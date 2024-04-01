@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model kkutu_ko {
+  id    String  @id(map: "kkutu_kr_key") @map("_id") @db.VarChar(256)
+  type  String?
+  mean  String
+  hit   Int     @default(0)
+  flag  Int?
+  theme String?
+}
