@@ -151,3 +151,12 @@ model Stats {
 
   @@id([id, userId])
 }
+
+model User {
+  id String @id
+  name String
+  image String
+  score Int @default(0)
+  provider String
+  password String?
+}

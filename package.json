@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "prisma generate & nest build",
+    "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -20,49 +20,20 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "^10.3.7",
-    "@nestjs/config": "^3.2.2",
-    "@nestjs/core": "^10.3.7",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
     "@nestjs/mapped-types": "*",
-    "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
-    "@nestjs/platform-socket.io": "^10.3.7",
-    "@nestjs/serve-static": "^4.0.2",
-    "@nestjs/swagger": "^7.3.1",
     "@nestjs/websockets": "^10.3.7",
-    "@prisma/client": "^5.22.0",
-    "@types/express-session": "^1.18.0",
-    "@types/express-socket.io-session": "^1.3.9",
-    "@types/mime": "3.0.4",
-    "@types/passport": "^1.0.16",
-    "@types/passport-local": "^1.0.38",
-    "@types/passport-naver": "^1.0.4",
-    "@wakgames/backend-sdk": "git+https://github.com/kms0219kms/Waktaverse-Games-BackendSdk-Nodejs.git#prebuilt/7d3f07c",
-    "bcrypt": "^5.1.1",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1",
-    "connect-mongo": "^5.1.0",
-    "connect-mongodb-session": "^5.0.0",
-    "connect-redis": "^7.1.1",
-    "express-session": "^1.18.0",
-    "express-socket.io-session": "^1.3.5",
-    "global": "^4.4.0",
-    "ioredis": "^5.4.1",
-    "jsonwebtoken": "^9.0.2",
-    "jwks-rsa": "^3.1.0",
-    "mime": "^4.0.3",
-    "passport": "^0.7.0",
-    "passport-local": "^1.0.0",
-    "passport-naver": "^1.0.6",
-    "prisma": "^5.22.0",
-    "redis": "^4.7.0",
+    "@prisma/client": "^5.11.0",
+    "@types/mime": "^4.0.0",
+    "prisma": "^5.11.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.7.5",
-    "swagger-ui-express": "^5.0.0"
+    "socket.io": "^4.7.5"
   },
   "devDependencies": {
-    "@nestjs/cli": "^10.3.2",
+    "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@types/express": "^4.17.17",
@@ -100,9 +71,5 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  },
-  "resolutions": {
-    "@types/mime": "3.0.4"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  }
 }
