@@ -10,7 +10,5 @@ export declare class UserService {
         name: string;
         image: string;
         score: number;
-        provider: string;
-        password: string;
     }>;
 }
