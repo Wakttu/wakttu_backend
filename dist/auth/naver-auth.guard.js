@@ -9,25 +9,23 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserService = void 0;
+exports.NaverAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
-let UserService = class UserService {
-    constructor(prisma) {
-        this.prisma = prisma;
+const passport_1 = require("@nestjs/passport");
+let NaverAuthGuard = class NaverAuthGuard extends (0, passport_1.AuthGuard)('naver') {
+    constructor() {
+        super();
     }
-    async create(data) {
-        return await this.prisma.user.create({ data });
-    }
-    async findById(id) {
-        const response = await this.prisma.user.findUnique({ where: { id } });
-        delete response.password;
-        return response;
+    async canActivate(context) {
+        const activate = (await super.canActivate(context));
+        const request = context.switchToHttp().getRequest();
+        await super.logIn(request);
+        return activate;
     }
 };
-exports.UserService = UserService;
-exports.UserService = UserService = __decorate([
+exports.NaverAuthGuard = NaverAuthGuard;
+exports.NaverAuthGuard = NaverAuthGuard = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
-], UserService);
-//# sourceMappingURL=user.service.js.map
+    __metadata("design:paramtypes", [])
+], NaverAuthGuard);
+//# sourceMappingURL=naver-auth.guard.js.map

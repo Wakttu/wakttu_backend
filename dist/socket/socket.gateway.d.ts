@@ -15,5 +15,6 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     handleMessage({ roomId, message }: Data): void;
     handleEnter(roomId: string, client: Socket): void;
     handleExit(roomId: string, client: Socket): void;
+    handleStatus(client: Socket): void;
 }
 export {};

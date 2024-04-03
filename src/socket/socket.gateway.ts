@@ -25,8 +25,8 @@ export class SocketGateway
   public clients: {
     [socketId: string]: string;
   } = {};
+
   handleConnection(client: Socket): void {
-    console.log(`connect: ${client.id}`);
     this.clients[client.id] = client.id;
     console.log(this.clients);
   }
@@ -36,7 +36,6 @@ export class SocketGateway
   }
 
   handleDisconnect(client: Socket): void {
-    console.log(`disconnect: ${client.id}`);
     delete this.clients[client.id];
   }
 
@@ -58,5 +57,10 @@ export class SocketGateway
   handleExit(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
     client.leave(roomId);
     this.server.to(roomId).emit('exit', `${client.id}이 퇴장`);
+  }
+
+  @SubscribeMessage('status')
+  handleStatus(@ConnectedSocket() client: Socket) {
+    console.log(client.rooms);
   }
 }

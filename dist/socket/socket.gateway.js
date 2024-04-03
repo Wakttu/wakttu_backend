@@ -20,7 +20,6 @@ let SocketGateway = class SocketGateway {
         this.clients = {};
     }
     handleConnection(client) {
-        console.log(`connect: ${client.id}`);
         this.clients[client.id] = client.id;
         console.log(this.clients);
     }
@@ -28,7 +27,6 @@ let SocketGateway = class SocketGateway {
         console.log('socket is open!');
     }
     handleDisconnect(client) {
-        console.log(`disconnect: ${client.id}`);
         delete this.clients[client.id];
     }
     handleMessage({ roomId, message }) {
@@ -41,6 +39,9 @@ let SocketGateway = class SocketGateway {
     handleExit(roomId, client) {
         client.leave(roomId);
         this.server.to(roomId).emit('exit', `${client.id}이 퇴장`);
+    }
+    handleStatus(client) {
+        console.log(client.rooms);
     }
 };
 exports.SocketGateway = SocketGateway;
@@ -71,6 +72,13 @@ __decorate([
     __metadata("design:paramtypes", [String, socket_io_1.Socket]),
     __metadata("design:returntype", void 0)
 ], SocketGateway.prototype, "handleExit", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('status'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket]),
+    __metadata("design:returntype", void 0)
+], SocketGateway.prototype, "handleStatus", null);
 exports.SocketGateway = SocketGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({ namespace: 'wakttu' })
 ], SocketGateway);

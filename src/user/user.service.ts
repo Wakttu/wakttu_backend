@@ -12,6 +12,8 @@ export class UserService {
   }
 
   async findById(id: string) {
-    return await this.prisma.user.findUnique({ where: { id } });
+    const response = await this.prisma.user.findUnique({ where: { id } });
+    delete response.password;
+    return response;
   }
 }
