@@ -12,8 +12,10 @@ export class UserService {
   }
 
   async findById(id: string) {
-    const response = await this.prisma.user.findUnique({ where: { id } });
-    delete response.password;
+    const response = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, name: true, image: true, score: true },
+    });
     return response;
   }
 }
