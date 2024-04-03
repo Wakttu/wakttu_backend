@@ -15,3 +15,12 @@ model kkutu_ko {
   flag  Int?
   theme String?
 }
+
+model User {
+  id String @id
+  name String
+  image String
+  score Int @default(0)
+  provider String
+  password String?
+}
