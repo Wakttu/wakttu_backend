@@ -8,8 +8,6 @@ export declare class UserController {
         name: string;
         image: string;
         score: number;
-        provider: string;
-        password: string;
     }>;
     signUp(createUserDto: CreateUserDto): Promise<import("src/user/entities/user.entity").User>;
 }

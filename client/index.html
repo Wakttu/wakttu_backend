@@ -19,6 +19,9 @@
     <button id="exit" onclick="Exit()">exit</button>
     <button id="rooms" onclick="Status()">Status</button>
     <a href="http://localhost:3000/auth/naver">naver로 떠나기</a>
+    <hr />
+    <input type="text" id="game" />
+    <button onclick="sendGame()">버튼</button>
   </body>
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -47,6 +50,12 @@
     function Status() {
       socket.emit('status', 'hello');
     }
+
+    async function sendGame() {
+      const id = document.querySelector('#game').value;
+      const res = await fetch(`http://localhost:3000/dictionary/game/${id}`);
+      console.log(res);
+    }
     socket.on('message', (data) => {
       alert(data);
     });
@@ -60,6 +69,10 @@
     });
 
     socket.on('test', (data) => {
+      console.log(data);
+    });
+
+    socket.on('game', (data) => {
       console.log(data);
     });
   </script>

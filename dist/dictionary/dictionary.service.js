@@ -9,27 +9,34 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserService = void 0;
+exports.DictionaryService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let UserService = class UserService {
+let DictionaryService = class DictionaryService {
     constructor(prisma) {
         this.prisma = prisma;
     }
     async create(data) {
-        return await this.prisma.user.create({ data });
+        return await this.prisma.kkutu_ko.create({ data });
     }
     async findById(id) {
-        const response = await this.prisma.user.findUnique({
+        return await this.prisma.kkutu_ko.findUnique({
             where: { id },
-            select: { id: true, name: true, image: true, score: true },
         });
-        return response;
+    }
+    async update(id, data) {
+        return await this.prisma.kkutu_ko.update({
+            where: { id },
+            data,
+        });
+    }
+    async remove(id) {
+        return await this.prisma.kkutu_ko.delete({ where: { id } });
     }
 };
-exports.UserService = UserService;
-exports.UserService = UserService = __decorate([
+exports.DictionaryService = DictionaryService;
+exports.DictionaryService = DictionaryService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
-], UserService);
-//# sourceMappingURL=user.service.js.map
+], DictionaryService);
+//# sourceMappingURL=dictionary.service.js.map

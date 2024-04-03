@@ -3,6 +3,6 @@ export class Dictionary {
   type: string;
   mean: string;
   hit: number;
-  meta: any;
-  wakta: boolean;
+  flag: string;
+  theme: string;
 }
