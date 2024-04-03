@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
+const class_validator_1 = require("class-validator");
 class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;
@@ -19,6 +20,7 @@ __decorate([
         example: 'Xefafadvmmd',
         description: 'this is id of User',
     }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "id", void 0);
 __decorate([
@@ -26,6 +28,7 @@ __decorate([
         example: '냐무냠',
         description: 'this is name of User',
     }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "name", void 0);
 __decorate([
@@ -33,6 +36,7 @@ __decorate([
         example: 'http://www.image.png',
         description: 'this is image-URL of User',
     }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "image", void 0);
 __decorate([
@@ -40,12 +44,15 @@ __decorate([
         example: 'naver',
         description: 'this is provider of User',
     }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "provider", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'this is password of User. ',
     }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "password", void 0);
 //# sourceMappingURL=create-user.dto.js.map

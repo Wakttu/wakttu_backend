@@ -13,12 +13,23 @@ const app_service_1 = require("./app.service");
 const socket_module_1 = require("./socket/socket.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const user_module_1 = require("./user/user.module");
+const auth_module_1 = require("./auth/auth.module");
+const serve_static_1 = require("@nestjs/serve-static");
+const path_1 = require("path");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [socket_module_1.SocketModule, prisma_module_1.PrismaModule, user_module_1.UserModule],
+        imports: [
+            serve_static_1.ServeStaticModule.forRoot({
+                rootPath: (0, path_1.join)(__dirname, '..', 'client'),
+            }),
+            socket_module_1.SocketModule,
+            prisma_module_1.PrismaModule,
+            user_module_1.UserModule,
+            auth_module_1.AuthModule,
+        ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

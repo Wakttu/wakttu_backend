@@ -1,32 +1,66 @@
 <!doctype html>
 <html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>test</title>
+  </head>
+  <body>
+    <h3>message</h3>
+    <input type="text" id="message" />
+    <button onclick="sendMessage()">버튼</button>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Document</title>
-</head>
+    <hr />
 
-<body>
-  <form action="/auth/test" method="post">
-    email: <input type="text" name="email" /><br />
-    password:<input type="password" name="password" /><br />
-    <button type="submit">로그인</button>
-  </form>
-</body>
-<script src="https://port-0-wakttu-backend-2aat2cluozach9.sel5.cloudtype.app/socket.io/socket.io.js"></script>
-
-<script>
-  const socket = io('/wakttu');
-  console.log(socket);
-
-  async function getData() {
-    const response = await fetch("http://localhost:1945/test");
-    const data = await response.json();
-    console.log(data);
+    <span type="text" id="room"></span>
+    <input type="text" id="input" />
+    <button onclick="setRoom()">roomId 설정</button>
+    <button id="enter" onclick="Enter()">enter</button>
+    <button id="exit" onclick="Exit()">exit</button>
+    <button id="rooms" onclick="Status()">Status</button>
+    <a href="http://localhost:3000/auth/naver">naver로 떠나기</a>
+  </body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io('/wakttu');
     console.log(socket);
-  }
-  getData();
-</script>
 
+    function setRoom() {
+      const input = document.querySelector('#input');
+      document.querySelector('#room').innerText = input.value;
+    }
+    function sendMessage() {
+      const input = document.querySelector('#message');
+      socket.emit('message', input.value);
+    }
+
+    function Enter() {
+      const roomId = document.querySelector('#room').innerText;
+      socket.emit('enter', roomId);
+    }
+
+    function Exit() {
+      const roomId = document.querySelector('#roomId').value;
+      socket.emit('exit', roomId);
+    }
+
+    function Status() {
+      socket.emit('status', 'hello');
+    }
+    socket.on('message', (data) => {
+      alert(data);
+    });
+
+    socket.on('enter', (data) => {
+      alert(data);
+    });
+
+    socket.on('exit', (data) => {
+      alert(data);
+    });
+
+    socket.on('test', (data) => {
+      console.log(data);
+    });
+  </script>
 </html>
