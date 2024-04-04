@@ -6,8 +6,8 @@ export declare class UserService {
     constructor(prisma: PrismaService);
     create(data: CreateUserDto): Promise<User>;
     findById(id: string): Promise<{
-        id: string;
         name: string;
+        id: string;
         image: string;
         score: number;
     }>;

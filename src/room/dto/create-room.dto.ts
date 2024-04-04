@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateRoomDto {
   @ApiProperty({
@@ -11,11 +11,11 @@ export class CreateRoomDto {
 
   @ApiProperty({
     example: '123456',
-    description: '방의 비밀번호가 있을경우 입력가능',
+    description: '방의 비밀번호가 있을경우 입력 (수형태)',
   })
   @IsOptional()
-  @IsString()
-  password: string;
+  @IsNumber()
+  password: number;
 
   @ApiProperty({
     example: '1',
@@ -26,26 +26,18 @@ export class CreateRoomDto {
   type: number;
 
   @ApiProperty({
-    example: '6',
-    description: '라운드 수',
-  })
-  @IsNumber()
-  round: number;
-
-  @ApiProperty({
-    example: '[매너, 품어]',
+    example: '[1,0,1,0,1]',
     description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
   })
   @IsOptional()
-  @IsString({ each: true })
-  option: string[];
+  @IsBoolean({ each: true })
+  option: boolean[];
 
   @ApiProperty({ example: '8', description: '인원수설정하는값' })
   @IsNumber()
-  total: number;
+  count: number;
 
-  @ApiProperty({ example: '600000', description: '라운드 시간 ms 단위' })
-  @IsOptional()
-  @IsNumber()
-  time: number;
+  @ApiProperty({ example: 'xdffqe', description: '방장의 id값 naver의 id' })
+  @IsString()
+  masterId: string;
 }

@@ -1,7 +1,7 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { SocketGateway } from './socket/socket.gateway';
+import { NaverAuthGuard } from './auth/naver-auth.guard';
 
 @Controller()
 export class AppController {
@@ -10,22 +10,10 @@ export class AppController {
     private readonly socketGateway: SocketGateway,
   ) {}
 
-  // 세션로그인 되는지 확인용 코드
   @Get()
-  isLoggined(@Req() req: Request): any {
-    return req.user;
-  }
-
-  @Get('/test')
-  getSession(@Req() req: Request): any {
-    const user = this.appService.findUser(req.session.user);
-    if (!user) req.session.destroy(() => {});
-    return req.session;
-  }
-
-  @Get('/achieve')
-  async getAchieve() {
-    return await this.appService.getAchieve();
+  @UseGuards(NaverAuthGuard)
+  getHello(): string {
+    return this.appService.getHello();
   }
 
   @Get('test')

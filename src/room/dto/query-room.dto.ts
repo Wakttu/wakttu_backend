@@ -34,10 +34,10 @@ export class QueryRoomDto {
   start: number;
 
   @ApiProperty({
-    example: '옵션 설정',
+    example: '[1,0,1,0,1]',
     description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
   })
   @IsOptional()
-  @IsString({ each: true })
-  option: string[];
+  @IsBoolean({ each: true })
+  option: boolean[];
 }

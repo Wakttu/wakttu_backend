@@ -158,5 +158,21 @@ model User {
   image String
   score Int @default(0)
   provider String
+  host Room?
   password String?
+}
+
+model Room {
+  id String @id @default(uuid())
+  title String
+  password Int?
+  type Int
+  option Boolean[]
+  count Int
+  start Boolean @default(false)
+  master User @relation(references: [id],fields: [masterId] )
+  masterId String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

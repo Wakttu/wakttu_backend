@@ -12,8 +12,9 @@ import { DictionaryService } from './dictionary.service';
 import { CreateDictionaryDto } from './dto/create-dictionary.dto';
 import { UpdateDictionaryDto } from './dto/update-dictionary.dto';
 import { SocketGateway } from 'src/socket/socket.gateway';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Dictionary')
 @Controller('dictionary')
 export class DictionaryController {
   constructor(
