@@ -93,6 +93,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], DictionaryController.prototype, "check", null);
 exports.DictionaryController = DictionaryController = __decorate([
+    (0, swagger_1.ApiTags)('Dictionary'),
     (0, common_1.Controller)('dictionary'),
     __metadata("design:paramtypes", [dictionary_service_1.DictionaryService,
         socket_gateway_1.SocketGateway])

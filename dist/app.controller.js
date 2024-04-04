@@ -13,6 +13,7 @@ exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
 const app_service_1 = require("./app.service");
 const socket_gateway_1 = require("./socket/socket.gateway");
+const naver_auth_guard_1 = require("./auth/naver-auth.guard");
 let AppController = class AppController {
     constructor(appService, socketGateway) {
         this.appService = appService;
@@ -29,6 +30,7 @@ let AppController = class AppController {
 exports.AppController = AppController;
 __decorate([
     (0, common_1.Get)(),
+    (0, common_1.UseGuards)(naver_auth_guard_1.NaverAuthGuard),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", String)

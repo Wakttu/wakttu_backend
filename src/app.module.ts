@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { DictionaryModule } from './dictionary/dictionary.module';
+import { RoomModule } from './room/room.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -18,6 +19,7 @@ import { DictionaryModule } from './dictionary/dictionary.module';
     UserModule,
     AuthModule,
     DictionaryModule,
+    RoomModule,
   ],
   controllers: [AppController],
   providers: [AppService],
