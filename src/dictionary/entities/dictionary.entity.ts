@@ -3,6 +3,6 @@ export class Dictionary {
   type: string;
   mean: string;
   hit: number;
-  flag: string;
+  flag: number;
   theme: string;
 }

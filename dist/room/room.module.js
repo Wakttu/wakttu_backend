@@ -17,6 +17,7 @@ exports.RoomModule = RoomModule = __decorate([
     (0, common_1.Module)({
         controllers: [room_controller_1.RoomController],
         providers: [room_service_1.RoomService],
+        exports: [room_service_1.RoomService],
     })
 ], RoomModule);
 //# sourceMappingURL=room.module.js.map

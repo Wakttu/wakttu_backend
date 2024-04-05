@@ -11,15 +11,15 @@ const common_1 = require("@nestjs/common");
 const dictionary_service_1 = require("./dictionary.service");
 const dictionary_controller_1 = require("./dictionary.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
-const socket_module_1 = require("../socket/socket.module");
 let DictionaryModule = class DictionaryModule {
 };
 exports.DictionaryModule = DictionaryModule;
 exports.DictionaryModule = DictionaryModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, socket_module_1.SocketModule],
+        imports: [prisma_module_1.PrismaModule],
         controllers: [dictionary_controller_1.DictionaryController],
         providers: [dictionary_service_1.DictionaryService],
+        exports: [dictionary_service_1.DictionaryService],
     })
 ], DictionaryModule);
 //# sourceMappingURL=dictionary.module.js.map
