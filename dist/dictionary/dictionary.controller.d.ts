@@ -46,6 +46,7 @@ export declare class DictionaryController {
         hit: number;
         wakta: boolean;
     }>;
+<<<<<<< HEAD
     checkManner(keyword: string): Promise<boolean>;
     findAll(id: string): Promise<{
         id: string;
@@ -55,4 +56,6 @@ export declare class DictionaryController {
         hit: number;
         wakta: boolean;
     }[]>;
+=======
+>>>>>>> 4b3bc0d (feat: turn 개발)
 }

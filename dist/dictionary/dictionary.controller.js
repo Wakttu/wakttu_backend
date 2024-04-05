@@ -49,12 +49,15 @@ let DictionaryController = class DictionaryController {
     async remove(id) {
         return await this.dictionaryService.remove(id);
     }
+<<<<<<< HEAD
     async checkManner(keyword) {
         return await this.dictionaryService.checkManner(keyword);
     }
     async findAll(id) {
         return await this.dictionaryService.findAll(id);
     }
+=======
+>>>>>>> 4b3bc0d (feat: turn 개발)
 };
 exports.DictionaryController = DictionaryController;
 __decorate([
@@ -108,6 +111,7 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], DictionaryController.prototype, "remove", null);
+<<<<<<< HEAD
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: '한방단어 인지 확인' }),
     (0, common_1.Get)('manner/:keyword'),
@@ -124,6 +128,8 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], DictionaryController.prototype, "findAll", null);
+=======
+>>>>>>> 4b3bc0d (feat: turn 개발)
 exports.DictionaryController = DictionaryController = __decorate([
 <<<<<<< HEAD
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),

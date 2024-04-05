@@ -233,7 +233,11 @@ exports.SocketService = SocketService;
 exports.SocketService = SocketService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [dictionary_service_1.DictionaryService,
+<<<<<<< HEAD
         room_service_1.RoomService,
         user_service_1.UserService])
+=======
+        room_service_1.RoomService])
+>>>>>>> 4b3bc0d (feat: turn 개발)
 ], SocketService);
 //# sourceMappingURL=socket.service.js.map
