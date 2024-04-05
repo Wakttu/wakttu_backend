@@ -1,11 +1,9 @@
 import { DictionaryService } from './dictionary.service';
 import { CreateDictionaryDto } from './dto/create-dictionary.dto';
 import { UpdateDictionaryDto } from './dto/update-dictionary.dto';
-import { SocketGateway } from 'src/socket/socket.gateway';
 export declare class DictionaryController {
     private readonly dictionaryService;
-    private readonly socketGateway;
-    constructor(dictionaryService: DictionaryService, socketGateway: SocketGateway);
+    constructor(dictionaryService: DictionaryService);
     create(createDictionaryDto: CreateDictionaryDto): Promise<{
         id: string;
         type: string;
@@ -31,14 +29,6 @@ export declare class DictionaryController {
         theme: string;
     }>;
     remove(id: string): Promise<{
-        id: string;
-        type: string;
-        mean: string;
-        hit: number;
-        flag: number;
-        theme: string;
-    }>;
-    check(id: string, req: any): Promise<{
         id: string;
         type: string;
         mean: string;

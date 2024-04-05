@@ -9,12 +9,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SocketModule = void 0;
 const common_1 = require("@nestjs/common");
 const socket_gateway_1 = require("./socket.gateway");
+const socket_service_1 = require("./socket.service");
+const room_module_1 = require("../room/room.module");
+const dictionary_module_1 = require("../dictionary/dictionary.module");
 let SocketModule = class SocketModule {
 };
 exports.SocketModule = SocketModule;
 exports.SocketModule = SocketModule = __decorate([
     (0, common_1.Module)({
-        providers: [socket_gateway_1.SocketGateway],
+        imports: [room_module_1.RoomModule, dictionary_module_1.DictionaryModule],
+        providers: [socket_gateway_1.SocketGateway, socket_service_1.SocketService],
         exports: [socket_gateway_1.SocketGateway],
     })
 ], SocketModule);

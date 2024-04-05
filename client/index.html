@@ -8,11 +8,11 @@
   <body>
     <h3>message</h3>
     <input type="text" id="message" />
-    <button onclick="sendMessage()">버튼</button>
+    <button onclick="sendChat()">버튼</button>
 
     <hr />
 
-    <span type="text" id="room"></span>
+    <span type="text" id="room">xxx1</span>
     <input type="text" id="input" />
     <button onclick="setRoom()">roomId 설정</button>
     <button id="enter" onclick="Enter()">enter</button>
@@ -20,8 +20,14 @@
     <button id="rooms" onclick="Status()">Status</button>
     <a href="http://localhost:3000/auth/naver">naver로 떠나기</a>
     <hr />
-    <input type="text" id="game" />
-    <button onclick="sendGame()">버튼</button>
+    <input type="text" id="dictionary" />
+    <button onclick="checkDictionary()">사전확인</button>
+    <hr />
+    <button onclick="Test()">Test</button>
+
+    <button onclick="setTurn()">Myturn</button>
+    <hr />
+    <div id="chat"></div>
   </body>
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -32,9 +38,9 @@
       const input = document.querySelector('#input');
       document.querySelector('#room').innerText = input.value;
     }
-    function sendMessage() {
+    function sendChat() {
       const input = document.querySelector('#message');
-      socket.emit('message', input.value);
+      socket.emit('chat', { roomId: 'xxx1', message: input.value });
     }
 
     function Enter() {
@@ -43,7 +49,7 @@
     }
 
     function Exit() {
-      const roomId = document.querySelector('#roomId').value;
+      const roomId = document.querySelector('#room').innerText;
       socket.emit('exit', roomId);
     }
 
@@ -51,14 +57,20 @@
       socket.emit('status', 'hello');
     }
 
-    async function sendGame() {
-      const id = document.querySelector('#game').value;
+    async function checkDictionary() {
+      const id = document.querySelector('#dictionary').value;
       const res = await fetch(`http://localhost:3000/dictionary/game/${id}`);
       console.log(res);
     }
-    socket.on('message', (data) => {
-      alert(data);
-    });
+
+    function setTurn() {
+      const roomId = document.querySelector('#room').innerText;
+      socket.emit('turn', roomId);
+    }
+
+    function Test() {
+      fetch('http://localhost:3000/test');
+    }
 
     socket.on('enter', (data) => {
       alert(data);
@@ -68,12 +80,15 @@
       alert(data);
     });
 
-    socket.on('test', (data) => {
-      console.log(data);
+    socket.on('game', (data) => {
+      const div = document.querySelector('#chat');
+      div.innerText += data;
     });
 
-    socket.on('game', (data) => {
-      console.log(data);
+    socket.on('chat', (data) => {
+      const div = document.querySelector('#chat');
+      div.innerText += data;
     });
+    1;
   </script>
 </html>
