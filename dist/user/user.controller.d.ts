@@ -4,8 +4,8 @@ export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
     getUser(id: string): Promise<{
-        id: string;
         name: string;
+        id: string;
         image: string;
         score: number;
     }>;

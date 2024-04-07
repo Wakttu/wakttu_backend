@@ -8,40 +8,45 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
 const app_service_1 = require("./app.service");
-const socket_gateway_1 = require("./socket/socket.gateway");
+const room_service_1 = require("./room/room.service");
 let AppController = class AppController {
-    constructor(appService, socketGateway) {
+    constructor(appService, roomService) {
         this.appService = appService;
-        this.socketGateway = socketGateway;
+        this.roomService = roomService;
     }
-    getHello() {
-        return this.appService.getHello();
+    isLoggined(req) {
+        return req.isAuthenticated();
     }
-    test() {
-        const server = this.socketGateway.server;
-        server.emit('test', this.socketGateway.clients);
+    createRoom(req) {
+        console.log(req.body);
     }
 };
 exports.AppController = AppController;
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", String)
-], AppController.prototype, "getHello", null);
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Object)
+], AppController.prototype, "isLoggined", null);
 __decorate([
-    (0, common_1.Get)('test'),
+    (0, common_1.Post)('/roomTest'),
+    (0, common_1.Redirect)('/list.html'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], AppController.prototype, "test", null);
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Object)
+], AppController.prototype, "createRoom", null);
 exports.AppController = AppController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [app_service_1.AppService,
-        socket_gateway_1.SocketGateway])
+        room_service_1.RoomService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map

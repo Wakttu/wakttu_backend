@@ -17,6 +17,7 @@ const auth_module_1 = require("./auth/auth.module");
 const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
 const dictionary_module_1 = require("./dictionary/dictionary.module");
+const room_module_1 = require("./room/room.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -31,6 +32,7 @@ exports.AppModule = AppModule = __decorate([
             user_module_1.UserModule,
             auth_module_1.AuthModule,
             dictionary_module_1.DictionaryModule,
+            room_module_1.RoomModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

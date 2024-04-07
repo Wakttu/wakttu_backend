@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { DictionaryService } from './dictionary.service';
 import { DictionaryController } from './dictionary.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
-  imports: [PrismaModule, SocketModule],
+  imports: [PrismaModule],
   controllers: [DictionaryController],
   providers: [DictionaryService],
+  exports: [DictionaryService],
 })
 export class DictionaryModule {}

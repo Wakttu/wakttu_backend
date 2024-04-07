@@ -17,12 +17,10 @@ const common_1 = require("@nestjs/common");
 const dictionary_service_1 = require("./dictionary.service");
 const create_dictionary_dto_1 = require("./dto/create-dictionary.dto");
 const update_dictionary_dto_1 = require("./dto/update-dictionary.dto");
-const socket_gateway_1 = require("../socket/socket.gateway");
 const swagger_1 = require("@nestjs/swagger");
 let DictionaryController = class DictionaryController {
-    constructor(dictionaryService, socketGateway) {
+    constructor(dictionaryService) {
         this.dictionaryService = dictionaryService;
-        this.socketGateway = socketGateway;
     }
     async create(createDictionaryDto) {
         return await this.dictionaryService.create(createDictionaryDto);
@@ -35,18 +33,6 @@ let DictionaryController = class DictionaryController {
     }
     async remove(id) {
         return await this.dictionaryService.remove(id);
-    }
-    async check(id, req) {
-        const server = this.socketGateway.server;
-        const response = await this.dictionaryService.findById(id);
-        console.log(req.user);
-        if (!response) {
-            server.emit('game', '존재하지않음');
-        }
-        else {
-            server.emit('game', response);
-        }
-        return response;
     }
 };
 exports.DictionaryController = DictionaryController;
@@ -83,18 +69,9 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], DictionaryController.prototype, "remove", null);
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'socket통신' }),
-    (0, common_1.Get)('game/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], DictionaryController.prototype, "check", null);
 exports.DictionaryController = DictionaryController = __decorate([
+    (0, swagger_1.ApiTags)('Dictionary'),
     (0, common_1.Controller)('dictionary'),
-    __metadata("design:paramtypes", [dictionary_service_1.DictionaryService,
-        socket_gateway_1.SocketGateway])
+    __metadata("design:paramtypes", [dictionary_service_1.DictionaryService])
 ], DictionaryController);
 //# sourceMappingURL=dictionary.controller.js.map
