@@ -38,6 +38,6 @@ export class QueryRoomDto {
     description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
   })
   @IsOptional()
-  @IsBoolean({ each: true })
-  option: boolean[];
+  @IsString({ each: true })
+  option: string[];
 }
