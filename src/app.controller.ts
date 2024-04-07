@@ -1,13 +1,13 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Post, Redirect, Req } from '@nestjs/common';
 import { AppService } from './app.service';
-import { SocketGateway } from './socket/socket.gateway';
 import { Request } from 'express';
+import { RoomService } from './room/room.service';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly socketGateway: SocketGateway,
+    private readonly roomService: RoomService,
   ) {}
 
   // 세션로그인 되는지 확인용 코드
@@ -16,10 +16,9 @@ export class AppController {
     return req.isAuthenticated();
   }
 
-  // socekt 의존성확인 코드
-  @Get('test')
-  test(@Req() req: any) {
-    const server = this.socketGateway.server;
-    this.socketGateway.handleTest(req, server);
+  @Post('/roomTest')
+  @Redirect('/list.html')
+  createRoom(@Req() req: Request): any {
+    console.log(req.body);
   }
 }

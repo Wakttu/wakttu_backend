@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomList</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+
+<body class="d-flex flex-column align-items-center mt-5">
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary" style="width: 500px;" data-bs-toggle="modal"
+        data-bs-target="#exampleModal">
+        Launch demo modal
+    </button>
+
+    <div class="d-flex flex-wrap" style="width: 800px;">
+        <div class="card m-2 p-2" style="width: 360px;">
+            <div class="card-body">
+                <h5 class="card-title">채팅 룸 제목1</h5>
+                <p class="card-text">이곳에 옵션정보가 들어갈거같죠?</p>
+                <a href="./index.html?roomId=xxx1" class="btn btn-primary">입장</a>
+            </div>
+        </div>
+
+        <div class="card m-2 p-2" style="width: 360px;">
+            <div class="card-body">
+                <h5 class="card-title">채팅 룸 제목2</h5>
+                <p class="card-text">이곳에 옵션정보가 들어갈거같죠?</p>
+                <a href="./index.html?roomId=xxx2" class="btn btn-primary">입장</a>
+            </div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">채팅방 설정</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="http://localhost:3000/roomTest" method="post" id="form">
+                        제목:<input type="text" name="title"><br />
+                        비밀번호:<input type="password" name="password"><br />
+                        라운드:<input type="number" name="round" value=2 min=2 max=8><br />
+                        <select name="type">
+                            <option value=1 selected>끝말잇기</option>
+                            <option value=2>쿵쿵따</option>
+                        </select>
+                        <br />
+                        <input type="checkbox" value="품어" name="option">품어
+                        <input type="checkbox" value="매너" name="option">매너
+                        <input type="hidden" name="masterId" value="masterId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" form="form">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+</body>
+<script>
+    function createRoom() {
+        const inputs = document.querySelectorAll('input');
+        console.log(inputs.value);
+    }
+</script>
+
+</html>

@@ -6,7 +6,7 @@ export declare class RoomService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     create(data: CreateRoomDto): Promise<Room | null>;
-    findByQuery(title?: string, start?: boolean, option?: boolean[], take?: number, skip?: number): Promise<Room[] | null>;
+    findByQuery(title?: string, start?: boolean, option?: string[], take?: number, skip?: number): Promise<Room[] | null>;
     findById(id: string): Promise<Room | null>;
     update(id: string, data: UpdateRoomDto): Promise<Room | null>;
     remove(id: string): Promise<any>;

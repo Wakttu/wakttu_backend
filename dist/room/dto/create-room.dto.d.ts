@@ -2,7 +2,8 @@ export declare class CreateRoomDto {
     title: string;
     password: number;
     type: number;
-    option: boolean[];
+    round: number;
+    option: string[];
     count: number;
     masterId: string;
 }
