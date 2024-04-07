@@ -3,5 +3,5 @@ export declare class QueryRoomDto {
     take: number;
     skip: number;
     start: number;
-    option: boolean[];
+    option: string[];
 }

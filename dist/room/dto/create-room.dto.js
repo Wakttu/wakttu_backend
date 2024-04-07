@@ -42,11 +42,19 @@ __decorate([
 ], CreateRoomDto.prototype, "type", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
+        example: '6',
+        description: '라운드 수',
+    }),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateRoomDto.prototype, "round", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
         example: '[1,0,1,0,1]',
         description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)({ each: true }),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateRoomDto.prototype, "option", void 0);
 __decorate([

@@ -11,14 +11,11 @@ import {
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
 
-interface Data {
-  roomId: string | string[];
-  message: string;
-}
-interface Info {
+interface Chat {
   roomId: string;
-  idx: number;
+  chat: string;
 }
+
 @WebSocketGateway({ namespace: 'wakttu' })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -29,15 +26,15 @@ export class SocketGateway
   public server: Server;
 
   public clients: {
-    [socketId: string]: { roomId: string; idx: number };
+    [socketId: string]: string;
   } = {};
 
   public rooms: {
-    [roomId: string]: { idx: number; id: string }[];
+    [roomId: string]: string[];
   } = {};
 
   public turn: {
-    [roomId: string]: number;
+    [roomId: string]: string;
   } = {};
 
   handleConnection(client: Socket) {
@@ -49,66 +46,81 @@ export class SocketGateway
   }
 
   handleDisconnect(client: Socket) {
-    const roomId = this.clients[client.id].roomId; // 오류로 소켓 종료시 접속중이던 room에서 삭제
+    const roomId = this.clients[client.id]; // 오류로 소켓 종료시 접속중이던 room에서 삭제
     delete this.clients[client.id];
     if (roomId)
-      this.rooms[roomId] = this.rooms[roomId].filter(
-        (user) => user.id !== client.id,
-      );
+      this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== client.id);
+    this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
     console.log('disconnect:', client.id);
   }
 
   @SubscribeMessage('chat')
   async handleMessage(
-    @MessageBody() { roomId, message }: Data,
+    @MessageBody() { roomId, chat }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    console.log(roomId, message);
-    if (this.turn[roomId as string] == this.clients[client.id].idx) {
-      const response = await this.socketService.findWord(message);
-      this.server.to(roomId).emit('game', JSON.stringify(response));
-    }
-    this.server.to(roomId).emit('chat', message);
+    this.server.to(roomId).emit('chat', `${client.id}:${chat}`);
   }
 
   @SubscribeMessage('enter')
   handleEnter(
-    @MessageBody() { roomId, idx }: Info,
+    @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
+    if (client.rooms.has(roomId)) {
+      return;
+    }
     client.join(roomId);
-    this.clients[client.id] = { roomId, idx };
+    this.clients[client.id] = roomId;
+
+    if (!this.rooms[roomId]) {
+      this.rooms[roomId] = [];
+    }
+
+    this.rooms[roomId] = [client.id];
+    this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
     this.server.to(roomId).emit('enter', `${client.id}이 입장`);
-    this.rooms[roomId].push({ idx: idx, id: client.id });
-    console.log(this.clients, this.rooms);
   }
 
   @SubscribeMessage('exit')
   handleExit(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
     console.log('exit');
+    if (!client.rooms.has(roomId)) {
+      return;
+    }
     client.leave(roomId);
-    this.rooms[roomId] = this.rooms[roomId].filter(
-      (user) => user.id !== client.id,
-    );
+    this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== client.id);
+    this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
     this.server.to(roomId).emit('exit', `${client.id}이 퇴장`);
   }
 
-  //방설정확인
-  @SubscribeMessage('status')
-  handleStatus(@ConnectedSocket() client: Socket) {
-    console.log(client.rooms);
-  }
-
-  handleTest(data: any, server) {
-    console.log(data, server);
-  }
-
-  @SubscribeMessage('turn')
-  handleTurn(
-    @MessageBody() { roomId, idx }: Info,
+  @SubscribeMessage('turn_start')
+  handleTurnStart(
+    @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    this.turn[roomId] = idx;
-    this.server.to(roomId).emit('turn', `Turn : ${client.id}`);
+    this.turn[roomId] = client.id;
+    this.server.to(roomId).emit('turn_start', `${client.id}님 턴!`);
+  }
+
+  @SubscribeMessage('turn_end')
+  handleTurnEnd(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.turn[roomId] = null;
+    this.server.to(roomId).emit('turn_end', `${client.id}님 턴 종료!`);
+  }
+
+  @SubscribeMessage('answer')
+  async handleAnswer(
+    @MessageBody() { roomId, chat }: Chat,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.turn[roomId] !== client.id) {
+      return;
+    }
+    const check = await this.socketService.findWord(chat);
+    this.server.to(roomId).emit('answer', JSON.stringify(check));
   }
 }

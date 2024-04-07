@@ -56,7 +56,7 @@ __decorate([
         description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)({ each: true }),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], QueryRoomDto.prototype, "option", void 0);
 //# sourceMappingURL=query-room.dto.js.map

@@ -1,9 +1,9 @@
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-interface Data {
-    roomId: string | string[];
-    message: string;
+interface Chat {
+    roomId: string;
+    chat: string;
 }
 export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     private readonly socketService;
@@ -21,11 +21,11 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     handleConnection(client: Socket): void;
     afterInit(): void;
     handleDisconnect(client: Socket): void;
-    handleMessage({ roomId, message }: Data, client: Socket): Promise<void>;
+    handleMessage({ roomId, chat }: Chat, client: Socket): Promise<void>;
     handleEnter(roomId: string, client: Socket): void;
     handleExit(roomId: string, client: Socket): void;
-    handleStatus(client: Socket): void;
-    handleTest(data: any, server: any): void;
-    handleTurn(roomId: string, client: Socket): void;
+    handleTurnStart(roomId: string, client: Socket): void;
+    handleTurnEnd(roomId: string, client: Socket): void;
+    handleAnswer({ roomId, chat }: Chat, client: Socket): Promise<void>;
 }
 export {};

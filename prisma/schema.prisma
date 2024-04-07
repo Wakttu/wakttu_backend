@@ -165,9 +165,10 @@ model User {
 model Room {
   id String @id @default(uuid())
   title String
-  password Int?
+  password String?
   type Int
-  option Boolean[]
+  round Int
+  option String[]
   count Int
   start Boolean @default(false)
   master User @relation(references: [id],fields: [masterId] )
