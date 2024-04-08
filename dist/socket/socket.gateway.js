@@ -44,7 +44,7 @@ let SocketGateway = class SocketGateway {
     async handleCreate(data, client) {
         console.log(data);
         const room = await this.socketService.createRoom(data);
-        client.emit(JSON.stringify(room));
+        client.emit('createRoom', room);
     }
     handleEnter(roomId, client) {
         if (client.rooms.has(roomId)) {

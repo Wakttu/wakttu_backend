@@ -62,9 +62,4 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateRoomDto.prototype, "count", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ example: 'xdffqe', description: '방장의 id값 naver의 id' }),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateRoomDto.prototype, "masterId", void 0);
 //# sourceMappingURL=create-room.dto.js.map
