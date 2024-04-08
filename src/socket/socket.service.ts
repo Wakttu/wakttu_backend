@@ -13,4 +13,8 @@ export class SocketService {
   async findWord(word: string): Promise<Dictionary | null> {
     return await this.dic.findById(word);
   }
+
+  async getWord(length: number): Promise<string> {
+    return await this.dic.getWord(length);
+  }
 }
