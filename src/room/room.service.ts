@@ -18,9 +18,11 @@ export class RoomService {
         option: true,
         count: true,
         start: true,
-        masterId: true,
         createdAt: true,
         updatedAt: true,
+        users: {
+          select: { id: true, name: true },
+        },
       },
     });
   }
@@ -48,9 +50,11 @@ export class RoomService {
         option: true,
         count: true,
         start: true,
-        masterId: true,
         createdAt: true,
         updatedAt: true,
+        users: {
+          select: { id: true, name: true },
+        },
       },
     });
   }
@@ -66,9 +70,11 @@ export class RoomService {
         option: true,
         count: true,
         start: true,
-        masterId: true,
         createdAt: true,
         updatedAt: true,
+        users: {
+          select: { id: true, name: true },
+        },
       },
     });
   }
@@ -85,9 +91,11 @@ export class RoomService {
         option: true,
         count: true,
         start: true,
-        masterId: true,
         createdAt: true,
         updatedAt: true,
+        users: {
+          select: { id: true, name: true },
+        },
       },
     });
   }
