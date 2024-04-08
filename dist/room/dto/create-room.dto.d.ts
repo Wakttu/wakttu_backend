@@ -5,5 +5,4 @@ export declare class CreateRoomDto {
     round: number;
     option: string[];
     count: number;
-    masterId: string;
 }
