@@ -36,4 +36,5 @@ export declare class DictionaryService {
         flag: number;
         theme: string;
     }>;
+    getWord(length: number): Promise<string>;
 }

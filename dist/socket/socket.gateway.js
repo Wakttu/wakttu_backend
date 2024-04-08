@@ -20,7 +20,8 @@ let SocketGateway = class SocketGateway {
     constructor(socketService) {
         this.socketService = socketService;
         this.clients = {};
-        this.rooms = {};
+        this.roomUser = {};
+        this.roomInfo = {};
         this.turn = {};
     }
     handleConnection(client) {
@@ -33,12 +34,17 @@ let SocketGateway = class SocketGateway {
         const roomId = this.clients[client.id];
         delete this.clients[client.id];
         if (roomId)
-            this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== client.id);
-        this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
+            this.roomUser[roomId] = this.roomUser[roomId].filter((id) => id !== client.id);
+        this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
         console.log('disconnect:', client.id);
     }
     async handleMessage({ roomId, chat }, client) {
         this.server.to(roomId).emit('chat', `${client.id}:${chat}`);
+    }
+    async handleCreate(data, client) {
+        console.log(data);
+        const room = await this.socketService.createRoom(data);
+        client.emit('createRoom', room);
     }
     handleEnter(roomId, client) {
         if (client.rooms.has(roomId)) {
@@ -46,11 +52,11 @@ let SocketGateway = class SocketGateway {
         }
         client.join(roomId);
         this.clients[client.id] = roomId;
-        if (!this.rooms[roomId]) {
-            this.rooms[roomId] = [];
+        if (!this.roomUser[roomId]) {
+            this.roomUser[roomId] = [];
         }
-        this.rooms[roomId] = [client.id];
-        this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
+        this.roomUser[roomId] = [client.id];
+        this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
         this.server.to(roomId).emit('enter', `${client.id}이 입장`);
     }
     handleExit(roomId, client) {
@@ -59,9 +65,15 @@ let SocketGateway = class SocketGateway {
             return;
         }
         client.leave(roomId);
-        this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== client.id);
-        this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
+        this.roomUser[roomId] = this.roomUser[roomId].filter((id) => id !== client.id);
+        this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
         this.server.to(roomId).emit('exit', `${client.id}이 퇴장`);
+    }
+    async handleReady(roomId) {
+        if (this.roomInfo[roomId].round == 0) {
+            this.roomInfo[roomId].word = await this.socketService.getWord(this.roomInfo[roomId].round);
+            this.server.to(roomId).emit('ready', this.roomInfo[roomId].word);
+        }
     }
     handleTurnStart(roomId, client) {
         this.turn[roomId] = client.id;
@@ -93,6 +105,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleMessage", null);
 __decorate([
+    (0, websockets_1.SubscribeMessage)('createRoom'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleCreate", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)('enter'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
@@ -108,6 +128,13 @@ __decorate([
     __metadata("design:paramtypes", [String, socket_io_1.Socket]),
     __metadata("design:returntype", void 0)
 ], SocketGateway.prototype, "handleExit", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('ready'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleReady", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('turn_start'),
     __param(0, (0, websockets_1.MessageBody)()),

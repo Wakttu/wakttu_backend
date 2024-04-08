@@ -33,6 +33,12 @@ let DictionaryService = class DictionaryService {
     async remove(id) {
         return await this.prisma.kkutu_ko.delete({ where: { id } });
     }
+    async getWord(length) {
+        const list = await this.prisma
+            .$queryRaw `SELECT * FROM "public"."kkutu_ko" WHERE LENGTH(id) == ${length}`;
+        const idx = Math.floor(Math.random() * list.length);
+        return list[idx];
+    }
 };
 exports.DictionaryService = DictionaryService;
 exports.DictionaryService = DictionaryService = __decorate([

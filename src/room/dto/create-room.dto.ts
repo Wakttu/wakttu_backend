@@ -43,8 +43,4 @@ export class CreateRoomDto {
   @ApiProperty({ example: '8', description: '인원수설정하는값' })
   @IsNumber()
   count: number;
-
-  @ApiProperty({ example: 'xdffqe', description: '방장의 id값 naver의 id' })
-  @IsString()
-  masterId: string;
 }

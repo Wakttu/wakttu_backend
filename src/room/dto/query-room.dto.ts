@@ -34,7 +34,7 @@ export class QueryRoomDto {
   start: number;
 
   @ApiProperty({
-    example: '[1,0,1,0,1]',
+    example: '옵션 설정',
     description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
   })
   @IsOptional()

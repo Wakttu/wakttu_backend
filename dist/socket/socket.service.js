@@ -21,6 +21,12 @@ let SocketService = class SocketService {
     async findWord(word) {
         return await this.dic.findById(word);
     }
+    async getWord(length) {
+        return await this.dic.getWord(length);
+    }
+    async createRoom(data) {
+        return await this.room.create(data);
+    }
 };
 exports.SocketService = SocketService;
 exports.SocketService = SocketService = __decorate([

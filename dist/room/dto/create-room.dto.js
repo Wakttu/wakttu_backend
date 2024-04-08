@@ -26,11 +26,11 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         example: '123456',
-        description: '방의 비밀번호가 있을경우 입력 (수형태)',
+        description: '방의 비밀번호가 있을경우 입력가능',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    __metadata("design:type", Number)
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
 ], CreateRoomDto.prototype, "password", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
@@ -62,9 +62,4 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateRoomDto.prototype, "count", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({ example: 'xdffqe', description: '방장의 id값 naver의 id' }),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateRoomDto.prototype, "masterId", void 0);
 //# sourceMappingURL=create-room.dto.js.map

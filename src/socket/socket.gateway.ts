@@ -29,10 +29,22 @@ export class SocketGateway
     [socketId: string]: string;
   } = {};
 
-  public rooms: {
+  public roomUser: {
     [roomId: string]: string[];
   } = {};
 
+  public roomInfo: {
+    [roomId: string]: {
+      title: string;
+      type: string;
+      users: any;
+      option: string[];
+      host: string | undefined;
+      round: number;
+      word: string;
+      password: string;
+    };
+  } = {};
   public turn: {
     [roomId: string]: string;
   } = {};
@@ -49,8 +61,10 @@ export class SocketGateway
     const roomId = this.clients[client.id]; // 오류로 소켓 종료시 접속중이던 room에서 삭제
     delete this.clients[client.id];
     if (roomId)
-      this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== client.id);
-    this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
+      this.roomUser[roomId] = this.roomUser[roomId].filter(
+        (id) => id !== client.id,
+      );
+    this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
     console.log('disconnect:', client.id);
   }
 
@@ -60,6 +74,16 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     this.server.to(roomId).emit('chat', `${client.id}:${chat}`);
+  }
+
+  @SubscribeMessage('createRoom')
+  async handleCreate(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log(data);
+    const room = await this.socketService.createRoom(data);
+    client.emit('createRoom', room);
   }
 
   @SubscribeMessage('enter')
@@ -73,12 +97,12 @@ export class SocketGateway
     client.join(roomId);
     this.clients[client.id] = roomId;
 
-    if (!this.rooms[roomId]) {
-      this.rooms[roomId] = [];
+    if (!this.roomUser[roomId]) {
+      this.roomUser[roomId] = [];
     }
 
-    this.rooms[roomId] = [client.id];
-    this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
+    this.roomUser[roomId] = [client.id];
+    this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
     this.server.to(roomId).emit('enter', `${client.id}이 입장`);
   }
 
@@ -89,9 +113,21 @@ export class SocketGateway
       return;
     }
     client.leave(roomId);
-    this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== client.id);
-    this.server.to(roomId).emit('list', JSON.stringify(this.rooms[roomId]));
+    this.roomUser[roomId] = this.roomUser[roomId].filter(
+      (id) => id !== client.id,
+    );
+    this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
     this.server.to(roomId).emit('exit', `${client.id}이 퇴장`);
+  }
+
+  @SubscribeMessage('ready')
+  async handleReady(@MessageBody() roomId: string) {
+    if (this.roomInfo[roomId].round == 0) {
+      this.roomInfo[roomId].word = await this.socketService.getWord(
+        this.roomInfo[roomId].round,
+      );
+      this.server.to(roomId).emit('ready', this.roomInfo[roomId].word);
+    }
   }
 
   @SubscribeMessage('turn_start')

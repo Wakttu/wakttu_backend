@@ -12,8 +12,20 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     clients: {
         [socketId: string]: string;
     };
-    rooms: {
+    roomUser: {
         [roomId: string]: string[];
+    };
+    roomInfo: {
+        [roomId: string]: {
+            title: string;
+            type: string;
+            users: any;
+            option: string[];
+            host: string | undefined;
+            round: number;
+            word: string;
+            password: string;
+        };
     };
     turn: {
         [roomId: string]: string;
@@ -22,8 +34,10 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     afterInit(): void;
     handleDisconnect(client: Socket): void;
     handleMessage({ roomId, chat }: Chat, client: Socket): Promise<void>;
+    handleCreate(data: any, client: Socket): Promise<void>;
     handleEnter(roomId: string, client: Socket): void;
     handleExit(roomId: string, client: Socket): void;
+    handleReady(roomId: string): Promise<void>;
     handleTurnStart(roomId: string, client: Socket): void;
     handleTurnEnd(roomId: string, client: Socket): void;
     handleAnswer({ roomId, chat }: Chat, client: Socket): Promise<void>;
