@@ -76,6 +76,16 @@ export class SocketGateway
     this.server.to(roomId).emit('chat', `${client.id}:${chat}`);
   }
 
+  @SubscribeMessage('createRoom')
+  async handleCreate(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log(data);
+    const room = await this.socketService.createRoom(data);
+    client.emit(JSON.stringify(room));
+  }
+
   @SubscribeMessage('enter')
   handleEnter(
     @MessageBody() roomId: string,
