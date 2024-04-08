@@ -6,7 +6,6 @@ export class Room {
   round: number;
   count: number;
   start: boolean;
-  masterId: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -21,9 +21,11 @@ model User {
   name String
   image String
   score Int @default(0)
-  provider String
-  host Room?
   password String?
+  provider String
+
+  room Room? @relation(references: [id],fields: [roomId] )
+  roomId String?
 }
 
 model Room {
@@ -35,8 +37,8 @@ model Room {
   option String[]
   count Int
   start Boolean @default(false)
-  master User @relation(references: [id],fields: [masterId] )
-  masterId String @unique
+
+  users User[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

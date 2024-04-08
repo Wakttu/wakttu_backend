@@ -26,4 +26,11 @@ export class DictionaryService {
   async remove(id: string) {
     return await this.prisma.kkutu_ko.delete({ where: { id } });
   }
+
+  async getWord(length: number) {
+    const list: string[] = await this.prisma
+      .$queryRaw`SELECT * FROM "public"."kkutu_ko" WHERE LENGTH(id) == ${length}`;
+    const idx = Math.floor(Math.random() * list.length);
+    return list[idx];
+  }
 }
