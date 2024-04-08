@@ -22,44 +22,34 @@ __decorate([
 ], CreateDictionaryDto.prototype, "id", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: '명사',
-        description: '품사의 종류',
+        example: '1,1',
+        description: '품사의 종류에 따라 번호 부여. 1=>명사 품사가 여러개일 경우 그에 따라 ,를 통해 추가',
     }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateDictionaryDto.prototype, "type", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: '~ 한 뜻이다.',
-        description: '뜻에 대하여 설명',
+        example: '{1}, [1], 1',
+        description: '사용안할 예정. 왜냐면 의미의 경우 저작권이 존재',
     }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateDictionaryDto.prototype, "mean", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: '입력된 횟 수',
-        description: '입력될 때마다 +1 됨.',
+        example: '2',
+        description: '먼용도인지모르겠음',
     }),
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
-], CreateDictionaryDto.prototype, "hit", void 0);
+], CreateDictionaryDto.prototype, "flag", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: true,
-        description: '왁타버스 관련 단어일 경우, true 아니면 false',
+        example: '320',
+        description: '번호를 통해 주제를 나눔, 나중에 다른 방식으로 수정예정',
     }),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", Boolean)
-], CreateDictionaryDto.prototype, "wakta", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        example: { bgm: 'url' },
-        description: 'url, bgm 정보',
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsJSON)(),
-    __metadata("design:type", Object)
-], CreateDictionaryDto.prototype, "meta", void 0);
+    __metadata("design:type", String)
+], CreateDictionaryDto.prototype, "theme", void 0);
 //# sourceMappingURL=create-dictionary.dto.js.map

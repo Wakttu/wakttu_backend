@@ -6,55 +6,35 @@ export declare class DictionaryService {
     constructor(prisma: PrismaService);
     create(data: CreateDictionaryDto): Promise<{
         id: string;
-        type: string | null;
-        meta: import("@prisma/client/runtime/library").JsonValue | null;
-        mean: string | null;
+        type: string;
+        mean: string;
         hit: number;
-        wakta: boolean;
+        flag: number;
+        theme: string;
     }>;
     findById(id: string): Promise<{
         id: string;
-        type: string | null;
-        meta: import("@prisma/client/runtime/library").JsonValue | null;
-        mean: string | null;
+        type: string;
+        mean: string;
         hit: number;
-        wakta: boolean;
+        flag: number;
+        theme: string;
     }>;
-    findAll(id: string): Promise<{
-        id: string;
-        type: string | null;
-        meta: import("@prisma/client/runtime/library").JsonValue | null;
-        mean: string | null;
-        hit: number;
-        wakta: boolean;
-    }[]>;
     update(id: string, data: UpdateDictionaryDto): Promise<{
         id: string;
-        type: string | null;
-        meta: import("@prisma/client/runtime/library").JsonValue | null;
-        mean: string | null;
+        type: string;
+        mean: string;
         hit: number;
-        wakta: boolean;
+        flag: number;
+        theme: string;
     }>;
     remove(id: string): Promise<{
         id: string;
-        type: string | null;
-        meta: import("@prisma/client/runtime/library").JsonValue | null;
-        mean: string | null;
+        type: string;
+        mean: string;
         hit: number;
-        wakta: boolean;
+        flag: number;
+        theme: string;
     }>;
     getWord(length: number): Promise<string>;
-    checkManner(keyword: string): Promise<boolean>;
-    getMission(): Promise<string>;
-    search(keyword: string, take?: number, skip?: number): Promise<{
-        id: string;
-        type: string | null;
-        meta: import("@prisma/client/runtime/library").JsonValue | null;
-        mean: string | null;
-        hit: number;
-        wakta: boolean;
-    }[]>;
-    todayWord(): Promise<string>;
-    getQuiz(round: number): Promise<[]>;
 }

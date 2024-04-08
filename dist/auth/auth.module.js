@@ -10,9 +10,10 @@ exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
+const naver_strategy_1 = require("./naver-strategy");
 const user_module_1 = require("../user/user.module");
 const passport_1 = require("@nestjs/passport");
-const wakgames_module_1 = require("../wakgames/wakgames.module");
+const serializer_1 = require("../serializer");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -23,10 +24,9 @@ exports.AuthModule = AuthModule = __decorate([
             passport_1.PassportModule.register({
                 session: true,
             }),
-            wakgames_module_1.WakgamesModule,
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService],
+        providers: [auth_service_1.AuthService, naver_strategy_1.NaverStrategy, serializer_1.SessionSerializer],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map
