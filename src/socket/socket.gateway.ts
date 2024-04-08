@@ -83,7 +83,7 @@ export class SocketGateway
   ) {
     console.log(data);
     const room = await this.socketService.createRoom(data);
-    client.emit(JSON.stringify(room));
+    client.emit('createRoom', room);
   }
 
   @SubscribeMessage('enter')
