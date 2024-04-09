@@ -26,6 +26,30 @@ let UserService = class UserService {
         });
         return response;
     }
+    async enter(id, roomId) {
+        const response = await this.prisma.user.update({
+            where: { id },
+            data: {
+                room: { connect: { id: roomId } },
+            },
+            include: {
+                room: true,
+            },
+        });
+        return response.room;
+    }
+    async exit(id, roomId) {
+        const response = await this.prisma.user.update({
+            where: { id },
+            data: {
+                room: { disconnect: { id: roomId } },
+            },
+            include: {
+                room: true,
+            },
+        });
+        return response.room;
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
