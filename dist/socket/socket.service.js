@@ -8,30 +8,47 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SocketService = void 0;
 const common_1 = require("@nestjs/common");
 const dictionary_service_1 = require("../dictionary/dictionary.service");
 const room_service_1 = require("../room/room.service");
+const user_service_1 = require("../user/user.service");
+const common_2 = require("@nestjs/common");
 let SocketService = class SocketService {
-    constructor(dic, room) {
-        this.dic = dic;
-        this.room = room;
+    constructor(dicService, roomService, userService) {
+        this.dicService = dicService;
+        this.roomService = roomService;
+        this.userService = userService;
     }
     async findWord(word) {
-        return await this.dic.findById(word);
+        return await this.dicService.findById(word);
     }
     async getWord(length) {
-        return await this.dic.getWord(length);
+        return await this.dicService.getWord(length);
     }
-    async createRoom(data) {
-        return await this.room.create(data);
+    async createRoom(roomId, data, user) {
+        await this.roomService.create(data);
+        return await this.userService.enter(user.id, roomId);
+    }
+    async test(req) {
+        return req;
     }
 };
 exports.SocketService = SocketService;
+__decorate([
+    __param(0, (0, common_2.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Request]),
+    __metadata("design:returntype", Promise)
+], SocketService.prototype, "test", null);
 exports.SocketService = SocketService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [dictionary_service_1.DictionaryService,
-        room_service_1.RoomService])
+        room_service_1.RoomService,
+        user_service_1.UserService])
 ], SocketService);
 //# sourceMappingURL=socket.service.js.map
