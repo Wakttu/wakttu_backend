@@ -13,7 +13,7 @@ export class SessionSerializer extends PassportSerializer {
     user: User,
     done: (err: any, user?: any) => void,
   ): Promise<any> {
-    console.log(user, 'serializeUser'); // 테스트 시 확인
+    //console.log(user, 'serializeUser'); // 테스트 시 확인
     done(null, user);
   }
 
@@ -22,7 +22,7 @@ export class SessionSerializer extends PassportSerializer {
     done: (err: any, user?: any) => void,
   ): Promise<any> {
     const user = await this.userService.findById(payload.id);
-    console.log(user, 'deserializeUser'); // 테스트 시 확인
+    //    console.log(user, 'deserializeUser'); // 테스트 시 확인
     return user ? done(null, user) : done(null, null);
   }
 }

@@ -11,4 +11,28 @@ export declare class UserService {
         image: string;
         score: number;
     }>;
+    enter(id: string, roomId: string): Promise<{
+        id: string;
+        title: string;
+        password: string;
+        type: number;
+        round: number;
+        option: string[];
+        count: number;
+        start: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    exit(id: string, roomId: string): Promise<{
+        id: string;
+        title: string;
+        password: string;
+        type: number;
+        round: number;
+        option: string[];
+        count: number;
+        start: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
 }

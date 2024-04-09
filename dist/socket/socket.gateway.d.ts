@@ -30,16 +30,14 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     turn: {
         [roomId: string]: string;
     };
-    handleConnection(client: Socket): void;
+    handleConnection(client: any): void;
     afterInit(): void;
     handleDisconnect(client: Socket): void;
+    handleAlarm(message: string): void;
     handleMessage({ roomId, chat }: Chat, client: Socket): Promise<void>;
-    handleCreate(data: any, client: Socket): Promise<void>;
-    handleEnter(roomId: string, client: Socket): void;
+    handleEnter(roomId: string, client: Socket): Promise<void>;
     handleExit(roomId: string, client: Socket): void;
     handleReady(roomId: string): Promise<void>;
-    handleTurnStart(roomId: string, client: Socket): void;
-    handleTurnEnd(roomId: string, client: Socket): void;
     handleAnswer({ roomId, chat }: Chat, client: Socket): Promise<void>;
 }
 export {};
