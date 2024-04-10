@@ -8,16 +8,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SocketService = void 0;
 const common_1 = require("@nestjs/common");
 const dictionary_service_1 = require("../dictionary/dictionary.service");
 const room_service_1 = require("../room/room.service");
 const user_service_1 = require("../user/user.service");
-const common_2 = require("@nestjs/common");
 let SocketService = class SocketService {
     constructor(dicService, roomService, userService) {
         this.dicService = dicService;
@@ -30,21 +26,41 @@ let SocketService = class SocketService {
     async getWord(length) {
         return await this.dicService.getWord(length);
     }
-    async createRoom(roomId, data, user) {
-        await this.roomService.create(data);
-        return await this.userService.enter(user.id, roomId);
+    async createRoom(userId, data) {
+        const room = await this.roomService.create(data);
+        return await this.userService.enter(userId, room.id);
     }
-    async test(req) {
-        return req;
+    async deleteRoom(roomId) {
+        return await this.roomService.remove(roomId);
+    }
+    async deleteAllRoom() {
+        await this.roomService.removeAll();
+    }
+    async enterRoom(userId, roomId) {
+        return await this.userService.enter(userId, roomId);
+    }
+    async exitRoom(userId) {
+        return await this.userService.exit(userId);
+    }
+    async strongExitRoom(userId) {
+        const response = await this.userService.findById(userId);
+        const roomId = response.roomId;
+        const room = await this.roomService.findById(roomId);
+        if (room.users.length > 1) {
+            return await this.userService.exit(userId);
+        }
+        else {
+            return await this.roomService.remove(roomId);
+        }
+    }
+    async getRoomList(title = undefined, start = false, option = undefined, take = 6, skip = 0) {
+        return await this.roomService.findByQuery(title, start, option, take, skip);
+    }
+    async getRoom(roomId) {
+        return await this.roomService.findById(roomId);
     }
 };
 exports.SocketService = SocketService;
-__decorate([
-    __param(0, (0, common_2.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Request]),
-    __metadata("design:returntype", Promise)
-], SocketService.prototype, "test", null);
 exports.SocketService = SocketService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [dictionary_service_1.DictionaryService,

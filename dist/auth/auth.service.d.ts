@@ -2,10 +2,10 @@ import { UserService } from 'src/user/user.service';
 export declare class AuthService {
     private readonly userService;
     constructor(userService: UserService);
-    OAuthLogin(user: any): Promise<{
-        id: string;
+    OAuthLogin(user: any): Promise<import("src/user/entities/user.entity").User | {
         name: string;
-        image: string;
+        id: string;
         score: number;
-    } | import("src/user/entities/user.entity").User>;
+        roomId: string;
+    }>;
 }

@@ -1,4 +1,5 @@
 export declare class Room {
+    [x: string]: any;
     id: string;
     title: string;
     type: number;
