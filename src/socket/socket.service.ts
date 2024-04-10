@@ -5,7 +5,6 @@ import { RoomService } from 'src/room/room.service';
 import { Room } from 'src/room/entities/room.entity';
 import { UserService } from 'src/user/user.service';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
-import { Req } from '@nestjs/common';
 @Injectable()
 export class SocketService {
   constructor(
@@ -22,15 +21,48 @@ export class SocketService {
     return await this.dicService.getWord(length);
   }
 
-  async createRoom(
-    roomId: string,
-    data: CreateRoomDto,
-    user: any,
-  ): Promise<Room> {
-    await this.roomService.create(data);
-    return await this.userService.enter(user.id, roomId);
+  async createRoom(userId: string, data: CreateRoomDto): Promise<Room> {
+    const room = await this.roomService.create(data);
+    return await this.userService.enter(userId, room.id);
   }
-  async test(@Req() req: Request) {
-    return req;
+
+  async deleteRoom(roomId: string): Promise<Room | null> {
+    return await this.roomService.remove(roomId);
+  }
+
+  async deleteAllRoom(): Promise<void> {
+    await this.roomService.removeAll();
+  }
+
+  async enterRoom(userId: string, roomId: string): Promise<Room> {
+    return await this.userService.enter(userId, roomId);
+  }
+
+  async exitRoom(userId: string): Promise<Room> {
+    return await this.userService.exit(userId);
+  }
+
+  async strongExitRoom(userId: string) {
+    const response = await this.userService.findById(userId);
+    const roomId = response.roomId;
+    const room = await this.roomService.findById(roomId);
+    if (room.users.length > 1) {
+      return await this.userService.exit(userId);
+    } else {
+      return await this.roomService.remove(roomId);
+    }
+  }
+  async getRoomList(
+    title: string = undefined,
+    start: boolean = false,
+    option: string[] = undefined,
+    take: number = 6,
+    skip: number = 0,
+  ): Promise<Room[]> {
+    return await this.roomService.findByQuery(title, start, option, take, skip);
+  }
+
+  async getRoom(roomId: string): Promise<Room> {
+    return await this.roomService.findById(roomId);
   }
 }

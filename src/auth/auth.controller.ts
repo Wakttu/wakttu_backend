@@ -18,8 +18,8 @@ export class AuthController {
   @UseGuards(NaverAuthGuard)
   async naverLoginCallback(@Req() req, @Res() res): Promise<void> {
     const user = req.user;
-    const response = await this.authService.OAuthLogin(user);
-    return res.json(response);
+    await this.authService.OAuthLogin(user);
+    return res.redirect('/list.html');
   }
 
   @ApiOperation({ summary: 'check to login User' })

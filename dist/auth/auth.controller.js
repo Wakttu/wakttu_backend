@@ -24,8 +24,8 @@ let AuthController = class AuthController {
     async naverLogin() { }
     async naverLoginCallback(req, res) {
         const user = req.user;
-        const response = await this.authService.OAuthLogin(user);
-        return res.json(response);
+        await this.authService.OAuthLogin(user);
+        return res.redirect('/list.html');
     }
     async user(req) {
         if (req.user) {
