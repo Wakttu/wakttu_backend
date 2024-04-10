@@ -8,10 +8,15 @@ export declare class UserService {
     findById(id: string): Promise<{
         name: string;
         id: string;
-        image: string;
         score: number;
+        roomId: string;
     }>;
     enter(id: string, roomId: string): Promise<{
+        users: {
+            name: string;
+            id: string;
+        }[];
+    } & {
         id: string;
         title: string;
         password: string;
@@ -23,7 +28,7 @@ export declare class UserService {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    exit(id: string, roomId: string): Promise<{
+    exit(id: string): Promise<{
         id: string;
         title: string;
         password: string;

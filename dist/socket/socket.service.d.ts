@@ -11,6 +11,12 @@ export declare class SocketService {
     constructor(dicService: DictionaryService, roomService: RoomService, userService: UserService);
     findWord(word: string): Promise<Dictionary | null>;
     getWord(length: number): Promise<string>;
-    createRoom(roomId: string, data: CreateRoomDto, user: any): Promise<Room>;
-    test(req: Request): Promise<Request>;
+    createRoom(userId: string, data: CreateRoomDto): Promise<Room>;
+    deleteRoom(roomId: string): Promise<Room | null>;
+    deleteAllRoom(): Promise<void>;
+    enterRoom(userId: string, roomId: string): Promise<Room>;
+    exitRoom(userId: string): Promise<Room>;
+    strongExitRoom(userId: string): Promise<any>;
+    getRoomList(title?: string, start?: boolean, option?: string[], take?: number, skip?: number): Promise<Room[]>;
+    getRoom(roomId: string): Promise<Room>;
 }

@@ -6,8 +6,8 @@ export declare class UserController {
     getUser(id: string): Promise<{
         name: string;
         id: string;
-        image: string;
         score: number;
+        roomId: string;
     }>;
     signUp(createUserDto: CreateUserDto): Promise<import("src/user/entities/user.entity").User>;
 }

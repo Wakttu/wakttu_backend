@@ -18,57 +18,89 @@ const socket_io_1 = require("socket.io");
 const socket_service_1 = require("./socket.service");
 const common_1 = require("@nestjs/common");
 const socket_auth_guard_1 = require("../auth/socket-auth.guard");
+const create_room_dto_1 = require("../room/dto/create-room.dto");
 let SocketGateway = class SocketGateway {
     constructor(socketService) {
         this.socketService = socketService;
-        this.clients = {};
-        this.roomUser = {};
+        this.user = {};
         this.roomInfo = {};
         this.turn = {};
     }
     handleConnection(client) {
-        console.log(client.request.user);
-        console.log('connect:', client.id);
+        if (!client.request.user)
+            return;
+        this.user[client.id] = client.request.user;
+        console.log('connect:', this.user[client.id].name);
+        this.server.emit('list', this.user);
     }
-    afterInit() {
+    async afterInit() {
+        await this.socketService.deleteAllRoom();
         console.log('socket is open!');
     }
-    handleDisconnect(client) {
-        const roomId = this.clients[client.id];
-        delete this.clients[client.id];
-        if (roomId)
-            this.roomUser[roomId] = this.roomUser[roomId].filter((id) => id !== client.id);
-        this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
-        console.log('disconnect:', client.id);
+    async handleDisconnect(client) {
+        if (!client.request.user)
+            return;
+        const roomId = this.user[client.id].roomId;
+        if (roomId) {
+            await this.socketService.exitRoom(this.user[client.id].id);
+            this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
+            console.log('disconnect:', this.user[client.id].name);
+            if (this.roomInfo[roomId].users.length > 0) {
+                this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+                this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
+            }
+            else {
+                delete this.roomInfo[roomId];
+                await this.socketService.deleteRoom(roomId);
+            }
+        }
+        delete this.user[client.id];
+        this.server.emit('list', this.user);
     }
     handleAlarm(message) {
         this.server.emit('alarm', message);
     }
+    async handleRoomList(client) {
+        const roomList = await this.socketService.getRoomList();
+        client.emit('roomList', roomList);
+    }
     async handleMessage({ roomId, chat }, client) {
-        this.server.to(roomId).emit('chat', `${client.id}:${chat}`);
+        this.server.to(roomId).emit('chat', `${this.user[client.id].name}:${chat}`);
+    }
+    async handleCreate(data, client) {
+        this.user[client.id] = client.request.user;
+        const room = await this.socketService.createRoom(this.user[client.id].id, data);
+        this.roomInfo[room.id] = room;
+        this.roomInfo[room.id].host = this.user[client.id].name;
+        client.emit('createRoom', this.roomInfo[room.id]);
     }
     async handleEnter(roomId, client) {
         if (client.rooms.has(roomId)) {
             return;
         }
+        if (!this.roomInfo[roomId])
+            return;
+        this.user[client.id].roomId = roomId;
+        this.roomInfo[roomId] = await this.socketService.enterRoom(this.user[client.id].id, roomId);
         client.join(roomId);
-        this.clients[client.id] = roomId;
-        if (!this.roomUser[roomId]) {
-            this.roomUser[roomId] = [];
-        }
-        this.roomUser[roomId] = [client.id];
-        this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
-        this.server.to(roomId).emit('enter', `${client.id}이 입장`);
+        this.server.to(roomId).emit('enter', this.roomInfo[roomId]);
     }
-    handleExit(roomId, client) {
+    async handleExit(roomId, client) {
         console.log('exit');
         if (!client.rooms.has(roomId)) {
             return;
         }
+        await this.socketService.exitRoom(this.user[client.id].id);
+        this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
         client.leave(roomId);
-        this.roomUser[roomId] = this.roomUser[roomId].filter((id) => id !== client.id);
-        this.server.to(roomId).emit('list', JSON.stringify(this.roomUser[roomId]));
-        this.server.to(roomId).emit('exit', `${client.id}이 퇴장`);
+        if (this.roomInfo[roomId].users.length > 0) {
+            this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+            this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
+        }
+        else {
+            delete this.roomInfo[roomId];
+            await this.socketService.deleteRoom(roomId);
+        }
     }
     async handleReady(roomId) {
         if (this.roomInfo[roomId].round == 0) {
@@ -90,7 +122,6 @@ __decorate([
     __metadata("design:type", socket_io_1.Server)
 ], SocketGateway.prototype, "server", void 0);
 __decorate([
-    (0, common_1.UseGuards)(socket_auth_guard_1.SocketAuthenticatedGuard),
     __param(0, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -104,6 +135,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SocketGateway.prototype, "handleAlarm", null);
 __decorate([
+    (0, websockets_1.SubscribeMessage)('roomList'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleRoomList", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)('chat'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
@@ -112,11 +150,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleMessage", null);
 __decorate([
+    (0, websockets_1.SubscribeMessage)('createRoom'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_room_dto_1.CreateRoomDto, Object]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleCreate", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)('enter'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, socket_io_1.Socket]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleEnter", null);
 __decorate([
@@ -125,7 +171,7 @@ __decorate([
     __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, socket_io_1.Socket]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleExit", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('ready'),
@@ -143,6 +189,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleAnswer", null);
 exports.SocketGateway = SocketGateway = __decorate([
+    (0, common_1.UseGuards)(socket_auth_guard_1.SocketAuthenticatedGuard),
     (0, websockets_1.WebSocketGateway)({ namespace: 'wakttu' }),
     __metadata("design:paramtypes", [socket_service_1.SocketService])
 ], SocketGateway);

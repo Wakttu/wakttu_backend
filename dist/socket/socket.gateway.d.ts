@@ -1,6 +1,8 @@
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
+import { CreateRoomDto } from 'src/room/dto/create-room.dto';
+import { Room } from 'src/room/entities/room.entity';
 interface Chat {
     roomId: string;
     chat: string;
@@ -9,34 +11,24 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     private readonly socketService;
     constructor(socketService: SocketService);
     server: Server;
-    clients: {
-        [socketId: string]: string;
-    };
-    roomUser: {
-        [roomId: string]: string[];
+    user: {
+        [socketId: string]: any;
     };
     roomInfo: {
-        [roomId: string]: {
-            title: string;
-            type: string;
-            users: any;
-            option: string[];
-            host: string | undefined;
-            round: number;
-            word: string;
-            password: string;
-        };
+        [roomId: string]: Room;
     };
     turn: {
         [roomId: string]: string;
     };
     handleConnection(client: any): void;
-    afterInit(): void;
-    handleDisconnect(client: Socket): void;
+    afterInit(): Promise<void>;
+    handleDisconnect(client: any): Promise<void>;
     handleAlarm(message: string): void;
+    handleRoomList(client: Socket): Promise<void>;
     handleMessage({ roomId, chat }: Chat, client: Socket): Promise<void>;
-    handleEnter(roomId: string, client: Socket): Promise<void>;
-    handleExit(roomId: string, client: Socket): void;
+    handleCreate(data: CreateRoomDto, client: any): Promise<void>;
+    handleEnter(roomId: string, client: any): Promise<void>;
+    handleExit(roomId: string, client: Socket): Promise<void>;
     handleReady(roomId: string): Promise<void>;
     handleAnswer({ roomId, chat }: Chat, client: Socket): Promise<void>;
 }
