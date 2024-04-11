@@ -9,29 +9,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SessionSerializer = void 0;
-const passport_1 = require("@nestjs/passport");
+exports.LocalGuard = void 0;
 const common_1 = require("@nestjs/common");
-const user_service_1 = require("./user/user.service");
-let SessionSerializer = class SessionSerializer extends passport_1.PassportSerializer {
-    constructor(userService) {
+const passport_1 = require("@nestjs/passport");
+let LocalGuard = class LocalGuard extends (0, passport_1.AuthGuard)('local') {
+    constructor() {
         super();
-        this.userService = userService;
     }
-    async serializeUser(user, done) {
-        done(null, user);
-    }
-    async deserializeUser(payload, done) {
-        const response = await this.userService.findById(payload.id);
-        const user = JSON.parse(JSON.stringify(response));
-        delete user.password;
-        console.log(user);
-        return user ? done(null, user) : done(null, null);
+    async canActivate(context) {
+        const result = (await super.canActivate(context));
+        await super.logIn(context.switchToHttp().getRequest());
+        return result;
     }
 };
-exports.SessionSerializer = SessionSerializer;
-exports.SessionSerializer = SessionSerializer = __decorate([
+exports.LocalGuard = LocalGuard;
+exports.LocalGuard = LocalGuard = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [user_service_1.UserService])
-], SessionSerializer);
-//# sourceMappingURL=serializer.js.map
+    __metadata("design:paramtypes", [])
+], LocalGuard);
+//# sourceMappingURL=local-auth.guard.js.map
