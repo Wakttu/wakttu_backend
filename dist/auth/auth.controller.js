@@ -32,8 +32,8 @@ let AuthController = class AuthController {
     logout(request) {
         return this.authService.logout(request);
     }
-    async login() {
-        return await this.authService.login();
+    async login(res) {
+        res.redirect('/list.html');
     }
     async signup(user) {
         return await this.authService.signup(user);
@@ -92,8 +92,9 @@ __decorate([
     }),
     (0, common_1.Post)('local'),
     (0, common_1.UseGuards)(local_auth_guard_1.LocalGuard),
+    __param(0, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([

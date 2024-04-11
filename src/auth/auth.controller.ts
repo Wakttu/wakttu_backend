@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { NaverAuthGuard } from './naver-auth.guard';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LocalGuard } from './local-auth.guard';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 @ApiTags('Auth')
@@ -50,8 +50,8 @@ export class AuthController {
   })
   @Post('local')
   @UseGuards(LocalGuard)
-  async login(): Promise<any> {
-    return await this.authService.login();
+  async login(@Res() res: Response): Promise<any> {
+    res.redirect('/list.html');
   }
 
   @ApiOperation({ summary: 'Local Signup' })

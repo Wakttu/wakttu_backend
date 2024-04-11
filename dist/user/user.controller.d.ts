@@ -5,8 +5,8 @@ export declare class UserController {
     constructor(userService: UserService);
     getUser(id: string): Promise<{
         name: string;
-        id: string;
         password: string;
+        id: string;
         score: number;
         roomId: string;
     }>;
