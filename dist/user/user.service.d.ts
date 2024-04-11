@@ -7,8 +7,8 @@ export declare class UserService {
     create(data: CreateUserDto): Promise<User>;
     findById(id: string): Promise<{
         name: string;
-        id: string;
         password: string;
+        id: string;
         score: number;
         roomId: string;
     }>;

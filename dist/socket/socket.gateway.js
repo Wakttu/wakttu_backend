@@ -86,7 +86,6 @@ let SocketGateway = class SocketGateway {
         this.server.to(roomId).emit('enter', this.roomInfo[roomId]);
     }
     async handleExit(roomId, client) {
-        console.log('exit');
         if (!client.rooms.has(roomId)) {
             return;
         }
