@@ -6,6 +6,7 @@ export declare class UserController {
     getUser(id: string): Promise<{
         name: string;
         id: string;
+        password: string;
         score: number;
         roomId: string;
     }>;

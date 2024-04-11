@@ -20,6 +20,7 @@ export class CreateUserDto {
     example: 'naver',
     description: 'this is provider of User',
   })
+  @IsOptional()
   @IsString()
   provider: string;
 

@@ -17,25 +17,25 @@ model kkutu_ko {
 }
 
 model User {
-  id String @id
-  name String
-  score Int @default(0)
+  id       String  @id
+  name     String
+  score    Int     @default(0)
   password String?
   provider String
 
-  room Room? @relation(references: [id],fields: [roomId] )
+  room   Room?   @relation(references: [id], fields: [roomId])
   roomId String?
 }
 
 model Room {
-  id String @id @default(uuid())
-  title String
+  id       String   @id @default(uuid())
+  title    String
   password String?
-  type Int
-  round Int
-  option String[]
-  count Int
-  start Boolean @default(false)
+  type     Int
+  round    Int
+  option   String[]
+  count    Int
+  start    Boolean  @default(false)
 
   users User[]
 

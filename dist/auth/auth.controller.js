@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const naver_auth_guard_1 = require("./naver-auth.guard");
 const swagger_1 = require("@nestjs/swagger");
+const local_auth_guard_1 = require("./local-auth.guard");
+const create_user_dto_1 = require("../user/dto/create-user.dto");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
@@ -26,6 +28,15 @@ let AuthController = class AuthController {
         const user = req.user;
         await this.authService.OAuthLogin(user);
         return res.redirect('/list.html');
+    }
+    logout(request) {
+        return this.authService.logout(request);
+    }
+    async login() {
+        return await this.authService.login();
+    }
+    async signup(user) {
+        return await this.authService.signup(user);
     }
     async user(req) {
         if (req.user) {
@@ -61,6 +72,47 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "naverLoginCallback", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'logout' }),
+    (0, common_1.Get)('logout'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Local Login' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            properties: {
+                email: { type: 'string' },
+                password: { type: 'string' },
+            },
+        },
+    }),
+    (0, common_1.Post)('local'),
+    (0, common_1.UseGuards)(local_auth_guard_1.LocalGuard),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "login", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Local Signup' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            properties: {
+                id: { type: 'string' },
+                name: { type: 'string' },
+                password: { type: 'string' },
+            },
+        },
+    }),
+    (0, common_1.Post)('signup'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "signup", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'check to login User' }),
     (0, common_1.Get)('status'),
