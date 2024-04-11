@@ -8,6 +8,7 @@ export declare class UserService {
     findById(id: string): Promise<{
         name: string;
         id: string;
+        password: string;
         score: number;
         roomId: string;
     }>;

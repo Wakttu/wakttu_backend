@@ -33,17 +33,10 @@ __decorate([
 ], CreateUserDto.prototype, "name", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: 'http://www.image.png',
-        description: 'this is image-URL of User',
-    }),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateUserDto.prototype, "image", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
         example: 'naver',
         description: 'this is provider of User',
     }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "provider", void 0);

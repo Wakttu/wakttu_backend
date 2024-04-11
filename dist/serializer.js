@@ -22,7 +22,10 @@ let SessionSerializer = class SessionSerializer extends passport_1.PassportSeria
         done(null, user);
     }
     async deserializeUser(payload, done) {
-        const user = await this.userService.findById(payload.id);
+        const response = await this.userService.findById(payload.id);
+        const user = JSON.parse(JSON.stringify(response));
+        delete user.password;
+        console.log(user);
         return user ? done(null, user) : done(null, null);
     }
 };

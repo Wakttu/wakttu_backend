@@ -9,22 +9,31 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LocalGuard = void 0;
-const common_1 = require("@nestjs/common");
+exports.LocalStrategy = void 0;
 const passport_1 = require("@nestjs/passport");
-let LocalGuard = class LocalGuard extends (0, passport_1.AuthGuard)('local') {
-    constructor() {
-        super();
+const common_1 = require("@nestjs/common");
+const passport_local_1 = require("passport-local");
+const auth_service_1 = require("./auth.service");
+let LocalStrategy = class LocalStrategy extends (0, passport_1.PassportStrategy)(passport_local_1.Strategy) {
+    constructor(authService) {
+        super({
+            usernameField: 'email',
+            passwordField: 'password',
+        });
+        this.authService = authService;
     }
-    async canActivate(context) {
-        const result = (await super.canActivate(context));
-        await super.logIn(context.switchToHttp().getRequest());
-        return result;
+    async validate(email, password) {
+        const user = {
+            id: email,
+            password: password,
+            provider: 'local',
+        };
+        return await this.authService.LocalLogin(user);
     }
 };
-exports.LocalGuard = LocalGuard;
-exports.LocalGuard = LocalGuard = __decorate([
+exports.LocalStrategy = LocalStrategy;
+exports.LocalStrategy = LocalStrategy = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
-], LocalGuard);
-//# sourceMappingURL=local-auth.guard.js.map
+    __metadata("design:paramtypes", [auth_service_1.AuthService])
+], LocalStrategy);
+//# sourceMappingURL=local-strategy.js.map

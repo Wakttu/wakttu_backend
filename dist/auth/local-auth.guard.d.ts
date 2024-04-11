@@ -1,5 +1,7 @@
-import { CanActivate, ExecutionContext } from '@nestjs/common';
-export declare class LocalAuthenticatedGuard implements CanActivate {
+import { ExecutionContext } from '@nestjs/common';
+declare const LocalGuard_base: import("@nestjs/passport").Type<import("@nestjs/passport").IAuthGuard>;
+export declare class LocalGuard extends LocalGuard_base {
+    constructor();
     canActivate(context: ExecutionContext): Promise<boolean>;
-    checkBody(body: any): boolean;
 }
+export {};
