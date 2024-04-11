@@ -16,6 +16,8 @@ export class AuthService {
 
   async LocalLogin(user) {
     const response = await this.userService.findById(user.id);
+    if (!response) throw new UnauthorizedException('해당하는 유저가 없습니다.');
+
     const passwordMatch: boolean = await this.passworMatch(
       user.password,
       response.password,

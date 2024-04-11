@@ -28,6 +28,8 @@ let AuthService = class AuthService {
     }
     async LocalLogin(user) {
         const response = await this.userService.findById(user.id);
+        if (!response)
+            throw new common_1.UnauthorizedException('해당하는 유저가 없습니다.');
         const passwordMatch = await this.passworMatch(user.password, response.password);
         if (!passwordMatch)
             throw new common_1.UnauthorizedException('password is not equal');

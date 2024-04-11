@@ -135,7 +135,6 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('exit');
     if (!client.rooms.has(roomId)) {
       return;
     }
