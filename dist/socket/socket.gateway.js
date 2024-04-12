@@ -30,7 +30,6 @@ let SocketGateway = class SocketGateway {
         if (!client.request.user)
             return;
         this.user[client.id] = client.request.user;
-        console.log('connect:', this.user[client.id].name);
         this.server.emit('list', this.user);
     }
     async afterInit() {
@@ -44,7 +43,6 @@ let SocketGateway = class SocketGateway {
         if (roomId) {
             await this.socketService.exitRoom(this.user[client.id].id);
             this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-            console.log('disconnect:', this.user[client.id].name);
             if (this.roomInfo[roomId].users.length > 0) {
                 this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
                 this.server.to(roomId).emit('exit', this.roomInfo[roomId]);

@@ -73,12 +73,11 @@ export class AuthController {
   @Get('status')
   async user(@Req() req: any) {
     if (req.user) {
-      console.log(req.user, 'Authenticated User');
       return {
+        data: req.user,
         msg: 'Authenticated',
       };
     } else {
-      console.log(req.user, 'User cannot found');
       return {
         msg: 'Not Authenticated',
       };
