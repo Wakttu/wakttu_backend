@@ -40,13 +40,12 @@ let AuthController = class AuthController {
     }
     async user(req) {
         if (req.user) {
-            console.log(req.user, 'Authenticated User');
             return {
+                data: req.user,
                 msg: 'Authenticated',
             };
         }
         else {
-            console.log(req.user, 'User cannot found');
             return {
                 msg: 'Not Authenticated',
             };

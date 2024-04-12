@@ -44,7 +44,6 @@ export class SocketGateway
   handleConnection(@ConnectedSocket() client: any) {
     if (!client.request.user) return;
     this.user[client.id] = client.request.user;
-    console.log('connect:', this.user[client.id].name);
     this.server.emit('list', this.user);
   }
 
@@ -59,7 +58,6 @@ export class SocketGateway
     if (roomId) {
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-      console.log('disconnect:', this.user[client.id].name);
       if (this.roomInfo[roomId].users.length > 0) {
         this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
         this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
@@ -75,7 +73,7 @@ export class SocketGateway
   // server에 접속해있는 모든 클라이언트에게 msg 보내기
   @SubscribeMessage('alarm')
   handleAlarm(@MessageBody() message: string) {
-    this.server.emit('alarm', message);
+    this.server.emit('alarm', { message });
   }
 
   // 방접속해있는 유저에게  List 전달
@@ -90,7 +88,9 @@ export class SocketGateway
     @MessageBody() { roomId, chat }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.to(roomId).emit('chat', `${this.user[client.id].name}:${chat}`);
+    this.server
+      .to(roomId)
+      .emit('chat', { name: this.user[client.id].name, chat: chat });
   }
 
   // 게임 방 생성
