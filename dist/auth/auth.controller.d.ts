@@ -10,6 +10,10 @@ export declare class AuthController {
     login(res: Response): Promise<any>;
     signup(user: CreateUserDto): Promise<any>;
     user(req: any): Promise<{
+        data: any;
         msg: string;
+    } | {
+        msg: string;
+        data?: undefined;
     }>;
 }

@@ -53,7 +53,7 @@ let AuthService = class AuthService {
     async signup({ id, name, password }) {
         const checkId = await this.userService.findById(id);
         if (checkId)
-            return '이미 존재하는 email 입니다.';
+            return { status: 403, message: '이미 존재하는 이메일' };
         const hashPassword = await bcrypt.hash(password, 5);
         const user = {
             id: id,
@@ -63,9 +63,9 @@ let AuthService = class AuthService {
         };
         const response = await this.userService.create(user);
         if (!response)
-            return '회원가입 실패';
+            return { status: 403, message: '회원가입 실패' };
         else
-            return '회원가입 성공';
+            return { status: 201, message: '회원가입 성공' };
     }
 };
 exports.AuthService = AuthService;

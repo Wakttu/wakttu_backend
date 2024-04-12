@@ -25,7 +25,6 @@ let SessionSerializer = class SessionSerializer extends passport_1.PassportSeria
         const response = await this.userService.findById(payload.id);
         const user = JSON.parse(JSON.stringify(response));
         delete user.password;
-        console.log(user);
         return user ? done(null, user) : done(null, null);
     }
 };
