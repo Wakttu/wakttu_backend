@@ -54,6 +54,23 @@ export class AuthController {
     res.redirect('/list.html');
   }
 
+  @ApiOperation({ summary: 'Local Login' })
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string' },
+        password: { type: 'string' },
+      },
+    },
+  })
+  @Post('login')
+  @UseGuards(LocalGuard)
+  async localLogin(@Req() req: Request): Promise<any> {
+    const json = JSON.parse(JSON.stringify(req.user));
+    const { password, ...user } = json;
+    return user;
+  }
+
   @ApiOperation({ summary: 'Local Signup' })
   @ApiBody({
     schema: {

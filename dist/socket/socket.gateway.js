@@ -56,14 +56,16 @@ let SocketGateway = class SocketGateway {
         this.server.emit('list', this.user);
     }
     handleAlarm(message) {
-        this.server.emit('alarm', message);
+        this.server.emit('alarm', { message });
     }
     async handleRoomList(client) {
         const roomList = await this.socketService.getRoomList();
         client.emit('roomList', roomList);
     }
     async handleMessage({ roomId, chat }, client) {
-        this.server.to(roomId).emit('chat', `${this.user[client.id].name}:${chat}`);
+        this.server
+            .to(roomId)
+            .emit('chat', { name: this.user[client.id].name, chat: chat });
     }
     async handleCreate(data, client) {
         this.user[client.id] = client.request.user;
