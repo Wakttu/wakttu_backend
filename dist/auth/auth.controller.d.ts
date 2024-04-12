@@ -8,6 +8,7 @@ export declare class AuthController {
     naverLoginCallback(req: any, res: any): Promise<void>;
     logout(request: Request): Promise<any>;
     login(res: Response): Promise<any>;
+    localLogin(req: Request): Promise<any>;
     signup(user: CreateUserDto): Promise<any>;
     user(req: any): Promise<{
         data: any;

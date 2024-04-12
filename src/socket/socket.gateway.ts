@@ -30,28 +30,35 @@ export class SocketGateway
   @WebSocketServer()
   public server: Server;
 
+  // 서버에 연결된 사용자 정보
   public user: {
     [socketId: string]: any;
   } = {};
 
+  // 게임방의 정보
   public roomInfo: {
     [roomId: string]: Room;
   } = {};
+
+  // 턴의 기능 추후 roomInfo에 속해질예정
   public turn: {
     [roomId: string]: string;
   } = {};
 
+  // 접속시 수행되는 코드
   handleConnection(@ConnectedSocket() client: any) {
     if (!client.request.user) return;
     this.user[client.id] = client.request.user;
     this.server.emit('list', this.user);
   }
 
+  // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
     await this.socketService.deleteAllRoom();
     console.log('socket is open!');
   }
 
+  // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
     if (!client.request.user) return;
     const roomId = this.user[client.id].roomId;
@@ -161,6 +168,7 @@ export class SocketGateway
     }
   }
 
+  // 답변
   @SubscribeMessage('answer')
   async handleAnswer(
     @MessageBody() { roomId, chat }: Chat,
