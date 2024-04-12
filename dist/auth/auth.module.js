@@ -14,6 +14,7 @@ const naver_strategy_1 = require("./naver-strategy");
 const user_module_1 = require("../user/user.module");
 const passport_1 = require("@nestjs/passport");
 const serializer_1 = require("../serializer");
+const local_strategy_1 = require("./local-strategy");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -26,7 +27,7 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, naver_strategy_1.NaverStrategy, serializer_1.SessionSerializer],
+        providers: [auth_service_1.AuthService, naver_strategy_1.NaverStrategy, local_strategy_1.LocalStrategy, serializer_1.SessionSerializer],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

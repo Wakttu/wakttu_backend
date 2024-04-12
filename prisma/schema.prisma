@@ -17,26 +17,27 @@ model kkutu_ko {
 }
 
 model User {
-  id String @id
-  name String
-  image String
-  score Int @default(0)
-  provider String
-  host Room?
+  id       String  @id
+  name     String
+  score    Int     @default(0)
   password String?
+  provider String
+
+  room   Room?   @relation(references: [id], fields: [roomId])
+  roomId String?
 }
 
 model Room {
-  id String @id @default(uuid())
-  title String
+  id       String   @id @default(uuid())
+  title    String
   password String?
-  type Int
-  round Int
-  option String[]
-  count Int
-  start Boolean @default(false)
-  master User @relation(references: [id],fields: [masterId] )
-  masterId String @unique
+  type     Int
+  round    Int
+  option   String[]
+  count    Int
+  start    Boolean  @default(false)
+
+  users User[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

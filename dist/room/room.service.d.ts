@@ -10,4 +10,5 @@ export declare class RoomService {
     findById(id: string): Promise<Room | null>;
     update(id: string, data: UpdateRoomDto): Promise<Room | null>;
     remove(id: string): Promise<any>;
+    removeAll(): Promise<any>;
 }

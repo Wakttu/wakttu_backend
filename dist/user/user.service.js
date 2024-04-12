@@ -22,9 +22,48 @@ let UserService = class UserService {
     async findById(id) {
         const response = await this.prisma.user.findUnique({
             where: { id },
-            select: { id: true, name: true, image: true, score: true },
+            select: {
+                id: true,
+                name: true,
+                score: true,
+                roomId: true,
+                password: true,
+            },
         });
         return response;
+    }
+    async enter(id, roomId) {
+        const response = await this.prisma.user.update({
+            where: { id },
+            data: {
+                room: { connect: { id: roomId } },
+            },
+            include: {
+                room: {
+                    include: {
+                        users: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        return response.room;
+    }
+    async exit(id) {
+        const response = await this.prisma.user.update({
+            where: { id },
+            data: {
+                room: { disconnect: true },
+            },
+            include: {
+                room: true,
+            },
+        });
+        return response.room;
     }
 };
 exports.UserService = UserService;

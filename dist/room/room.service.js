@@ -27,13 +27,15 @@ let RoomService = class RoomService {
                 option: true,
                 count: true,
                 start: true,
-                masterId: true,
                 createdAt: true,
                 updatedAt: true,
+                users: {
+                    select: { id: true, name: true },
+                },
             },
         });
     }
-    async findByQuery(title = undefined, start = false, option = undefined, take = 6, skip = 0) {
+    async findByQuery(title = undefined, start = false, option = [], take = 6, skip = 0) {
         return await this.prisma.room.findMany({
             take,
             skip,
@@ -50,9 +52,11 @@ let RoomService = class RoomService {
                 option: true,
                 count: true,
                 start: true,
-                masterId: true,
                 createdAt: true,
                 updatedAt: true,
+                users: {
+                    select: { id: true, name: true },
+                },
             },
         });
     }
@@ -67,9 +71,11 @@ let RoomService = class RoomService {
                 option: true,
                 count: true,
                 start: true,
-                masterId: true,
                 createdAt: true,
                 updatedAt: true,
+                users: {
+                    select: { id: true, name: true },
+                },
             },
         });
     }
@@ -85,14 +91,19 @@ let RoomService = class RoomService {
                 option: true,
                 count: true,
                 start: true,
-                masterId: true,
                 createdAt: true,
                 updatedAt: true,
+                users: {
+                    select: { id: true, name: true },
+                },
             },
         });
     }
     async remove(id) {
         return await this.prisma.room.delete({ where: { id } });
+    }
+    async removeAll() {
+        return await this.prisma.room.deleteMany();
     }
 };
 exports.RoomService = RoomService;

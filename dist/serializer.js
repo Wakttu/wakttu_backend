@@ -19,12 +19,13 @@ let SessionSerializer = class SessionSerializer extends passport_1.PassportSeria
         this.userService = userService;
     }
     async serializeUser(user, done) {
-        console.log(user, 'serializeUser');
         done(null, user);
     }
     async deserializeUser(payload, done) {
-        const user = await this.userService.findById(payload.id);
-        console.log(user, 'deserializeUser');
+        const response = await this.userService.findById(payload.id);
+        const user = JSON.parse(JSON.stringify(response));
+        delete user.password;
+        console.log(user);
         return user ? done(null, user) : done(null, null);
     }
 };

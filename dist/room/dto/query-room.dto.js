@@ -52,7 +52,7 @@ __decorate([
 ], QueryRoomDto.prototype, "start", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: '[1,0,1,0,1]',
+        example: '옵션 설정',
         description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
     }),
     (0, class_validator_1.IsOptional)(),

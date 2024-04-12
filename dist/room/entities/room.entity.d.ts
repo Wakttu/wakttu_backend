@@ -1,4 +1,5 @@
 export declare class Room {
+    [x: string]: any;
     id: string;
     title: string;
     type: number;
@@ -6,7 +7,6 @@ export declare class Room {
     round: number;
     count: number;
     start: boolean;
-    masterId: string;
     createdAt: Date;
     updatedAt: Date;
 }

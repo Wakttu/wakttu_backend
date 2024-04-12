@@ -7,8 +7,38 @@ export declare class UserService {
     create(data: CreateUserDto): Promise<User>;
     findById(id: string): Promise<{
         name: string;
+        password: string;
         id: string;
-        image: string;
         score: number;
+        roomId: string;
+    }>;
+    enter(id: string, roomId: string): Promise<{
+        users: {
+            name: string;
+            id: string;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        password: string;
+        type: number;
+        round: number;
+        option: string[];
+        count: number;
+        start: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    exit(id: string): Promise<{
+        id: string;
+        title: string;
+        password: string;
+        type: number;
+        round: number;
+        option: string[];
+        count: number;
+        start: boolean;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }

@@ -17,16 +17,10 @@ export class CreateUserDto {
   name: string;
 
   @ApiProperty({
-    example: 'http://www.image.png',
-    description: 'this is image-URL of User',
-  })
-  @IsString()
-  image: string;
-
-  @ApiProperty({
     example: 'naver',
     description: 'this is provider of User',
   })
+  @IsOptional()
   @IsString()
   provider: string;
 

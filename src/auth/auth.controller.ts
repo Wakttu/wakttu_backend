@@ -1,7 +1,18 @@
-import { Controller, UseGuards, Get, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  UseGuards,
+  Get,
+  Req,
+  Res,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { NaverAuthGuard } from './naver-auth.guard';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { LocalGuard } from './local-auth.guard';
+import { Request, Response } from 'express';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -18,8 +29,44 @@ export class AuthController {
   @UseGuards(NaverAuthGuard)
   async naverLoginCallback(@Req() req, @Res() res): Promise<void> {
     const user = req.user;
-    const response = await this.authService.OAuthLogin(user);
-    return res.json(response);
+    await this.authService.OAuthLogin(user);
+    return res.redirect('/list.html');
+  }
+
+  @ApiOperation({ summary: 'logout' })
+  @Get('logout')
+  logout(@Req() request: Request): Promise<any> {
+    return this.authService.logout(request);
+  }
+
+  @ApiOperation({ summary: 'Local Login' })
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string' },
+        password: { type: 'string' },
+      },
+    },
+  })
+  @Post('local')
+  @UseGuards(LocalGuard)
+  async login(@Res() res: Response): Promise<any> {
+    res.redirect('/list.html');
+  }
+
+  @ApiOperation({ summary: 'Local Signup' })
+  @ApiBody({
+    schema: {
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        password: { type: 'string' },
+      },
+    },
+  })
+  @Post('signup')
+  async signup(@Body() user: CreateUserDto): Promise<any> {
+    return await this.authService.signup(user);
   }
 
   @ApiOperation({ summary: 'check to login User' })

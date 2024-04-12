@@ -13,19 +13,58 @@ exports.SocketService = void 0;
 const common_1 = require("@nestjs/common");
 const dictionary_service_1 = require("../dictionary/dictionary.service");
 const room_service_1 = require("../room/room.service");
+const user_service_1 = require("../user/user.service");
 let SocketService = class SocketService {
-    constructor(dic, room) {
-        this.dic = dic;
-        this.room = room;
+    constructor(dicService, roomService, userService) {
+        this.dicService = dicService;
+        this.roomService = roomService;
+        this.userService = userService;
     }
     async findWord(word) {
-        return await this.dic.findById(word);
+        return await this.dicService.findById(word);
+    }
+    async getWord(length) {
+        return await this.dicService.getWord(length);
+    }
+    async createRoom(userId, data) {
+        const room = await this.roomService.create(data);
+        return await this.userService.enter(userId, room.id);
+    }
+    async deleteRoom(roomId) {
+        return await this.roomService.remove(roomId);
+    }
+    async deleteAllRoom() {
+        await this.roomService.removeAll();
+    }
+    async enterRoom(userId, roomId) {
+        return await this.userService.enter(userId, roomId);
+    }
+    async exitRoom(userId) {
+        return await this.userService.exit(userId);
+    }
+    async strongExitRoom(userId) {
+        const response = await this.userService.findById(userId);
+        const roomId = response.roomId;
+        const room = await this.roomService.findById(roomId);
+        if (room.users.length > 1) {
+            return await this.userService.exit(userId);
+        }
+        else {
+            return await this.roomService.remove(roomId);
+        }
+    }
+    async getRoomList(title = undefined, start = false, option = undefined, take = 6, skip = 0) {
+        return await this.roomService.findByQuery(title, start, option, take, skip);
+    }
+    async getRoom(roomId) {
+        return await this.roomService.findById(roomId);
     }
 };
 exports.SocketService = SocketService;
 exports.SocketService = SocketService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [dictionary_service_1.DictionaryService,
-        room_service_1.RoomService])
+        room_service_1.RoomService,
+        user_service_1.UserService])
 ], SocketService);
 //# sourceMappingURL=socket.service.js.map

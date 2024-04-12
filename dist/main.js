@@ -4,10 +4,22 @@ const core_1 = require("@nestjs/core");
 const swagger_1 = require("@nestjs/swagger");
 const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
-const session = require("express-session");
 const passport = require("passport");
+const session_adapter_1 = require("./session.adapter");
+const session = require("express-session");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const sessionMiddleware = session({
+        secret: process.env.SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 60000 * 60,
+            httpOnly: true,
+        },
+    });
+    app.use(sessionMiddleware);
+    app.useWebSocketAdapter(new session_adapter_1.SessionAdapter(sessionMiddleware, app));
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Wakttu')
         .setDescription('Wakttu API description')
@@ -20,15 +32,6 @@ async function bootstrap() {
         whitelist: true,
         transform: true,
         transformOptions: { enableImplicitConversion: true },
-    }));
-    app.use(session({
-        secret: process.env.SECRET,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            maxAge: 60000 * 60,
-            httpOnly: true,
-        },
     }));
     app.use(passport.initialize());
     app.use(passport.session());
