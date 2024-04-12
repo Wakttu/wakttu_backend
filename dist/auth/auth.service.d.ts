@@ -3,18 +3,18 @@ import { Request } from 'express';
 export declare class AuthService {
     private readonly userService;
     constructor(userService: UserService);
-    OAuthLogin(user: any): Promise<{
-        id: string;
+    OAuthLogin(user: any): Promise<import("src/user/entities/user.entity").User | {
         name: string;
-        score: number;
         password: string;
+        id: string;
+        score: number;
         roomId: string;
-    } | import("src/user/entities/user.entity").User>;
+    }>;
     LocalLogin(user: any): Promise<{
-        id: string;
         name: string;
-        score: number;
         password: string;
+        id: string;
+        score: number;
         roomId: string;
     }>;
     passworMatch(password: string, hash: string): Promise<boolean>;

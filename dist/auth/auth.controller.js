@@ -35,6 +35,11 @@ let AuthController = class AuthController {
     async login(res) {
         res.redirect('/list.html');
     }
+    async localLogin(req) {
+        const json = JSON.parse(JSON.stringify(req.user));
+        const { password, ...user } = json;
+        return user;
+    }
     async signup(user) {
         return await this.authService.signup(user);
     }
@@ -96,6 +101,23 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Local Login' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            properties: {
+                email: { type: 'string' },
+                password: { type: 'string' },
+            },
+        },
+    }),
+    (0, common_1.Post)('login'),
+    (0, common_1.UseGuards)(local_auth_guard_1.LocalGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "localLogin", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Local Signup' }),
     (0, swagger_1.ApiBody)({
