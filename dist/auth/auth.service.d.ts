@@ -24,5 +24,8 @@ export declare class AuthService {
         id: any;
         name: any;
         password: any;
-    }): Promise<"이미 존재하는 email 입니다." | "회원가입 실패" | "회원가입 성공">;
+    }): Promise<{
+        status: number;
+        message: string;
+    }>;
 }
