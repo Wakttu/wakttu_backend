@@ -1,12 +1,12 @@
 export class Room {
-  [x: string]: any;
   id: string;
   title: string;
   type: number;
   option: string[];
   round: number;
-  count: number;
+  total: number;
   start: boolean;
+  users: any;
   createdAt: Date;
   updatedAt: Date;
 }

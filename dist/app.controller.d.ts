@@ -1,11 +1,9 @@
 import { AppService } from './app.service';
 import { Request } from 'express';
-import { RoomService } from './room/room.service';
-import { SocketGateway } from './socket/socket.gateway';
+import { SocketService } from './socket/socket.service';
 export declare class AppController {
     private readonly appService;
-    private readonly roomService;
-    private readonly socket;
-    constructor(appService: AppService, roomService: RoomService, socket: SocketGateway);
+    private socketService;
+    constructor(appService: AppService, socketService: SocketService);
     isLoggined(req: Request): any;
 }

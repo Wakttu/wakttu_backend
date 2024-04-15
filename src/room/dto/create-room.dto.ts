@@ -42,5 +42,5 @@ export class CreateRoomDto {
 
   @ApiProperty({ example: '8', description: '인원수설정하는값' })
   @IsNumber()
-  count: number;
+  total: number;
 }

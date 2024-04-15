@@ -29,8 +29,9 @@ export class DictionaryService {
 
   async getWord(length: number) {
     const list: string[] = await this.prisma
-      .$queryRaw`SELECT * FROM "public"."kkutu_ko" WHERE LENGTH(id) == ${length}`;
+      .$queryRaw`SELECT * FROM "public"."kkutu_ko" WHERE LENGTH(_id) =${length}`;
     const idx = Math.floor(Math.random() * list.length);
+    //console.log(list[idx]);
     return list[idx];
   }
 }
