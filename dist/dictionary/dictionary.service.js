@@ -35,7 +35,7 @@ let DictionaryService = class DictionaryService {
     }
     async getWord(length) {
         const list = await this.prisma
-            .$queryRaw `SELECT * FROM "public"."kkutu_ko" WHERE LENGTH(id) == ${length}`;
+            .$queryRaw `SELECT * FROM "public"."kkutu_ko" WHERE LENGTH(_id) =${length}`;
         const idx = Math.floor(Math.random() * list.length);
         return list[idx];
     }

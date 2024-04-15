@@ -8,6 +8,6 @@ import { UserModule } from 'src/user/user.module';
 @Module({
   imports: [UserModule, RoomModule, DictionaryModule],
   providers: [SocketGateway, SocketService],
-  exports: [SocketGateway],
+  exports: [SocketGateway, SocketService],
 })
 export class SocketModule {}

@@ -24,7 +24,7 @@ let SocketGateway = class SocketGateway {
         this.socketService = socketService;
         this.user = {};
         this.roomInfo = {};
-        this.turn = {};
+        this.game = {};
     }
     handleConnection(client) {
         if (!client.request.user)
@@ -44,7 +44,7 @@ let SocketGateway = class SocketGateway {
             await this.socketService.exitRoom(this.user[client.id].id);
             this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
             if (this.roomInfo[roomId].users.length > 0) {
-                this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+                this.game[roomId].host = this.roomInfo[roomId].users[0].name;
                 this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
             }
             else {
@@ -71,7 +71,7 @@ let SocketGateway = class SocketGateway {
         this.user[client.id] = client.request.user;
         const room = await this.socketService.createRoom(this.user[client.id].id, data);
         this.roomInfo[room.id] = room;
-        this.roomInfo[room.id].host = this.user[client.id].name;
+        this.game[room.id].host = this.user[client.id].name;
         client.emit('createRoom', this.roomInfo[room.id]);
     }
     async handleEnter(roomId, client) {
@@ -93,7 +93,7 @@ let SocketGateway = class SocketGateway {
         this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
         client.leave(roomId);
         if (this.roomInfo[roomId].users.length > 0) {
-            this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+            this.game[roomId].host = this.roomInfo[roomId].users[0].name;
             this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
         }
         else {
@@ -101,14 +101,15 @@ let SocketGateway = class SocketGateway {
             await this.socketService.deleteRoom(roomId);
         }
     }
-    async handleReady(roomId) {
-        if (this.roomInfo[roomId].round == 0) {
-            this.roomInfo[roomId].word = await this.socketService.getWord(this.roomInfo[roomId].round);
-            this.server.to(roomId).emit('ready', this.roomInfo[roomId].word);
+    async handleReady(roomId, client) {
+        if (this.game[roomId].host !== this.user[client.id].name) {
+            return;
         }
+        this.game[roomId].target = await this.socketService.setWord(this.roomInfo[roomId].round);
+        this.server.to(roomId).emit('start', this.game[roomId]);
     }
     async handleAnswer({ roomId, chat }, client) {
-        if (this.turn[roomId] !== client.id) {
+        if (this.game[roomId].turn !== client.id) {
             return;
         }
         const check = await this.socketService.findWord(chat);
@@ -173,10 +174,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleExit", null);
 __decorate([
-    (0, websockets_1.SubscribeMessage)('ready'),
+    (0, websockets_1.SubscribeMessage)('start'),
     __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, socket_io_1.Socket]),
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleReady", null);
 __decorate([

@@ -5,15 +5,15 @@ export declare class AuthService {
     constructor(userService: UserService);
     OAuthLogin(user: any): Promise<import("src/user/entities/user.entity").User | {
         name: string;
-        password: string;
         id: string;
+        password: string;
         score: number;
         roomId: string;
     }>;
     LocalLogin(user: any): Promise<{
         name: string;
-        password: string;
         id: string;
+        password: string;
         score: number;
         roomId: string;
     }>;

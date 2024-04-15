@@ -20,7 +20,7 @@ exports.SocketModule = SocketModule = __decorate([
     (0, common_1.Module)({
         imports: [user_module_1.UserModule, room_module_1.RoomModule, dictionary_module_1.DictionaryModule],
         providers: [socket_gateway_1.SocketGateway, socket_service_1.SocketService],
-        exports: [socket_gateway_1.SocketGateway],
+        exports: [socket_gateway_1.SocketGateway, socket_service_1.SocketService],
     })
 ], SocketModule);
 //# sourceMappingURL=socket.module.js.map

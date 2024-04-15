@@ -67,6 +67,7 @@ export class AuthController {
   @UseGuards(LocalGuard)
   async localLogin(@Req() req: Request): Promise<any> {
     const json = JSON.parse(JSON.stringify(req.user));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...user } = json;
     return user;
   }
