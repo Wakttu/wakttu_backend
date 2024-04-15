@@ -61,5 +61,5 @@ __decorate([
     (0, swagger_1.ApiProperty)({ example: '8', description: '인원수설정하는값' }),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
-], CreateRoomDto.prototype, "count", void 0);
+], CreateRoomDto.prototype, "total", void 0);
 //# sourceMappingURL=create-room.dto.js.map

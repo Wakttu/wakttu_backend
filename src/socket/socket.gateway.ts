@@ -20,6 +20,16 @@ interface Chat {
   chat: string;
 }
 
+interface Game {
+  host: string;
+  type: number;
+  round: number;
+  turn: number;
+  total: number;
+  keyword: string;
+  target: string;
+}
+
 @UseGuards(SocketAuthenticatedGuard)
 @WebSocketGateway({ namespace: 'wakttu' })
 export class SocketGateway
@@ -40,9 +50,9 @@ export class SocketGateway
     [roomId: string]: Room;
   } = {};
 
-  // 턴의 기능 추후 roomInfo에 속해질예정
-  public turn: {
-    [roomId: string]: string;
+  // 게임 진행 정보
+  public game: {
+    [roomId: string]: Game;
   } = {};
 
   // 접속시 수행되는 코드
@@ -66,7 +76,7 @@ export class SocketGateway
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId].users.length > 0) {
-        this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+        this.game[roomId].host = this.roomInfo[roomId].users[0].name;
         this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
       } else {
         delete this.roomInfo[roomId];
@@ -112,7 +122,7 @@ export class SocketGateway
       data,
     );
     this.roomInfo[room.id] = room;
-    this.roomInfo[room.id].host = this.user[client.id].name;
+    this.game[room.id].host = this.user[client.id].name;
     client.emit('createRoom', this.roomInfo[room.id]);
   }
 
@@ -149,7 +159,7 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+      this.game[roomId].host = this.roomInfo[roomId].users[0].name;
       this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
     } else {
       delete this.roomInfo[roomId];
@@ -158,26 +168,55 @@ export class SocketGateway
   }
 
   // 게임 시작시 주제 단어 선정
-  @SubscribeMessage('ready')
-  async handleReady(@MessageBody() roomId: string) {
-    if (this.roomInfo[roomId].round == 0) {
-      this.roomInfo[roomId].word = await this.socketService.getWord(
-        this.roomInfo[roomId].round,
-      );
-      this.server.to(roomId).emit('ready', this.roomInfo[roomId].word);
+  @SubscribeMessage('start')
+  async handleReady(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      return;
     }
+    this.game[roomId].keyword = await this.socketService.setWord(
+      this.roomInfo[roomId].round,
+    );
+    this.game[roomId].turn = 0;
+    this.game[roomId].total = this.roomInfo[roomId].users.length;
+    this.server.to(roomId).emit('start', this.game[roomId]);
+  }
+
+  @SubscribeMessage('round')
+  handleRound(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const curRound = this.game[roomId].round++;
+    const lastRound = this.roomInfo[roomId].round;
+    if (curRound === lastRound) {
+      this.server.emit('end', { msg: 'end' });
+      return;
+    }
+
+    this.game[roomId].turn = this.user[client.id].name;
+    this.game[roomId].target = this.game[roomId].keyword[curRound];
+    this.server.to(roomId).emit('round', this.game[roomId]);
   }
 
   // 답변
-  @SubscribeMessage('answer')
+  @SubscribeMessage('turn')
   async handleAnswer(
     @MessageBody() { roomId, chat }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.turn[roomId] !== client.id) {
+    if (
+      this.user[client.id].id !==
+      this.roomInfo[roomId].users[this.game[roomId].turn].id
+    )
       return;
-    }
     const check = await this.socketService.findWord(chat);
-    this.server.to(roomId).emit('answer', check);
+    if (check) {
+      this.game[roomId].turn++;
+      this.game[roomId].turn %= this.game[roomId].total;
+    }
+    this.server.to(roomId).emit('turn', check);
   }
 }

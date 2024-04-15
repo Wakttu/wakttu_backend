@@ -17,7 +17,7 @@ export class SocketService {
     return await this.dicService.findById(word);
   }
 
-  async getWord(length: number): Promise<string> {
+  async setWord(length: number): Promise<string> {
     return await this.dicService.getWord(length);
   }
 
@@ -26,8 +26,8 @@ export class SocketService {
     return await this.userService.enter(userId, room.id);
   }
 
-  async deleteRoom(roomId: string): Promise<Room | null> {
-    return await this.roomService.remove(roomId);
+  async deleteRoom(roomId: string): Promise<void> {
+    await this.roomService.remove(roomId);
   }
 
   async deleteAllRoom(): Promise<void> {
@@ -38,8 +38,8 @@ export class SocketService {
     return await this.userService.enter(userId, roomId);
   }
 
-  async exitRoom(userId: string): Promise<Room> {
-    return await this.userService.exit(userId);
+  async exitRoom(userId: string): Promise<void> {
+    await this.userService.exit(userId);
   }
 
   async strongExitRoom(userId: string) {
