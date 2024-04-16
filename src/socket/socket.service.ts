@@ -55,7 +55,7 @@ export class SocketService {
   async getRoomList(
     title: string = undefined,
     start: boolean = false,
-    option: string[] = undefined,
+    option: string[] = [],
     take: number = 6,
     skip: number = 0,
   ): Promise<Room[]> {
