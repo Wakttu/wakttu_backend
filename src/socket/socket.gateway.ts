@@ -20,7 +20,7 @@ interface Chat {
   chat: string;
 }
 
-interface Game {
+class Game {
   host: string;
   type: number;
   round: number;
@@ -80,6 +80,7 @@ export class SocketGateway
         this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
       } else {
         delete this.roomInfo[roomId];
+        delete this.game[roomId];
         await this.socketService.deleteRoom(roomId);
       }
     }
@@ -122,6 +123,7 @@ export class SocketGateway
       data,
     );
     this.roomInfo[room.id] = room;
+    this.game[room.id] = new Game();
     this.game[room.id].host = this.user[client.id].name;
     client.emit('createRoom', this.roomInfo[room.id]);
   }
@@ -163,13 +165,14 @@ export class SocketGateway
       this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
     } else {
       delete this.roomInfo[roomId];
+      delete this.game[roomId];
       await this.socketService.deleteRoom(roomId);
     }
   }
 
   // 게임 시작시 주제 단어 선정
   @SubscribeMessage('start')
-  async handleReady(
+  async handleStart(
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
@@ -218,5 +221,15 @@ export class SocketGateway
       this.game[roomId].turn %= this.game[roomId].total;
     }
     this.server.to(roomId).emit('turn', check);
+  }
+
+  // Get 변수
+  @SubscribeMessage('info')
+  handleInfo(@ConnectedSocket() client: Socket) {
+    client.emit('info', {
+      game: this.game,
+      user: this.user,
+      roomInfo: this.roomInfo,
+    });
   }
 }
