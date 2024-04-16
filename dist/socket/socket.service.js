@@ -53,7 +53,7 @@ let SocketService = class SocketService {
             return await this.roomService.remove(roomId);
         }
     }
-    async getRoomList(title = undefined, start = false, option = undefined, take = 6, skip = 0) {
+    async getRoomList(title = undefined, start = false, option = [], take = 6, skip = 0) {
         return await this.roomService.findByQuery(title, start, option, take, skip);
     }
     async getRoom(roomId) {
