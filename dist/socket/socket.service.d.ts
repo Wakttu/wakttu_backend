@@ -19,4 +19,5 @@ export declare class SocketService {
     strongExitRoom(userId: string): Promise<any>;
     getRoomList(title?: string, start?: boolean, option?: string[], take?: number, skip?: number): Promise<Room[]>;
     getRoom(roomId: string): Promise<Room>;
+    setStart(roomId: string, start: boolean): Promise<Room>;
 }

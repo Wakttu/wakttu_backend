@@ -22,7 +22,6 @@ let AppController = class AppController {
         this.socketService = socketService;
     }
     isLoggined(req) {
-        console.log(req.session);
         return req.user;
     }
 };
