@@ -51,7 +51,8 @@ let SocketGateway = class SocketGateway {
         if (roomId) {
             await this.socketService.exitRoom(this.user[client.id].id);
             this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-            if (this.roomInfo[roomId].users.length > 0) {
+            if (this.roomInfo[roomId].users &&
+                this.roomInfo[roomId].users.length > 0) {
                 this.game[roomId].host = this.roomInfo[roomId].users[0].name;
                 this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
             }
