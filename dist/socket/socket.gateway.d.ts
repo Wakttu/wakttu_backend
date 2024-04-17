@@ -8,11 +8,13 @@ interface Chat {
     chat: string;
 }
 declare class Game {
+    constructor();
     host: string;
     type: number;
     round: number;
     turn: number;
     total: number;
+    users: string[];
     keyword: string;
     target: string;
 }
@@ -38,9 +40,10 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     handleCreate(data: CreateRoomDto, client: any): Promise<void>;
     handleEnter(roomId: string, client: any): Promise<void>;
     handleExit(roomId: string, client: Socket): Promise<void>;
+    handleReady(roomId: string, client: Socket): void;
     handleStart(roomId: string, client: Socket): Promise<void>;
-    handleRound(roomId: string, client: Socket): void;
-    handleAnswer({ roomId, chat }: Chat, client: Socket): Promise<void>;
+    handleRound(roomId: string): void;
+    handleAnswer({ roomId, chat }: Chat): Promise<void>;
     handleInfo(client: Socket): void;
 }
 export {};

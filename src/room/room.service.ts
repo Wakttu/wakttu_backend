@@ -100,6 +100,30 @@ export class RoomService {
     });
   }
 
+  async setStart(id: string, start: boolean): Promise<Room> {
+    return await this.prisma.room.update({
+      where: { id },
+      data: {
+        start: {
+          set: start,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        round: true,
+        option: true,
+        total: true,
+        start: true,
+        createdAt: true,
+        updatedAt: true,
+        users: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+  }
   async remove(id: string): Promise<any> {
     return await this.prisma.room.delete({ where: { id } });
   }
