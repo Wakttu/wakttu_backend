@@ -59,6 +59,9 @@ let SocketService = class SocketService {
     async getRoom(roomId) {
         return await this.roomService.findById(roomId);
     }
+    async setStart(roomId, start) {
+        return await this.roomService.setStart(roomId, !start);
+    }
 };
 exports.SocketService = SocketService;
 exports.SocketService = SocketService = __decorate([

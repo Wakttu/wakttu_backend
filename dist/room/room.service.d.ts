@@ -9,6 +9,7 @@ export declare class RoomService {
     findByQuery(title?: string, start?: boolean, option?: string[], take?: number, skip?: number): Promise<Room[] | null>;
     findById(id: string): Promise<Room | null>;
     update(id: string, data: UpdateRoomDto): Promise<Room | null>;
+    setStart(id: string, start: boolean): Promise<Room>;
     remove(id: string): Promise<any>;
     removeAll(): Promise<any>;
 }

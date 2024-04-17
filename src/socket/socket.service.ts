@@ -65,4 +65,7 @@ export class SocketService {
   async getRoom(roomId: string): Promise<Room> {
     return await this.roomService.findById(roomId);
   }
+  async setStart(roomId: string, start: boolean): Promise<Room> {
+    return await this.roomService.setStart(roomId, !start);
+  }
 }
