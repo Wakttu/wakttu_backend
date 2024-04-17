@@ -23,7 +23,7 @@ let SocketService = class SocketService {
     async findWord(word) {
         return await this.dicService.findById(word);
     }
-    async getWord(length) {
+    async setWord(length) {
         return await this.dicService.getWord(length);
     }
     async createRoom(userId, data) {
@@ -31,7 +31,7 @@ let SocketService = class SocketService {
         return await this.userService.enter(userId, room.id);
     }
     async deleteRoom(roomId) {
-        return await this.roomService.remove(roomId);
+        await this.roomService.remove(roomId);
     }
     async deleteAllRoom() {
         await this.roomService.removeAll();
@@ -40,7 +40,7 @@ let SocketService = class SocketService {
         return await this.userService.enter(userId, roomId);
     }
     async exitRoom(userId) {
-        return await this.userService.exit(userId);
+        await this.userService.exit(userId);
     }
     async strongExitRoom(userId) {
         const response = await this.userService.findById(userId);
@@ -53,11 +53,14 @@ let SocketService = class SocketService {
             return await this.roomService.remove(roomId);
         }
     }
-    async getRoomList(title = undefined, start = false, option = undefined, take = 6, skip = 0) {
+    async getRoomList(title = undefined, start = false, option = [], take = 6, skip = 0) {
         return await this.roomService.findByQuery(title, start, option, take, skip);
     }
     async getRoom(roomId) {
         return await this.roomService.findById(roomId);
+    }
+    async setStart(roomId, start) {
+        return await this.roomService.setStart(roomId, !start);
     }
 };
 exports.SocketService = SocketService;

@@ -15,16 +15,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppController = void 0;
 const common_1 = require("@nestjs/common");
 const app_service_1 = require("./app.service");
-const room_service_1 = require("./room/room.service");
-const socket_gateway_1 = require("./socket/socket.gateway");
+const socket_service_1 = require("./socket/socket.service");
 let AppController = class AppController {
-    constructor(appService, roomService, socket) {
+    constructor(appService, socketService) {
         this.appService = appService;
-        this.roomService = roomService;
-        this.socket = socket;
+        this.socketService = socketService;
     }
     isLoggined(req) {
-        console.log(req.session);
         return req.user;
     }
 };
@@ -39,7 +36,6 @@ __decorate([
 exports.AppController = AppController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [app_service_1.AppService,
-        room_service_1.RoomService,
-        socket_gateway_1.SocketGateway])
+        socket_service_1.SocketService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map

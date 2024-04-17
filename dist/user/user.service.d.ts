@@ -7,8 +7,8 @@ export declare class UserService {
     create(data: CreateUserDto): Promise<User>;
     findById(id: string): Promise<{
         name: string;
-        password: string;
         id: string;
+        password: string;
         score: number;
         roomId: string;
     }>;
@@ -24,7 +24,7 @@ export declare class UserService {
         type: number;
         round: number;
         option: string[];
-        count: number;
+        total: number;
         start: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -36,7 +36,7 @@ export declare class UserService {
         type: number;
         round: number;
         option: string[];
-        count: number;
+        total: number;
         start: boolean;
         createdAt: Date;
         updatedAt: Date;

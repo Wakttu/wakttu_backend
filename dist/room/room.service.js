@@ -25,7 +25,7 @@ let RoomService = class RoomService {
                 type: true,
                 round: true,
                 option: true,
-                count: true,
+                total: true,
                 start: true,
                 createdAt: true,
                 updatedAt: true,
@@ -50,7 +50,7 @@ let RoomService = class RoomService {
                 type: true,
                 round: true,
                 option: true,
-                count: true,
+                total: true,
                 start: true,
                 createdAt: true,
                 updatedAt: true,
@@ -69,7 +69,7 @@ let RoomService = class RoomService {
                 type: true,
                 round: true,
                 option: true,
-                count: true,
+                total: true,
                 start: true,
                 createdAt: true,
                 updatedAt: true,
@@ -89,7 +89,31 @@ let RoomService = class RoomService {
                 type: true,
                 round: true,
                 option: true,
-                count: true,
+                total: true,
+                start: true,
+                createdAt: true,
+                updatedAt: true,
+                users: {
+                    select: { id: true, name: true },
+                },
+            },
+        });
+    }
+    async setStart(id, start) {
+        return await this.prisma.room.update({
+            where: { id },
+            data: {
+                start: {
+                    set: start,
+                },
+            },
+            select: {
+                id: true,
+                title: true,
+                type: true,
+                round: true,
+                option: true,
+                total: true,
                 start: true,
                 createdAt: true,
                 updatedAt: true,

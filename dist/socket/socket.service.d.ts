@@ -10,13 +10,14 @@ export declare class SocketService {
     private readonly userService;
     constructor(dicService: DictionaryService, roomService: RoomService, userService: UserService);
     findWord(word: string): Promise<Dictionary | null>;
-    getWord(length: number): Promise<string>;
+    setWord(length: number): Promise<string>;
     createRoom(userId: string, data: CreateRoomDto): Promise<Room>;
-    deleteRoom(roomId: string): Promise<Room | null>;
+    deleteRoom(roomId: string): Promise<void>;
     deleteAllRoom(): Promise<void>;
     enterRoom(userId: string, roomId: string): Promise<Room>;
-    exitRoom(userId: string): Promise<Room>;
+    exitRoom(userId: string): Promise<void>;
     strongExitRoom(userId: string): Promise<any>;
     getRoomList(title?: string, start?: boolean, option?: string[], take?: number, skip?: number): Promise<Room[]>;
     getRoom(roomId: string): Promise<Room>;
+    setStart(roomId: string, start: boolean): Promise<Room>;
 }

@@ -20,6 +20,23 @@ interface Chat {
   chat: string;
 }
 
+class Game {
+  constructor() {
+    this.host = '';
+    this.round = 0;
+    this.turn = 0;
+    this.users = [];
+  }
+  host: string;
+  type: number;
+  round: number;
+  turn: number;
+  total: number;
+  users: string[];
+  keyword: string;
+  target: string;
+}
+
 @UseGuards(SocketAuthenticatedGuard)
 @WebSocketGateway({ namespace: 'wakttu' })
 export class SocketGateway
@@ -40,9 +57,9 @@ export class SocketGateway
     [roomId: string]: Room;
   } = {};
 
-  // 턴의 기능 추후 roomInfo에 속해질예정
-  public turn: {
-    [roomId: string]: string;
+  // 게임 진행 정보
+  public game: {
+    [roomId: string]: Game;
   } = {};
 
   // 접속시 수행되는 코드
@@ -66,10 +83,11 @@ export class SocketGateway
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId].users.length > 0) {
-        this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+        this.game[roomId].host = this.roomInfo[roomId].users[0].name;
         this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
       } else {
         delete this.roomInfo[roomId];
+        delete this.game[roomId];
         await this.socketService.deleteRoom(roomId);
       }
     }
@@ -95,9 +113,12 @@ export class SocketGateway
     @MessageBody() { roomId, chat }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    this.server
-      .to(roomId)
-      .emit('chat', { name: this.user[client.id].name, chat: chat });
+    if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
+      this.handleAnswer({ roomId, chat });
+    } else
+      this.server
+        .to(roomId)
+        .emit('chat', { name: this.user[client.id].name, chat: chat });
   }
 
   // 게임 방 생성
@@ -112,7 +133,8 @@ export class SocketGateway
       data,
     );
     this.roomInfo[room.id] = room;
-    this.roomInfo[room.id].host = this.user[client.id].name;
+    this.game[room.id] = new Game();
+    this.game[room.id].host = this.user[client.id].name;
     client.emit('createRoom', this.roomInfo[room.id]);
   }
 
@@ -149,35 +171,80 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+      this.game[roomId].host = this.roomInfo[roomId].users[0].name;
       this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
     } else {
       delete this.roomInfo[roomId];
+      delete this.game[roomId];
       await this.socketService.deleteRoom(roomId);
     }
   }
 
-  // 게임 시작시 주제 단어 선정
+  // 유저들의 ready 확인
   @SubscribeMessage('ready')
-  async handleReady(@MessageBody() roomId: string) {
-    if (this.roomInfo[roomId].round == 0) {
-      this.roomInfo[roomId].word = await this.socketService.getWord(
-        this.roomInfo[roomId].round,
-      );
-      this.server.to(roomId).emit('ready', this.roomInfo[roomId].word);
+  handleReady(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const index = this.game[roomId].users.indexOf(client.id);
+    if (index === -1) {
+      this.game[roomId].users.push(client.id);
+    } else {
+      this.game[roomId].users.splice(index, 1);
     }
+    this.server.to(roomId).emit('ready', this.game[roomId].users);
+  }
+  // 게임 시작시 주제 단어 선정
+  @SubscribeMessage('start')
+  async handleStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      return;
+    }
+    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+      return;
+    this.game[roomId].total = this.game[roomId].users.length;
+    this.game[roomId].keyword = await this.socketService.setWord(
+      this.roomInfo[roomId].round,
+    );
+    await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
+    this.server.to(roomId).emit('start', this.game[roomId]);
+  }
+
+  @SubscribeMessage('round')
+  handleRound(@MessageBody() roomId: string) {
+    const curRound = this.game[roomId].round++;
+    const lastRound = this.roomInfo[roomId].round;
+    if (curRound === lastRound) {
+      this.server.emit('end', { msg: 'end' });
+      return;
+    }
+    const target = this.game[roomId].keyword['_id'];
+    this.game[roomId].target = target[curRound];
+    this.server.to(roomId).emit('round', this.game[roomId]);
   }
 
   // 답변
-  @SubscribeMessage('answer')
-  async handleAnswer(
-    @MessageBody() { roomId, chat }: Chat,
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (this.turn[roomId] !== client.id) {
-      return;
-    }
+  async handleAnswer(@MessageBody() { roomId, chat }: Chat) {
     const check = await this.socketService.findWord(chat);
-    this.server.to(roomId).emit('answer', check);
+    if (check) {
+      this.game[roomId].turn++;
+      this.game[roomId].turn %= this.game[roomId].total;
+      const target = check['id'];
+      this.game[roomId].target = target[target.length - 1];
+    }
+    this.server.to(roomId).emit('turn', this.game[roomId]);
+  }
+
+  // Get 변수
+  @SubscribeMessage('info')
+  handleInfo(@ConnectedSocket() client: Socket) {
+    client.emit('info', {
+      game: this.game,
+      user: this.user,
+      roomInfo: this.roomInfo,
+    });
   }
 }

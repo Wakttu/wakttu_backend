@@ -4,5 +4,5 @@ export declare class CreateRoomDto {
     type: number;
     round: number;
     option: string[];
-    count: number;
+    total: number;
 }

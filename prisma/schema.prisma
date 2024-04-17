@@ -34,7 +34,7 @@ model Room {
   type     Int
   round    Int
   option   String[]
-  count    Int
+  total    Int
   start    Boolean  @default(false)
 
   users User[]

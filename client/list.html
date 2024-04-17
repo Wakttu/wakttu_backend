@@ -100,6 +100,9 @@
               min="2"
               max="8"
             /><br />
+            <input type="number" name="total" value="4" min="2" max="8" />
+            인원수
+
             <select id="type">
               <option value="1" selected>끝말잇기</option>
               <option value="2">쿵쿵따</option>
@@ -107,7 +110,6 @@
             <br />
             <input type="checkbox" value="품어" name="option" />품어
             <input type="checkbox" value="매너" name="option" />매너
-            <input type="hidden" name="count" value="3" />
           </div>
           <div class="modal-footer">
             <button
@@ -149,7 +151,13 @@
             입력창
           </button>
         </div>
-        <div><button onclick="exitRoom()">나가기</button></div>
+        <div>
+          <button onclick="exitRoom()">나가기</button
+          ><button onclick="getInfo()">정보얻기</button>
+          <button onclick="ready()">준비</button>
+          <button onclick="start()">시작</button>
+          <button onclick="round()">라운드</button>
+        </div>
       </div>
     </div>
 
@@ -173,19 +181,10 @@
       }
     });
     socket.on('createRoom', (data) => {
-      const id = document.querySelector('#main');
-      id.innerHTML = '';
-      for (let i = 0; i < data.length; i++) {
-        let div = document.createElement('div');
-        div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" onclick="enterRoom(this)">
-            <div class="card-body">
-                <h5 class="card-title">${data[i].title}</h5>
-                <p class="card-text">round:${data[i].round}|count:${data[i].users.length}/${data[i].count}|option:${data[i].option}|</p>
-                
-            </div>
-        </div>`;
-        id.appendChild(div);
-      }
+      const modal = document.querySelector('.roomModal');
+      modal.style.display = 'flex';
+      modal.dataset['id'] = data.id;
+      socket.emit('enter', data.id);
     });
     socket.on('roomList', (data) => {
       const id = document.querySelector('#main');
@@ -195,8 +194,8 @@
         div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" onclick="enterRoom(this)">
             <div class="card-body">
                 <h5 class="card-title">${data[i].title}</h5>
-                <p class="card-text">round:${data[i].round}|count:${data[i].users.length}/${data[i].count}|option:${data[i].option}|</p>
-                
+                <p class="card-text">round:${data[i].round}|total:${data[i].users.length}/${data[i].total}|option:${data[i].option}|</p>
+
             </div>
         </div>`;
         id.appendChild(div);
@@ -212,7 +211,7 @@
         if (inputs[i].name === 'chat') continue;
         if (inputs[i].name === 'option') {
           data['option'].push(inputs[i].value);
-        } else if (inputs[i].name === 'round' || inputs[i].name === 'count') {
+        } else if (inputs[i].name === 'round' || inputs[i].name === 'total') {
           data[inputs[i].name] = +inputs[i].value;
         } else {
           data[inputs[i].name] = inputs[i].value;
@@ -286,5 +285,59 @@
     function getRoomList() {
       socket.emit('roomList');
     }
+
+    function getInfo() {
+      socket.emit('info');
+    }
+    socket.on('info', (data) => {
+      console.log(data.user, data.game, data.roomInfo);
+      console.log(socket);
+    });
+
+    function ready() {
+      const modal = document.querySelector('.roomModal');
+      const roomId = modal.dataset['id'];
+      socket.emit('ready', roomId);
+    }
+
+    socket.on('ready', (data) => {
+      console.log(data);
+    });
+
+    function start() {
+      const modal = document.querySelector('.roomModal');
+      const roomId = modal.dataset['id'];
+      socket.emit('start', roomId);
+    }
+
+    socket.on('start', (data) => {
+      const div = document.createElement('div');
+      div.innerText = `주제어 : ${data.keyword._id}`;
+      document.querySelector('#chat').appendChild(div);
+      const div2 = document.createElement('div');
+      div2.innerText = `시작어 : ${data.keyword._id[data.round]}`;
+      document.querySelector('#chat').appendChild(div2);
+    });
+
+    function round() {
+      const modal = document.querySelector('.roomModal');
+      const roomId = modal.dataset['id'];
+      socket.emit('round', roomId);
+    }
+
+    socket.on('round', (data) => {
+      console.log(data);
+    });
+
+    socket.on('turn', (data) => {
+      const div = document.createElement('div');
+
+      if (data) {
+        div.innerText = `시작어 : ${data.target}`;
+      } else {
+        div.innerHTML = '틀린 답입니다.';
+      }
+      document.querySelector('#chat').appendChild(div);
+    });
   </script>
 </html>

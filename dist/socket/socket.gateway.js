@@ -19,12 +19,20 @@ const socket_service_1 = require("./socket.service");
 const common_1 = require("@nestjs/common");
 const socket_auth_guard_1 = require("../auth/socket-auth.guard");
 const create_room_dto_1 = require("../room/dto/create-room.dto");
+class Game {
+    constructor() {
+        this.host = '';
+        this.round = 0;
+        this.turn = 0;
+        this.users = [];
+    }
+}
 let SocketGateway = class SocketGateway {
     constructor(socketService) {
         this.socketService = socketService;
         this.user = {};
         this.roomInfo = {};
-        this.turn = {};
+        this.game = {};
     }
     handleConnection(client) {
         if (!client.request.user)
@@ -44,11 +52,12 @@ let SocketGateway = class SocketGateway {
             await this.socketService.exitRoom(this.user[client.id].id);
             this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
             if (this.roomInfo[roomId].users.length > 0) {
-                this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+                this.game[roomId].host = this.roomInfo[roomId].users[0].name;
                 this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
             }
             else {
                 delete this.roomInfo[roomId];
+                delete this.game[roomId];
                 await this.socketService.deleteRoom(roomId);
             }
         }
@@ -63,15 +72,20 @@ let SocketGateway = class SocketGateway {
         client.emit('roomList', roomList);
     }
     async handleMessage({ roomId, chat }, client) {
-        this.server
-            .to(roomId)
-            .emit('chat', { name: this.user[client.id].name, chat: chat });
+        if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
+            this.handleAnswer({ roomId, chat });
+        }
+        else
+            this.server
+                .to(roomId)
+                .emit('chat', { name: this.user[client.id].name, chat: chat });
     }
     async handleCreate(data, client) {
         this.user[client.id] = client.request.user;
         const room = await this.socketService.createRoom(this.user[client.id].id, data);
         this.roomInfo[room.id] = room;
-        this.roomInfo[room.id].host = this.user[client.id].name;
+        this.game[room.id] = new Game();
+        this.game[room.id].host = this.user[client.id].name;
         client.emit('createRoom', this.roomInfo[room.id]);
     }
     async handleEnter(roomId, client) {
@@ -93,26 +107,63 @@ let SocketGateway = class SocketGateway {
         this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
         client.leave(roomId);
         if (this.roomInfo[roomId].users.length > 0) {
-            this.roomInfo[roomId].host = this.roomInfo[roomId].users[0].name;
+            this.game[roomId].host = this.roomInfo[roomId].users[0].name;
             this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
         }
         else {
             delete this.roomInfo[roomId];
+            delete this.game[roomId];
             await this.socketService.deleteRoom(roomId);
         }
     }
-    async handleReady(roomId) {
-        if (this.roomInfo[roomId].round == 0) {
-            this.roomInfo[roomId].word = await this.socketService.getWord(this.roomInfo[roomId].round);
-            this.server.to(roomId).emit('ready', this.roomInfo[roomId].word);
+    handleReady(roomId, client) {
+        const index = this.game[roomId].users.indexOf(client.id);
+        if (index === -1) {
+            this.game[roomId].users.push(client.id);
         }
+        else {
+            this.game[roomId].users.splice(index, 1);
+        }
+        this.server.to(roomId).emit('ready', this.game[roomId].users);
     }
-    async handleAnswer({ roomId, chat }, client) {
-        if (this.turn[roomId] !== client.id) {
+    async handleStart(roomId, client) {
+        if (this.game[roomId].host !== this.user[client.id].name) {
             return;
         }
+        if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+            return;
+        this.game[roomId].total = this.game[roomId].users.length;
+        this.game[roomId].keyword = await this.socketService.setWord(this.roomInfo[roomId].round);
+        await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
+        this.server.to(roomId).emit('start', this.game[roomId]);
+    }
+    handleRound(roomId) {
+        const curRound = this.game[roomId].round++;
+        const lastRound = this.roomInfo[roomId].round;
+        if (curRound === lastRound) {
+            this.server.emit('end', { msg: 'end' });
+            return;
+        }
+        const target = this.game[roomId].keyword['_id'];
+        this.game[roomId].target = target[curRound];
+        this.server.to(roomId).emit('round', this.game[roomId]);
+    }
+    async handleAnswer({ roomId, chat }) {
         const check = await this.socketService.findWord(chat);
-        this.server.to(roomId).emit('answer', check);
+        if (check) {
+            this.game[roomId].turn++;
+            this.game[roomId].turn %= this.game[roomId].total;
+            const target = check['id'];
+            this.game[roomId].target = target[target.length - 1];
+        }
+        this.server.to(roomId).emit('turn', this.game[roomId]);
+    }
+    handleInfo(client) {
+        client.emit('info', {
+            game: this.game,
+            user: this.user,
+            roomInfo: this.roomInfo,
+        });
     }
 };
 exports.SocketGateway = SocketGateway;
@@ -175,18 +226,39 @@ __decorate([
 __decorate([
     (0, websockets_1.SubscribeMessage)('ready'),
     __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:paramtypes", [String, socket_io_1.Socket]),
+    __metadata("design:returntype", void 0)
 ], SocketGateway.prototype, "handleReady", null);
 __decorate([
-    (0, websockets_1.SubscribeMessage)('answer'),
+    (0, websockets_1.SubscribeMessage)('start'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:paramtypes", [String, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleStart", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('round'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SocketGateway.prototype, "handleRound", null);
+__decorate([
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleAnswer", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('info'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket]),
+    __metadata("design:returntype", void 0)
+], SocketGateway.prototype, "handleInfo", null);
 exports.SocketGateway = SocketGateway = __decorate([
     (0, common_1.UseGuards)(socket_auth_guard_1.SocketAuthenticatedGuard),
     (0, websockets_1.WebSocketGateway)({ namespace: 'wakttu' }),
