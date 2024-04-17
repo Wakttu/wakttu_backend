@@ -232,8 +232,10 @@ export class SocketGateway
     if (check) {
       this.game[roomId].turn++;
       this.game[roomId].turn %= this.game[roomId].total;
+      const target = check['id'];
+      this.game[roomId].target = target[target.length - 1];
     }
-    this.server.to(roomId).emit('turn', check);
+    this.server.to(roomId).emit('turn', this.game[roomId]);
   }
 
   // Get 변수

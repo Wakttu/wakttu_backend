@@ -314,6 +314,9 @@
       const div = document.createElement('div');
       div.innerText = `주제어 : ${data.keyword._id}`;
       document.querySelector('#chat').appendChild(div);
+      const div2 = document.createElement('div');
+      div2.innerText = `시작어 : ${data.keyword._id[data.round]}`;
+      document.querySelector('#chat').appendChild(div2);
     });
 
     function round() {
@@ -327,7 +330,14 @@
     });
 
     socket.on('turn', (data) => {
-      console.log(data);
+      const div = document.createElement('div');
+
+      if (data) {
+        div.innerText = `시작어 : ${data.target}`;
+      } else {
+        div.innerHTML = '틀린 답입니다.';
+      }
+      document.querySelector('#chat').appendChild(div);
     });
   </script>
 </html>
