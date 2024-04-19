@@ -32,6 +32,7 @@ let RoomService = class RoomService {
                 users: {
                     select: { id: true, name: true },
                 },
+                password: true,
             },
         });
     }
@@ -128,6 +129,14 @@ let RoomService = class RoomService {
     }
     async removeAll() {
         return await this.prisma.room.deleteMany();
+    }
+    async checkPassword(roomId, password) {
+        const response = await this.prisma.room.findUnique({
+            where: { id: roomId, password: password },
+        });
+        if (response)
+            return true;
+        return false;
     }
 };
 exports.RoomService = RoomService;

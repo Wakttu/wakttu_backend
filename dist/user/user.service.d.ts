@@ -12,6 +12,23 @@ export declare class UserService {
         score: number;
         roomId: string;
     }>;
+    roomCreate(id: string, roomId: string): Promise<{
+        users: {
+            name: string;
+            id: string;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        password: string;
+        type: number;
+        round: number;
+        option: string[];
+        total: number;
+        start: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     enter(id: string, roomId: string): Promise<{
         users: {
             name: string;

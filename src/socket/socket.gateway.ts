@@ -104,7 +104,7 @@ export class SocketGateway
     this.server.emit('alarm', { message });
   }
 
-  // 방접속해있는 유저에게  List 전달
+  // 서버에접속해있는 유저에게 현재 방들의 정보 List 전달
   @SubscribeMessage('roomList')
   async handleRoomList(@ConnectedSocket() client: Socket) {
     const roomList = await this.socketService.getRoomList();
@@ -131,33 +131,40 @@ export class SocketGateway
     @ConnectedSocket() client: any,
   ) {
     this.user[client.id] = client.request.user;
-    const room = await this.socketService.createRoom(
+    const info = await this.socketService.createRoom(
       this.user[client.id].id,
       data,
     );
+    const { password, ...room } = info;
     this.roomInfo[room.id] = room;
     this.game[room.id] = new Game();
     this.game[room.id].host = this.user[client.id].name;
-    client.emit('createRoom', this.roomInfo[room.id]);
+    client.emit('createRoom', { roomId: room.id, password });
   }
 
   // 게임 방 입장
   @SubscribeMessage('enter')
   async handleEnter(
-    @MessageBody() roomId: string,
+    @MessageBody() { roomId, password }: { roomId: string; password: string },
     @ConnectedSocket() client: any,
   ) {
     if (client.rooms.has(roomId)) {
       return;
     }
     if (!this.roomInfo[roomId]) return;
-    this.user[client.id].roomId = roomId;
+
+    const check = await this.socketService.checkPassword(roomId, password);
+    if (!check) {
+      client.emit('alarm', '유효하지 않은 패스워드 입니다.');
+      return;
+    }
+
     this.roomInfo[roomId] = await this.socketService.enterRoom(
       this.user[client.id].id,
       roomId,
     );
     client.join(roomId);
-
+    this.user[client.id].roomId = roomId;
     this.server.to(roomId).emit('enter', this.roomInfo[roomId]);
   }
 
@@ -183,6 +190,26 @@ export class SocketGateway
     }
   }
 
+  // 강퇴기능
+  @SubscribeMessage('kick')
+  handleKick(
+    @MessageBody() { roomId, socketId }: { roomId: string; socketId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.user[client.id].name !== this.game[roomId].host) {
+      return;
+    }
+    client.to(socketId).emit('kick helper');
+  }
+
+  @SubscribeMessage('kick helper')
+  async hanldeKickHelper(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    await this.handleExit(roomId, client);
+    client.emit('alarm', '퇴장 당하셨습니다.');
+  }
   // 유저들의 ready 확인
   @SubscribeMessage('ready')
   handleReady(
