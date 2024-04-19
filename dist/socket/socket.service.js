@@ -28,7 +28,7 @@ let SocketService = class SocketService {
     }
     async createRoom(userId, data) {
         const room = await this.roomService.create(data);
-        return await this.userService.enter(userId, room.id);
+        return await this.userService.roomCreate(userId, room.id);
     }
     async deleteRoom(roomId) {
         await this.roomService.remove(roomId);
@@ -61,6 +61,9 @@ let SocketService = class SocketService {
     }
     async setStart(roomId, start) {
         return await this.roomService.setStart(roomId, !start);
+    }
+    async checkPassword(roomId, password) {
+        return await this.roomService.checkPassword(roomId, password);
     }
 };
 exports.SocketService = SocketService;

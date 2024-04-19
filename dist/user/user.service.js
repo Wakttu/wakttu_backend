@@ -32,6 +32,27 @@ let UserService = class UserService {
         });
         return response;
     }
+    async roomCreate(id, roomId) {
+        const response = await this.prisma.user.update({
+            where: { id },
+            data: {
+                room: { connect: { id: roomId } },
+            },
+            include: {
+                room: {
+                    include: {
+                        users: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        return response.room;
+    }
     async enter(id, roomId) {
         const response = await this.prisma.user.update({
             where: { id },

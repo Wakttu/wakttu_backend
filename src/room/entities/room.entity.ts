@@ -10,3 +10,7 @@ export class Room {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export class CreateRoom extends Room {
+  password: string | undefined;
+}

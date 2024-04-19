@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DictionaryService } from 'src/dictionary/dictionary.service';
 import { Dictionary } from 'src/dictionary/entities/dictionary.entity';
 import { RoomService } from 'src/room/room.service';
-import { Room } from 'src/room/entities/room.entity';
+import { CreateRoom, Room } from 'src/room/entities/room.entity';
 import { UserService } from 'src/user/user.service';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 @Injectable()
@@ -21,9 +21,9 @@ export class SocketService {
     return await this.dicService.getWord(length);
   }
 
-  async createRoom(userId: string, data: CreateRoomDto): Promise<Room> {
+  async createRoom(userId: string, data: CreateRoomDto): Promise<CreateRoom> {
     const room = await this.roomService.create(data);
-    return await this.userService.enter(userId, room.id);
+    return await this.userService.roomCreate(userId, room.id);
   }
 
   async deleteRoom(roomId: string): Promise<void> {
@@ -67,5 +67,12 @@ export class SocketService {
   }
   async setStart(roomId: string, start: boolean): Promise<Room> {
     return await this.roomService.setStart(roomId, !start);
+  }
+
+  async checkPassword(
+    roomId: string,
+    password: string | undefined,
+  ): Promise<boolean> {
+    return await this.roomService.checkPassword(roomId, password);
   }
 }
