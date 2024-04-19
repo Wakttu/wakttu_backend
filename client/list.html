@@ -171,6 +171,11 @@
 
   <script>
     const socket = io('/wakttu');
+
+    socket.on('alarm', (data) => {
+      alert(data);
+    });
+
     socket.on('list', (data) => {
       let list = document.querySelector('#list');
       list.innerText = '';
@@ -180,27 +185,30 @@
         list.appendChild(div);
       }
     });
+
     socket.on('createRoom', (data) => {
       const modal = document.querySelector('.roomModal');
       modal.style.display = 'flex';
-      modal.dataset['id'] = data.id;
-      socket.emit('enter', data.id);
+      modal.dataset['id'] = data.roomId;
+      socket.emit('enter', data);
     });
+
     socket.on('roomList', (data) => {
       const id = document.querySelector('#main');
       id.innerHTML = '';
       for (let i = 0; i < data.length; i++) {
         let div = document.createElement('div');
-        div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" onclick="enterRoom(this)">
+        div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" data-password="${data[i].password}" onclick="enterRoom(this)">
             <div class="card-body">
                 <h5 class="card-title">${data[i].title}</h5>
-                <p class="card-text">round:${data[i].round}|total:${data[i].users.length}/${data[i].total}|option:${data[i].option}|</p>
+                <p class="card-text">round:${data[i].round}|total:${data[i].users.length}/${data[i].total}|option:${data[i].option}|password:${data[i].password}</p>
 
             </div>
         </div>`;
         id.appendChild(div);
       }
     });
+
     function createRoom() {
       const inputs = document.querySelectorAll('input');
       const select = document.querySelector('#type option[selected]').value;
@@ -228,8 +236,9 @@
       const modal = document.querySelector('.roomModal');
       modal.style.display = 'flex';
       const roomId = div.dataset['id'];
+      const password = div.dataset['password'];
       modal.dataset['id'] = roomId;
-      socket.emit('enter', roomId);
+      socket.emit('enter', { roomId, password });
     }
 
     socket.on('enter', (data) => {
