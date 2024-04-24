@@ -193,13 +193,16 @@ export class SocketGateway
   // 강퇴기능
   @SubscribeMessage('kick')
   handleKick(
-    @MessageBody() { roomId, socketId }: { roomId: string; socketId: string },
+    @MessageBody() { roomId, userId }: { roomId: string; userId: string },
     @ConnectedSocket() client: Socket,
   ) {
     if (this.user[client.id].name !== this.game[roomId].host) {
       return;
     }
-    client.to(socketId).emit('kick helper');
+    const key = Object.keys(this.user).find(
+      (key) => this.user[key].id === userId,
+    );
+    client.to(key).emit('kick helper');
   }
 
   @SubscribeMessage('kick helper')
