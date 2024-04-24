@@ -202,7 +202,8 @@ export class SocketGateway
     const key = Object.keys(this.user).find(
       (key) => this.user[key].id === userId,
     );
-    client.to(key).emit('kick helper');
+
+    client.to(key).emit('kick helper', { socketId: key });
   }
 
   @SubscribeMessage('kick helper')
