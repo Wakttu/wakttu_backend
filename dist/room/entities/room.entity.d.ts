@@ -10,3 +10,6 @@ export declare class Room {
     createdAt: Date;
     updatedAt: Date;
 }
+export declare class CreateRoom extends Room {
+    password: string | undefined;
+}

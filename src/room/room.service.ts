@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Room } from './entities/room.entity';
+import { CreateRoom, Room } from './entities/room.entity';
 
 @Injectable()
 export class RoomService {
   constructor(private readonly prisma: PrismaService) {}
-  async create(data: CreateRoomDto): Promise<Room | null> {
+  async create(data: CreateRoomDto): Promise<CreateRoom | null> {
     return await this.prisma.room.create({
       data,
       select: {
@@ -23,6 +23,7 @@ export class RoomService {
         users: {
           select: { id: true, name: true },
         },
+        password: true,
       },
     });
   }
@@ -130,5 +131,16 @@ export class RoomService {
 
   async removeAll(): Promise<any> {
     return await this.prisma.room.deleteMany();
+  }
+
+  async checkPassword(
+    roomId: string,
+    password: string | undefined,
+  ): Promise<boolean> {
+    const response = await this.prisma.room.findUnique({
+      where: { id: roomId, password: password },
+    });
+    if (response) return true;
+    return false;
   }
 }

@@ -83,21 +83,27 @@ let SocketGateway = class SocketGateway {
     }
     async handleCreate(data, client) {
         this.user[client.id] = client.request.user;
-        const room = await this.socketService.createRoom(this.user[client.id].id, data);
+        const info = await this.socketService.createRoom(this.user[client.id].id, data);
+        const { password, ...room } = info;
         this.roomInfo[room.id] = room;
         this.game[room.id] = new Game();
         this.game[room.id].host = this.user[client.id].name;
-        client.emit('createRoom', this.roomInfo[room.id]);
+        client.emit('createRoom', { roomId: room.id, password });
     }
-    async handleEnter(roomId, client) {
+    async handleEnter({ roomId, password }, client) {
         if (client.rooms.has(roomId)) {
             return;
         }
         if (!this.roomInfo[roomId])
             return;
-        this.user[client.id].roomId = roomId;
+        const check = await this.socketService.checkPassword(roomId, password);
+        if (!check) {
+            client.emit('alarm', '유효하지 않은 패스워드 입니다.');
+            return;
+        }
         this.roomInfo[roomId] = await this.socketService.enterRoom(this.user[client.id].id, roomId);
         client.join(roomId);
+        this.user[client.id].roomId = roomId;
         this.server.to(roomId).emit('enter', this.roomInfo[roomId]);
     }
     async handleExit(roomId, client) {
@@ -213,7 +219,7 @@ __decorate([
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleEnter", null);
 __decorate([

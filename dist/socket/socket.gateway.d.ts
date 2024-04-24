@@ -38,7 +38,10 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     handleRoomList(client: Socket): Promise<void>;
     handleMessage({ roomId, chat }: Chat, client: Socket): Promise<void>;
     handleCreate(data: CreateRoomDto, client: any): Promise<void>;
-    handleEnter(roomId: string, client: any): Promise<void>;
+    handleEnter({ roomId, password }: {
+        roomId: any;
+        password: any;
+    }, client: any): Promise<void>;
     handleExit(roomId: string, client: Socket): Promise<void>;
     handleReady(roomId: string, client: Socket): void;
     handleStart(roomId: string, client: Socket): Promise<void>;
