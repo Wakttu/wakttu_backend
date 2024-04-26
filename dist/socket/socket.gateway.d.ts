@@ -52,7 +52,6 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     hanldeKickHelper(roomId: string, client: Socket): Promise<void>;
     handleReady(roomId: string, client: Socket): void;
     handleStart(roomId: string, client: Socket): Promise<void>;
-    handleRound(roomId: string): void;
     handleAnswer({ roomId, chat }: Chat): Promise<void>;
     handleInfo(client: Socket): void;
 }

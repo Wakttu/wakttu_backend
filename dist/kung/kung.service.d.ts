@@ -3,4 +3,6 @@ export declare class KungService {
     private readonly socketGateway;
     constructor(socketGateway: SocketGateway);
     server: any;
+    setRule(roomId: string): void;
+    handleTest(): void;
 }
