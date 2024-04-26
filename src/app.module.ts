@@ -9,6 +9,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { DictionaryModule } from './dictionary/dictionary.module';
 import { RoomModule } from './room/room.module';
+import { KungModule } from './kung/kung.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -20,6 +21,7 @@ import { RoomModule } from './room/room.module';
     AuthModule,
     DictionaryModule,
     RoomModule,
+    KungModule,
   ],
   controllers: [AppController],
   providers: [AppService],
