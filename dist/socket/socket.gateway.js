@@ -44,6 +44,7 @@ let SocketGateway = class SocketGateway {
     }
     async afterInit() {
         await this.socketService.deleteAllRoom();
+        this.kungService.server = this.server;
         console.log('socket is open!');
     }
     async handleDisconnect(client) {
@@ -157,17 +158,6 @@ let SocketGateway = class SocketGateway {
         await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
         this.server.to(roomId).emit('start', this.game[roomId]);
     }
-    handleRound(roomId) {
-        const curRound = this.game[roomId].round++;
-        const lastRound = this.roomInfo[roomId].round;
-        if (curRound === lastRound) {
-            this.server.emit('end', { msg: 'end' });
-            return;
-        }
-        const target = this.game[roomId].keyword['_id'];
-        this.game[roomId].target = target[curRound];
-        this.server.to(roomId).emit('round', this.game[roomId]);
-    }
     async handleAnswer({ roomId, chat }) {
         const check = await this.socketService.findWord(chat);
         if (check) {
@@ -275,13 +265,6 @@ __decorate([
     __metadata("design:paramtypes", [String, socket_io_1.Socket]),
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleStart", null);
-__decorate([
-    (0, websockets_1.SubscribeMessage)('round'),
-    __param(0, (0, websockets_1.MessageBody)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], SocketGateway.prototype, "handleRound", null);
 __decorate([
     __param(0, (0, websockets_1.MessageBody)()),
     __metadata("design:type", Function),

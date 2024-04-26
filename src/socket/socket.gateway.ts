@@ -77,6 +77,7 @@ export class SocketGateway
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
     await this.socketService.deleteAllRoom();
+    this.kungService.server = this.server; // 서버를 service와 연결
     console.log('socket is open!');
   }
 
@@ -252,6 +253,7 @@ export class SocketGateway
     this.server.to(roomId).emit('start', this.game[roomId]);
   }
 
+  /* 모듈분리까지 잠깐 주석처리
   @SubscribeMessage('round')
   handleRound(@MessageBody() roomId: string) {
     const curRound = this.game[roomId].round++;
@@ -263,7 +265,7 @@ export class SocketGateway
     const target = this.game[roomId].keyword['_id'];
     this.game[roomId].target = target[curRound];
     this.server.to(roomId).emit('round', this.game[roomId]);
-  }
+  }*/
 
   // 답변
   async handleAnswer(@MessageBody() { roomId, chat }: Chat) {
@@ -286,4 +288,8 @@ export class SocketGateway
       roomInfo: this.roomInfo,
     });
   }
+
+  /*
+    kung kung tta handler
+  */
 }
