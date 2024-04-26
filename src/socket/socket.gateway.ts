@@ -10,10 +10,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { UseGuards } from '@nestjs/common';
+import { Inject, UseGuards, forwardRef } from '@nestjs/common';
 import { SocketAuthenticatedGuard } from 'src/auth/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
+import { KungService } from 'src/kung/kung.service';
 
 interface Chat {
   roomId: string;
@@ -42,7 +43,11 @@ class Game {
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private readonly socketService: SocketService) {}
+  constructor(
+    @Inject(forwardRef(() => KungService))
+    private readonly kungService: KungService,
+    private readonly socketService: SocketService,
+  ) {}
 
   @WebSocketServer()
   public server: Server;

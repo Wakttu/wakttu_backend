@@ -13,12 +13,18 @@ const socket_service_1 = require("./socket.service");
 const room_module_1 = require("../room/room.module");
 const dictionary_module_1 = require("../dictionary/dictionary.module");
 const user_module_1 = require("../user/user.module");
+const kung_module_1 = require("../kung/kung.module");
 let SocketModule = class SocketModule {
 };
 exports.SocketModule = SocketModule;
 exports.SocketModule = SocketModule = __decorate([
     (0, common_1.Module)({
-        imports: [user_module_1.UserModule, room_module_1.RoomModule, dictionary_module_1.DictionaryModule],
+        imports: [
+            user_module_1.UserModule,
+            room_module_1.RoomModule,
+            dictionary_module_1.DictionaryModule,
+            (0, common_1.forwardRef)(() => kung_module_1.KungModule),
+        ],
         providers: [socket_gateway_1.SocketGateway, socket_service_1.SocketService],
         exports: [socket_gateway_1.SocketGateway, socket_service_1.SocketService],
     })
