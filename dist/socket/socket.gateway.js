@@ -19,6 +19,7 @@ const socket_service_1 = require("./socket.service");
 const common_1 = require("@nestjs/common");
 const socket_auth_guard_1 = require("../auth/socket-auth.guard");
 const create_room_dto_1 = require("../room/dto/create-room.dto");
+const kung_service_1 = require("../kung/kung.service");
 class Game {
     constructor() {
         this.host = '';
@@ -28,7 +29,8 @@ class Game {
     }
 }
 let SocketGateway = class SocketGateway {
-    constructor(socketService) {
+    constructor(kungService, socketService) {
+        this.kungService = kungService;
         this.socketService = socketService;
         this.user = {};
         this.roomInfo = {};
@@ -42,6 +44,7 @@ let SocketGateway = class SocketGateway {
     }
     async afterInit() {
         await this.socketService.deleteAllRoom();
+        this.kungService.server = this.server;
         console.log('socket is open!');
     }
     async handleDisconnect(client) {
@@ -123,6 +126,17 @@ let SocketGateway = class SocketGateway {
             await this.socketService.deleteRoom(roomId);
         }
     }
+    handleKick({ roomId, userId }, client) {
+        if (this.user[client.id].name !== this.game[roomId].host) {
+            return;
+        }
+        const key = Object.keys(this.user).find((key) => this.user[key].id === userId);
+        client.to(key).emit('kick helper', { socketId: key });
+    }
+    async hanldeKickHelper(roomId, client) {
+        await this.handleExit(roomId, client);
+        client.emit('alarm', '퇴장 당하셨습니다.');
+    }
     handleReady(roomId, client) {
         const index = this.game[roomId].users.indexOf(client.id);
         if (index === -1) {
@@ -143,17 +157,6 @@ let SocketGateway = class SocketGateway {
         this.game[roomId].keyword = await this.socketService.setWord(this.roomInfo[roomId].round);
         await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
         this.server.to(roomId).emit('start', this.game[roomId]);
-    }
-    handleRound(roomId) {
-        const curRound = this.game[roomId].round++;
-        const lastRound = this.roomInfo[roomId].round;
-        if (curRound === lastRound) {
-            this.server.emit('end', { msg: 'end' });
-            return;
-        }
-        const target = this.game[roomId].keyword['_id'];
-        this.game[roomId].target = target[curRound];
-        this.server.to(roomId).emit('round', this.game[roomId]);
     }
     async handleAnswer({ roomId, chat }) {
         const check = await this.socketService.findWord(chat);
@@ -231,6 +234,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleExit", null);
 __decorate([
+    (0, websockets_1.SubscribeMessage)('kick'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", void 0)
+], SocketGateway.prototype, "handleKick", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('kick helper'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "hanldeKickHelper", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)('ready'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
@@ -247,13 +266,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SocketGateway.prototype, "handleStart", null);
 __decorate([
-    (0, websockets_1.SubscribeMessage)('round'),
-    __param(0, (0, websockets_1.MessageBody)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], SocketGateway.prototype, "handleRound", null);
-__decorate([
     __param(0, (0, websockets_1.MessageBody)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -269,6 +281,8 @@ __decorate([
 exports.SocketGateway = SocketGateway = __decorate([
     (0, common_1.UseGuards)(socket_auth_guard_1.SocketAuthenticatedGuard),
     (0, websockets_1.WebSocketGateway)({ namespace: 'wakttu' }),
-    __metadata("design:paramtypes", [socket_service_1.SocketService])
+    __param(0, (0, common_1.Inject)((0, common_1.forwardRef)(() => kung_service_1.KungService))),
+    __metadata("design:paramtypes", [kung_service_1.KungService,
+        socket_service_1.SocketService])
 ], SocketGateway);
 //# sourceMappingURL=socket.gateway.js.map

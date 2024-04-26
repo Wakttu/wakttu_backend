@@ -10,10 +10,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { UseGuards } from '@nestjs/common';
+import { Inject, UseGuards, forwardRef } from '@nestjs/common';
 import { SocketAuthenticatedGuard } from 'src/auth/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
+import { KungService } from 'src/kung/kung.service';
 
 interface Chat {
   roomId: string;
@@ -42,7 +43,11 @@ class Game {
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private readonly socketService: SocketService) {}
+  constructor(
+    @Inject(forwardRef(() => KungService))
+    private readonly kungService: KungService,
+    private readonly socketService: SocketService,
+  ) {}
 
   @WebSocketServer()
   public server: Server;
@@ -72,6 +77,7 @@ export class SocketGateway
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
     await this.socketService.deleteAllRoom();
+    this.kungService.server = this.server; // 서버를 service와 연결
     console.log('socket is open!');
   }
 
@@ -247,6 +253,7 @@ export class SocketGateway
     this.server.to(roomId).emit('start', this.game[roomId]);
   }
 
+  /* 모듈분리까지 잠깐 주석처리
   @SubscribeMessage('round')
   handleRound(@MessageBody() roomId: string) {
     const curRound = this.game[roomId].round++;
@@ -258,7 +265,7 @@ export class SocketGateway
     const target = this.game[roomId].keyword['_id'];
     this.game[roomId].target = target[curRound];
     this.server.to(roomId).emit('round', this.game[roomId]);
-  }
+  }*/
 
   // 답변
   async handleAnswer(@MessageBody() { roomId, chat }: Chat) {
@@ -281,4 +288,8 @@ export class SocketGateway
       roomInfo: this.roomInfo,
     });
   }
+
+  /*
+    kung kung tta handler
+  */
 }

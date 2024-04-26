@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
+import { KungService } from 'src/kung/kung.service';
 interface Chat {
     roomId: string;
     chat: string;
@@ -19,8 +20,9 @@ declare class Game {
     target: string;
 }
 export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+    private readonly kungService;
     private readonly socketService;
-    constructor(socketService: SocketService);
+    constructor(kungService: KungService, socketService: SocketService);
     server: Server;
     user: {
         [socketId: string]: any;
@@ -39,13 +41,17 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
     handleMessage({ roomId, chat }: Chat, client: Socket): Promise<void>;
     handleCreate(data: CreateRoomDto, client: any): Promise<void>;
     handleEnter({ roomId, password }: {
-        roomId: any;
-        password: any;
+        roomId: string;
+        password: string;
     }, client: any): Promise<void>;
     handleExit(roomId: string, client: Socket): Promise<void>;
+    handleKick({ roomId, userId }: {
+        roomId: string;
+        userId: string;
+    }, client: Socket): void;
+    hanldeKickHelper(roomId: string, client: Socket): Promise<void>;
     handleReady(roomId: string, client: Socket): void;
     handleStart(roomId: string, client: Socket): Promise<void>;
-    handleRound(roomId: string): void;
     handleAnswer({ roomId, chat }: Chat): Promise<void>;
     handleInfo(client: Socket): void;
 }
