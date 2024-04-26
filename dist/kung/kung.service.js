@@ -18,7 +18,13 @@ const socket_gateway_1 = require("../socket/socket.gateway");
 let KungService = class KungService {
     constructor(socketGateway) {
         this.socketGateway = socketGateway;
-        this.server = this.socketGateway.server;
+    }
+    setRule(roomId) {
+        this.server.to(roomId).emit('setRule', '금지어를 설정해주세요');
+    }
+    handleTest() {
+        console.log(this.server);
+        this.server.emit('kung', 'testing');
     }
 };
 exports.KungService = KungService;
