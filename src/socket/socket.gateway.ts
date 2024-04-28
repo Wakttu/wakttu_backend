@@ -21,7 +21,7 @@ interface Chat {
   chat: string;
 }
 
-class Game {
+export class Game {
   constructor() {
     this.host = '';
     this.round = 0;
@@ -220,6 +220,7 @@ export class SocketGateway
     await this.handleExit(roomId, client);
     client.emit('alarm', '퇴장 당하셨습니다.');
   }
+
   // 유저들의 ready 확인
   @SubscribeMessage('ready')
   handleReady(
@@ -234,6 +235,7 @@ export class SocketGateway
     }
     this.server.to(roomId).emit('ready', this.game[roomId].users);
   }
+
   // 게임 시작시 주제 단어 선정
   @SubscribeMessage('start')
   async handleStart(
@@ -292,4 +294,42 @@ export class SocketGateway
   /*
     kung kung tta handler
   */
+
+  @SubscribeMessage('kung.start')
+  async handleKungStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      return;
+    }
+    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+      return;
+    this.kungService.handleStart(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+    /*
+    this.game[roomId].total = this.game[roomId].users.length;
+    this.game[roomId].keyword = await this.socketService.setWord(
+      this.roomInfo[roomId].round,
+    );
+    await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
+    this.server.to(roomId).emit('start', this.game[roomId]);
+    */
+  }
+
+  @SubscribeMessage('kung.round')
+  handleKungRound(@MessageBody() roomId: string) {
+    const curRound = this.game[roomId].round++;
+    const lastRound = this.roomInfo[roomId].round;
+    if (curRound === lastRound) {
+      this.server.emit('end', { msg: 'end' });
+      return;
+    }
+    const target = this.game[roomId].keyword['_id'];
+    this.game[roomId].target = target[curRound];
+    this.server.to(roomId).emit('kung.round', this.game[roomId]);
+  }
 }
