@@ -15,22 +15,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.KungService = void 0;
 const common_1 = require("@nestjs/common");
 const socket_gateway_1 = require("../socket/socket.gateway");
+const socket_service_1 = require("../socket/socket.service");
+class Rule {
+    constructor(count = 8) {
+        this.ban = new Array(count).fill('');
+    }
+}
 let KungService = class KungService {
-    constructor(socketGateway) {
+    constructor(socketGateway, socketService) {
         this.socketGateway = socketGateway;
+        this.socketService = socketService;
+        this.rules = {};
     }
-    setRule(roomId) {
-        this.server.to(roomId).emit('setRule', '금지어를 설정해주세요');
+    async handleStart(roomId, roomInfo, game) {
+        game.total = game.users.length;
+        game.keyword = await this.socketService.setWord(roomInfo.round);
+        roomInfo.start = (await this.socketService.setStart(roomId, roomInfo.start)).start;
+        this.rules[roomId] = new Rule(roomInfo.users.length);
+        this.server.to(roomId).emit('start', game);
     }
-    handleTest() {
-        console.log(this.server);
-        this.server.emit('kung', 'testing');
+    handleBan(roomId, index, keyword) {
+        this.rules[roomId].ban[index] = keyword;
     }
 };
 exports.KungService = KungService;
 exports.KungService = KungService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)((0, common_1.forwardRef)(() => socket_gateway_1.SocketGateway))),
-    __metadata("design:paramtypes", [socket_gateway_1.SocketGateway])
+    __metadata("design:paramtypes", [socket_gateway_1.SocketGateway,
+        socket_service_1.SocketService])
 ], KungService);
 //# sourceMappingURL=kung.service.js.map
