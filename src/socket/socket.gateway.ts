@@ -123,7 +123,17 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
-      this.handleAnswer({ roomId, chat });
+      switch (this.roomInfo[roomId].type) {
+        case 0:
+          await this.handleAnswer({ roomId, chat });
+          break;
+        case 1:
+          await this.handleKungAnswer({ roomId, chat });
+          break;
+        case 2:
+          await this.handleAnswer({ roomId, chat });
+          break;
+      }
     } else
       this.server
         .to(roomId)
@@ -305,19 +315,11 @@ export class SocketGateway
     }
     if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
       return;
-    this.kungService.handleStart(
+    await this.kungService.handleStart(
       roomId,
       this.roomInfo[roomId],
       this.game[roomId],
     );
-    /*
-    this.game[roomId].total = this.game[roomId].users.length;
-    this.game[roomId].keyword = await this.socketService.setWord(
-      this.roomInfo[roomId].round,
-    );
-    await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
-    this.server.to(roomId).emit('start', this.game[roomId]);
-    */
   }
 
   @SubscribeMessage('kung.round')
@@ -331,5 +333,35 @@ export class SocketGateway
     const target = this.game[roomId].keyword['_id'];
     this.game[roomId].target = target[curRound];
     this.server.to(roomId).emit('kung.round', this.game[roomId]);
+  }
+
+  async handleKungAnswer(
+    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
+  ) {
+    if (chat.length !== 3) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '길이가 3이지 않습니다.' });
+      return;
+    }
+    const check = await this.socketService.findWord(chat);
+    if (check) {
+      this.game[roomId].turn += 1;
+      this.game[roomId].turn %= this.game[roomId].total;
+      const target = check['id'];
+      this.game[roomId].target = target[target.length - 1];
+    }
+    this.server.to(roomId).emit('kung.game', { answer: chat });
+    this.server.to(roomId).emit('turn', this.game[roomId]);
+  }
+
+  @SubscribeMessage('kung.ban')
+  handleKungBan(
+    @MessageBody() { roomId, keyword }: { roomId: string; keyword: string },
+    @ConnectedSocket() client: any,
+  ) {
+    const index = this.game[roomId].users.indexOf(client.id);
+    this.kungService.handleBan(roomId, index, keyword);
+    client.emit('kung.ban', { message: '금지단어 설정완료' });
   }
 }
