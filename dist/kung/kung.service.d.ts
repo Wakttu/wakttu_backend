@@ -1,8 +1,19 @@
-import { SocketGateway } from 'src/socket/socket.gateway';
+import { Room } from 'src/room/entities/room.entity';
+import { Game, SocketGateway } from 'src/socket/socket.gateway';
+import { SocketService } from 'src/socket/socket.service';
+declare class Rule {
+    constructor(count?: number);
+    ban: string[];
+}
 export declare class KungService {
     private readonly socketGateway;
-    constructor(socketGateway: SocketGateway);
+    private readonly socketService;
+    constructor(socketGateway: SocketGateway, socketService: SocketService);
     server: any;
-    setRule(roomId: string): void;
-    handleTest(): void;
+    rules: {
+        [roomId: string]: Rule;
+    };
+    handleStart(roomId: string, roomInfo: Room, game: Game): Promise<void>;
+    handleBan(roomId: string, index: number, keyword: string): void;
 }
+export {};

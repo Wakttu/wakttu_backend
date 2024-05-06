@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SocketGateway = void 0;
+exports.SocketGateway = exports.Game = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const socket_service_1 = require("./socket.service");
@@ -28,6 +28,7 @@ class Game {
         this.users = [];
     }
 }
+exports.Game = Game;
 let SocketGateway = class SocketGateway {
     constructor(kungService, socketService) {
         this.kungService = kungService;
@@ -77,7 +78,17 @@ let SocketGateway = class SocketGateway {
     }
     async handleMessage({ roomId, chat }, client) {
         if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
-            this.handleAnswer({ roomId, chat });
+            switch (this.roomInfo[roomId].type) {
+                case 0:
+                    await this.handleAnswer({ roomId, chat });
+                    break;
+                case 1:
+                    await this.handleKungAnswer({ roomId, chat });
+                    break;
+                case 2:
+                    await this.handleAnswer({ roomId, chat });
+                    break;
+            }
         }
         else
             this.server
@@ -174,6 +185,47 @@ let SocketGateway = class SocketGateway {
             user: this.user,
             roomInfo: this.roomInfo,
         });
+    }
+    async handleKungStart(roomId, client) {
+        if (this.game[roomId].host !== this.user[client.id].name) {
+            return;
+        }
+        if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+            return;
+        await this.kungService.handleStart(roomId, this.roomInfo[roomId], this.game[roomId]);
+    }
+    handleKungRound(roomId) {
+        const curRound = this.game[roomId].round++;
+        const lastRound = this.roomInfo[roomId].round;
+        if (curRound === lastRound) {
+            this.server.emit('end', { msg: 'end' });
+            return;
+        }
+        const target = this.game[roomId].keyword['_id'];
+        this.game[roomId].target = target[curRound];
+        this.server.to(roomId).emit('kung.round', this.game[roomId]);
+    }
+    async handleKungAnswer({ roomId, chat }) {
+        if (chat.length !== 3) {
+            this.server
+                .to(roomId)
+                .emit('alarm', { message: '길이가 3이지 않습니다.' });
+            return;
+        }
+        const check = await this.socketService.findWord(chat);
+        if (check) {
+            this.game[roomId].turn += 1;
+            this.game[roomId].turn %= this.game[roomId].total;
+            const target = check['id'];
+            this.game[roomId].target = target[target.length - 1];
+        }
+        this.server.to(roomId).emit('kung.game', { answer: chat });
+        this.server.to(roomId).emit('turn', this.game[roomId]);
+    }
+    handleKungBan({ roomId, keyword }, client) {
+        const index = this.game[roomId].users.indexOf(client.id);
+        this.kungService.handleBan(roomId, index, keyword);
+        client.emit('kung.ban', { message: '금지단어 설정완료' });
     }
 };
 exports.SocketGateway = SocketGateway;
@@ -278,6 +330,35 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket]),
     __metadata("design:returntype", void 0)
 ], SocketGateway.prototype, "handleInfo", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('kung.start'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleKungStart", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('kung.round'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SocketGateway.prototype, "handleKungRound", null);
+__decorate([
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SocketGateway.prototype, "handleKungAnswer", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('kung.ban'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], SocketGateway.prototype, "handleKungBan", null);
 exports.SocketGateway = SocketGateway = __decorate([
     (0, common_1.UseGuards)(socket_auth_guard_1.SocketAuthenticatedGuard),
     (0, websockets_1.WebSocketGateway)({ namespace: 'wakttu' }),

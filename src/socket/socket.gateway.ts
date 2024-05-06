@@ -21,7 +21,7 @@ interface Chat {
   chat: string;
 }
 
-class Game {
+export class Game {
   constructor() {
     this.host = '';
     this.round = 0;
@@ -123,7 +123,17 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
-      this.handleAnswer({ roomId, chat });
+      switch (this.roomInfo[roomId].type) {
+        case 0:
+          await this.handleAnswer({ roomId, chat });
+          break;
+        case 1:
+          await this.handleKungAnswer({ roomId, chat });
+          break;
+        case 2:
+          await this.handleAnswer({ roomId, chat });
+          break;
+      }
     } else
       this.server
         .to(roomId)
@@ -220,6 +230,7 @@ export class SocketGateway
     await this.handleExit(roomId, client);
     client.emit('alarm', '퇴장 당하셨습니다.');
   }
+
   // 유저들의 ready 확인
   @SubscribeMessage('ready')
   handleReady(
@@ -234,6 +245,7 @@ export class SocketGateway
     }
     this.server.to(roomId).emit('ready', this.game[roomId].users);
   }
+
   // 게임 시작시 주제 단어 선정
   @SubscribeMessage('start')
   async handleStart(
@@ -292,4 +304,64 @@ export class SocketGateway
   /*
     kung kung tta handler
   */
+
+  @SubscribeMessage('kung.start')
+  async handleKungStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      return;
+    }
+    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+      return;
+    await this.kungService.handleStart(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  @SubscribeMessage('kung.round')
+  handleKungRound(@MessageBody() roomId: string) {
+    const curRound = this.game[roomId].round++;
+    const lastRound = this.roomInfo[roomId].round;
+    if (curRound === lastRound) {
+      this.server.emit('end', { msg: 'end' });
+      return;
+    }
+    const target = this.game[roomId].keyword['_id'];
+    this.game[roomId].target = target[curRound];
+    this.server.to(roomId).emit('kung.round', this.game[roomId]);
+  }
+
+  async handleKungAnswer(
+    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
+  ) {
+    if (chat.length !== 3) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '길이가 3이지 않습니다.' });
+      return;
+    }
+    const check = await this.socketService.findWord(chat);
+    if (check) {
+      this.game[roomId].turn += 1;
+      this.game[roomId].turn %= this.game[roomId].total;
+      const target = check['id'];
+      this.game[roomId].target = target[target.length - 1];
+    }
+    this.server.to(roomId).emit('kung.game', { answer: chat });
+    this.server.to(roomId).emit('turn', this.game[roomId]);
+  }
+
+  @SubscribeMessage('kung.ban')
+  handleKungBan(
+    @MessageBody() { roomId, keyword }: { roomId: string; keyword: string },
+    @ConnectedSocket() client: any,
+  ) {
+    const index = this.game[roomId].users.indexOf(client.id);
+    this.kungService.handleBan(roomId, index, keyword);
+    client.emit('kung.ban', { message: '금지단어 설정완료' });
+  }
 }
