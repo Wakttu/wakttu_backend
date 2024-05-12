@@ -17,4 +17,6 @@ export declare class AuthController {
         msg: string;
         data?: undefined;
     }>;
+    checkId(id: string): Promise<any>;
+    checkName(name: string): Promise<any>;
 }

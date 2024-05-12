@@ -12,6 +12,12 @@ export declare class UserService {
         score: number;
         roomId: string;
     }>;
+    findByName(name: string): Promise<{
+        name: string;
+        id: string;
+        score: number;
+        roomId: string;
+    }>;
     roomCreate(id: string, roomId: string): Promise<{
         users: {
             name: string;
