@@ -6,7 +6,7 @@ import * as passport from 'passport';
 import { SessionAdapter } from './session.adapter';
 import * as session from 'express-session';
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
   const sessionMiddleware = session({
     secret: process.env.SECRET, // 세션을 암호화하기 위한 암호기 설정
     resave: false, // 모든 request마다 기존에 있던 session에 아무런 변경 사항이 없을 시에도 그 session을 다시 저장하는 옵션
