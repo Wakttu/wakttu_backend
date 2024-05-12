@@ -28,4 +28,14 @@ export declare class AuthService {
         status: number;
         message: string;
     }>;
+    checkId(id: string): Promise<{
+        status: number;
+        success: boolean;
+        message: string;
+    }>;
+    checkName(name: string): Promise<{
+        status: number;
+        success: boolean;
+        message: string;
+    }>;
 }

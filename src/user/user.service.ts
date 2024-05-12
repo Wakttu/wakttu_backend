@@ -24,6 +24,20 @@ export class UserService {
     });
     return response;
   }
+
+  async findByName(name: string) {
+    const response = await this.prisma.user.findUnique({
+      where: { name },
+      select: {
+        id: true,
+        name: true,
+        score: true,
+        roomId: true,
+        password: false,
+      },
+    });
+    return response;
+  }
   async roomCreate(id: string, roomId: string) {
     const response = await this.prisma.user.update({
       where: { id },

@@ -101,4 +101,30 @@ export class AuthController {
       };
     }
   }
+
+  @ApiOperation({ summary: 'check duplicate inspection of id' })
+  @ApiBody({
+    schema: {
+      properties: {
+        id: { type: 'string' },
+      },
+    },
+  })
+  @Post('check/id')
+  async checkId(@Body('id') id: string): Promise<any> {
+    return await this.authService.checkId(id);
+  }
+
+  @ApiOperation({ summary: 'check duplicate inspection of name' })
+  @ApiBody({
+    schema: {
+      properties: {
+        name: { type: 'string' },
+      },
+    },
+  })
+  @Post('check/name')
+  async checkName(@Body('name') name: string): Promise<any> {
+    return await this.authService.checkName(name);
+  }
 }
