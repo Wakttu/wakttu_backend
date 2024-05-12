@@ -56,6 +56,12 @@ let AuthController = class AuthController {
             };
         }
     }
+    async checkId(id) {
+        return await this.authService.checkId(id);
+    }
+    async checkName(name) {
+        return await this.authService.checkName(name);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -143,6 +149,36 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "user", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'check duplicate inspection of id' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            properties: {
+                id: { type: 'string' },
+            },
+        },
+    }),
+    (0, common_1.Post)('check/id'),
+    __param(0, (0, common_1.Body)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "checkId", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'check duplicate inspection of name' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            properties: {
+                name: { type: 'string' },
+            },
+        },
+    }),
+    (0, common_1.Post)('check/name'),
+    __param(0, (0, common_1.Body)('name')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "checkName", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),
