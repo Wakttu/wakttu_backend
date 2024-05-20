@@ -153,28 +153,35 @@ model Stats {
 }
 
 model User {
-  id       String  @id
-  name     String  @unique
-  score    Int     @default(0)
-  password String?
-  provider String
-
-  room   Room?   @relation(references: [id], fields: [roomId])
-  roomId String?
+  id           String  @id
+  name         String  @unique
+  score        Int     @default(0)
+  provider     String
+  password     String?
+  roomId       String?
+  refreshToken String?
+  room         Room?   @relation(fields: [roomId], references: [id])
 }
 
 model Room {
-  id       String   @id @default(uuid())
-  title    String
-  password String?
-  type     Int
-  round    Int
-  option   String[]
-  total    Int
-  start    Boolean  @default(false)
-
-  users User[]
-
+  id        String   @id @default(uuid())
+  title     String
+  password  String?
+  type      Int
+  option    String[]
+  start     Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  round     Int
+  total     Int
+  users     User[]
+}
+
+model wakttu_ko {
+  id    String  @id @map("_id") @db.VarChar
+  type  String?
+  mean  String?
+  meta  Json?   @db.Json
+  hit   Int @default(0)
+  wakta Boolean @default(false)
 }
