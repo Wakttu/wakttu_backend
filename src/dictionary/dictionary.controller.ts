@@ -43,4 +43,10 @@ export class DictionaryController {
   async remove(@Param('id') id: string) {
     return await this.dictionaryService.remove(id);
   }
+
+  @ApiOperation({ summary: '한방단어 인지 확인' })
+  @Get('manner/:keyword')
+  async checkManner(@Param('keyword') keyword: string) {
+    return await this.dictionaryService.checkManner(keyword);
+  }
 }
