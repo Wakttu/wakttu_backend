@@ -1,45 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>단어 찾기</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <h3>단어검색</h3>
-    <input type="text" id="find"> <button onclick="findWord()">버튼</button>
+    <input type="text" id="find" /> <button onclick="findWord()">버튼</button>
     <div id="info"></div>
 
-    <hr>
+    <hr />
 
     <h3>한방단어 체크</h3>
-    <input type="text" id="check"> <button onclick="check()">버튼</button>
+    <input type="text" id="check" /> <button onclick="check()">버튼</button>
     <div id="manner"></div>
-</body>
+  </body>
 
-<script>
+  <script>
     async function findWord() {
-        const input = document.getElementById('find');
-        console.log(input);
-        const keyword = input.value;
-        let info = await fetch(`http://localhost:3000/dictionary/${keyword}`).then(response => response.json());
-        const div = document.querySelector('#info');
-        div.innerHTML = `<p><span>단어 : ${info.id}</span> | <span>뜻 : ${info.mean}</span></p>`
+      const input = document.getElementById('find');
+      console.log(input);
+      const keyword = input.value;
+      const url = window.location.protocol + '//' + window.location.host;
+      console.log(url);
+      let info = await fetch(`${url}/dictionary/${keyword}`).then((response) =>
+        response.json(),
+      );
+      const div = document.querySelector('#info');
+      div.innerHTML = `<p><span>단어 : ${info.id}</span> | <span>뜻 : ${info.mean}</span></p>`;
     }
 
     async function check() {
-        const input = document.getElementById('check');
-        console.log(input);
-        const keyword = input.value;
-        let info = await fetch(`http://localhost:3000/dictionary/manner/${keyword}`).then(response => response.json());
-        const div = document.querySelector('#manner');
-        div.innerHTML = '';
-        for (let i = 0; i < info.length; i++) {
-            div.innerHTML += `<p>${info[i].id}</p>`;
-        }
+      const input = document.getElementById('check');
+      const keyword = input.value;
+      const url = window.location.protocol + '//' + window.location.host;
+      let info = await fetch(`${url}/dictionary/${keyword}`).then((response) =>
+        response.json(),
+      );
+      const div = document.querySelector('#manner');
+      div.innerHTML = '';
+      for (let i = 0; i < info.length; i++) {
+        div.innerHTML += `<p>${info[i].id}</p>`;
+      }
     }
-</script>
-
+  </script>
 </html>
