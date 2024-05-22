@@ -16,7 +16,8 @@
   <script>
     async function submit() {
       const inputs = document.querySelectorAll('input');
-      const response = await fetch('http://localhost:3000/auth/login', {
+      const url = window.location.protocol + '//' + window.location.host;
+      const response = await fetch(`${url}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,7 +28,7 @@
         }),
       });
       if (response.ok) {
-        window.location.replace('http://localhost:3000/kung-test.html');
+        window.location.replace(`${url}/kung-test.html`);
       }
     }
   </script>
