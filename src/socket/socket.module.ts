@@ -5,12 +5,14 @@ import { RoomModule } from 'src/room/room.module';
 import { DictionaryModule } from 'src/dictionary/dictionary.module';
 import { UserModule } from 'src/user/user.module';
 import { KungModule } from 'src/kung/kung.module';
+import { LastModule } from 'src/last/last.module';
 
 @Module({
   imports: [
     UserModule,
     RoomModule,
     DictionaryModule,
+    forwardRef(() => LastModule),
     forwardRef(() => KungModule),
   ],
   providers: [SocketGateway, SocketService],

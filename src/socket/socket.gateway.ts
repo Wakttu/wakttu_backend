@@ -15,6 +15,7 @@ import { SocketAuthenticatedGuard } from 'src/auth/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
 import { KungService } from 'src/kung/kung.service';
+import { LastService } from 'src/last/last.service';
 
 interface Chat {
   roomId: string;
@@ -44,6 +45,8 @@ export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   constructor(
+    @Inject(forwardRef(() => LastService))
+    private readonly lastService: LastService,
     @Inject(forwardRef(() => KungService))
     private readonly kungService: KungService,
     private readonly socketService: SocketService,
@@ -77,6 +80,7 @@ export class SocketGateway
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
     await this.socketService.deleteAllRoom();
+    this.lastService.server = this.server;
     this.kungService.server = this.server; // 서버를 service와 연결
     console.log('socket is open!');
   }
@@ -88,10 +92,7 @@ export class SocketGateway
     if (roomId) {
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-      if (
-        this.roomInfo[roomId].users &&
-        this.roomInfo[roomId].users.length > 0
-      ) {
+      if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
         this.game[roomId].host = this.roomInfo[roomId].users[0].name;
         this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
       } else {
@@ -116,6 +117,7 @@ export class SocketGateway
     const roomList = await this.socketService.getRoomList();
     client.emit('roomList', roomList);
   }
+
   // 게임 방에서 대화
   @SubscribeMessage('chat')
   async handleMessage(
@@ -125,7 +127,7 @@ export class SocketGateway
     if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
       switch (this.roomInfo[roomId].type) {
         case 0:
-          await this.handleAnswer({ roomId, chat });
+          await this.handleLastAnswer({ roomId, chat });
           break;
         case 1:
           await this.handleKungAnswer({ roomId, chat });
@@ -302,7 +304,53 @@ export class SocketGateway
   }
 
   /*
-    kung kung tta handler
+   끝말잇기
+  */
+  @SubscribeMessage('last.start')
+  async handleLastStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      return;
+    }
+    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+      return;
+    await this.lastService.handleStart(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  @SubscribeMessage('last.round')
+  handleLastRound(@MessageBody() roomId: string) {
+    this.lastService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+  async handleLastAnswer(
+    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
+  ) {
+    const check = await this.socketService.findWord(chat);
+    let success = false;
+    if (check) {
+      this.game[roomId].turn += 1;
+      this.game[roomId].turn %= this.game[roomId].total;
+      const target = check['id'];
+      this.game[roomId].target = target[target.length - 1];
+      success = true;
+    }
+    this.server.to(roomId).emit('last.game', {
+      success: success,
+      answer: chat,
+      game: this.game[roomId],
+    });
+  }
+  /*
+    쿵쿵따
   */
 
   @SubscribeMessage('kung.start')
@@ -345,14 +393,19 @@ export class SocketGateway
       return;
     }
     const check = await this.socketService.findWord(chat);
+    let success = false;
     if (check) {
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
       const target = check['id'];
       this.game[roomId].target = target[target.length - 1];
+      success = true;
     }
-    this.server.to(roomId).emit('kung.game', { answer: chat });
-    this.server.to(roomId).emit('turn', this.game[roomId]);
+    this.server.to(roomId).emit('kung.game', {
+      success: success,
+      answer: chat,
+      game: this.game[roomId],
+    });
   }
 
   @SubscribeMessage('kung.ban')
