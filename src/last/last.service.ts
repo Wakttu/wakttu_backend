@@ -4,14 +4,11 @@ import { Game, SocketGateway } from 'src/socket/socket.gateway';
 import { SocketService } from 'src/socket/socket.service';
 
 class Rule {
-  constructor(count: number = 8) {
-    this.ban = new Array(count).fill('');
-  }
-  ban: string[];
+  mission: string;
 }
 
 @Injectable()
-export class KungService {
+export class LastService {
   constructor(
     @Inject(forwardRef(() => SocketGateway))
     private readonly socketGateway: SocketGateway,
@@ -28,11 +25,18 @@ export class KungService {
     roomInfo.start = (
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
-    this.rules[roomId] = new Rule(roomInfo.users.length);
-    this.server.to(roomId).emit('kung.start', game);
+    this.server.to(roomId).emit('last.start', game);
   }
 
-  handleBan(roomId: string, index: number, keyword: string) {
-    this.rules[roomId].ban[index] = keyword;
+  handleRound(roomId: string, roomInfo: Room, game: Game) {
+    const curRound = game.round++;
+    const lastRound = roomInfo.round;
+    if (curRound === lastRound) {
+      this.server.to(roomId).emit('end', { message: 'end' });
+      return;
+    }
+    const target = game.keyword['_id'];
+    game.target = target[curRound];
+    this.server.to(roomId).emit('last.round', game);
   }
 }
