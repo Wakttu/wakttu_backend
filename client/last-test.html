@@ -41,12 +41,11 @@
     <div class="modal">
       <div class="modal_body">
         <h2 id="modal_title"></h2>
-        <button class="mx-1" onclick="closeModal()">나가기</button>
+        <button class="mx-1" onclick="exit()">나가기</button>
         <button class="mx-1" onclick="ready()">Ready</button>
         <button class="mx-1" onclick="start()">start</button>
         <button class="mx-1" onclick="info()">Info</button>
         <button class="mx-1" onclick="round()">Round</button>
-        <button class="mx-1" onclick="updateRoom()">update</button>
         <div class="border" id="roomUserList">
           <h4>유저목록</h4>
           <div class="d-flex" id="roomUserList"></div>
@@ -106,7 +105,7 @@
         title: '방의 제목',
         type: 0,
         round: 6,
-        option: ['품어', '매너', '외수'],
+        option: ['품어', '매너'],
         total: 8,
       };
       socket.emit('createRoom', data);
@@ -168,12 +167,13 @@
 
     function exit() {
       socket.emit('exit', roomId);
+      closeModal();
     }
 
     // chat
     socket.on('chat', (data) => {
       const log = document.querySelector('#log');
-      log.innerHTML += `<p>${data['user']['name']}: ${data['chat']}</p>`;
+      log.innerHTML += `<p>${data['name']}: ${data['chat']}</p>`;
     });
 
     function chat() {
@@ -221,21 +221,6 @@
 
     function info() {
       socket.emit('info');
-    }
-
-    socket.on('updateRoom', (data) => {
-      cosnole.log(data);
-    });
-
-    function updateRoom() {
-      const data = {
-        title: 'update',
-        password: '123456',
-      };
-      socket.emit('updateRoom', {
-        roomId,
-        data,
-      });
     }
   </script>
 

@@ -29,7 +29,7 @@ export class KungService {
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
     this.rules[roomId] = new Rule(roomInfo.users.length);
-    this.server.to(roomId).emit('start', game);
+    this.server.to(roomId).emit('kung.start', game);
   }
 
   handleBan(roomId: string, index: number, keyword: string) {
