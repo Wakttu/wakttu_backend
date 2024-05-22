@@ -10,6 +10,7 @@ import { join } from 'path';
 import { DictionaryModule } from './dictionary/dictionary.module';
 import { RoomModule } from './room/room.module';
 import { KungModule } from './kung/kung.module';
+import { LastModule } from './last/last.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -22,6 +23,7 @@ import { KungModule } from './kung/kung.module';
     DictionaryModule,
     RoomModule,
     KungModule,
+    LastModule,
   ],
   controllers: [AppController],
   providers: [AppService],
