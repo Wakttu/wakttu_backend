@@ -11,6 +11,7 @@ import { DictionaryModule } from './dictionary/dictionary.module';
 import { RoomModule } from './room/room.module';
 import { KungModule } from './kung/kung.module';
 import { LastModule } from './last/last.module';
+import { MemeModule } from './meme/meme.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -24,6 +25,7 @@ import { LastModule } from './last/last.module';
     RoomModule,
     KungModule,
     LastModule,
+    MemeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
