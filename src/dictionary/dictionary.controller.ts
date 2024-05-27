@@ -23,7 +23,7 @@ export class DictionaryController {
     return await this.dictionaryService.create(createDictionaryDto);
   }
 
-  @ApiOperation({ summary: '단어 추가 검색' })
+  @ApiOperation({ summary: '단어 검색' })
   @Get(':id')
   async findById(@Param('id') id: string) {
     return await this.dictionaryService.findById(id);
