@@ -46,6 +46,15 @@ model wakttu_ko {
   type  String?
   mean  String?
   meta  Json?   @db.Json
-  hit   Int @default(0)
+  hit   Int     @default(0)
   wakta Boolean @default(false)
+}
+
+model wakttu_meme {
+  id       String   @id @map("_id") @db.VarChar
+  mean     String?
+  hint     String[]
+  tag      String[]
+  choseong String
+  meta     Json?    @db.Json
 }
