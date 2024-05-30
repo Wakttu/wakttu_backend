@@ -31,8 +31,20 @@ export class KungService {
     this.rules[roomId] = new Rule(roomInfo.users.length);
     this.server.to(roomId).emit('kung.start', game);
   }
+  handleRound(roomId: string, roomInfo: Room, game: Game) {
+    const curRound = game.round++;
+    const lastRound = roomInfo.round;
+    if (curRound === lastRound) {
+      this.server.to(roomId).emit('end', { message: 'end' });
+      return;
+    }
+    const target = game.keyword['_id'];
+    game.target = target[curRound];
+    this.server.to(roomId).emit('kung.round', game);
+  }
 
   handleBan(roomId: string, index: number, keyword: string) {
     this.rules[roomId].ban[index] = keyword;
+    this.server.to(roomId).emit('kung.ban', this.rules[roomId]);
   }
 }
