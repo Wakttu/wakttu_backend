@@ -331,6 +331,7 @@ export class SocketGateway
       this.game[roomId],
     );
   }
+
   async handleLastAnswer(
     @MessageBody() { roomId, chat }: { roomId: string; chat: string },
   ) {
@@ -372,17 +373,12 @@ export class SocketGateway
 
   @SubscribeMessage('kung.round')
   handleKungRound(@MessageBody() roomId: string) {
-    const curRound = this.game[roomId].round++;
-    const lastRound = this.roomInfo[roomId].round;
-    if (curRound === lastRound) {
-      this.server.emit('end', { msg: 'end' });
-      return;
-    }
-    const target = this.game[roomId].keyword['_id'];
-    this.game[roomId].target = target[curRound];
-    this.server.to(roomId).emit('kung.round', this.game[roomId]);
+    this.kungService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
   }
-
   async handleKungAnswer(
     @MessageBody() { roomId, chat }: { roomId: string; chat: string },
   ) {
@@ -413,8 +409,10 @@ export class SocketGateway
     @MessageBody() { roomId, keyword }: { roomId: string; keyword: string },
     @ConnectedSocket() client: any,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
+    let index = this.game[roomId].users.indexOf(client.id);
+    index += 1;
+    index %= this.game[roomId].total;
     this.kungService.handleBan(roomId, index, keyword);
-    client.emit('kung.ban', { message: '금지단어 설정완료' });
+    client.emit('alarm', { message: '금지단어 설정완료' });
   }
 }
