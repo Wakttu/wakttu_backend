@@ -186,11 +186,11 @@ model wakttu_ko {
   wakta Boolean @default(false)
 }
 
-model wakttu_meme {
-  id       String   @id @map("_id") @db.VarChar
-  mean     String?
-  hint     String[]
-  tag      String[]
-  choseong String
-  meta     Json?    @db.Json
+model wakttu_quiz{
+  id Int @id @default(autoincrement())
+  type  String
+  qestion String 
+  answer String
+  hint String[]
+  tag String[]
 }
