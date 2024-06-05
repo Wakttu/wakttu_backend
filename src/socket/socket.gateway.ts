@@ -267,20 +267,6 @@ export class SocketGateway
     this.server.to(roomId).emit('start', this.game[roomId]);
   }
 
-  /* 모듈분리까지 잠깐 주석처리
-  @SubscribeMessage('round')
-  handleRound(@MessageBody() roomId: string) {
-    const curRound = this.game[roomId].round++;
-    const lastRound = this.roomInfo[roomId].round;
-    if (curRound === lastRound) {
-      this.server.emit('end', { msg: 'end' });
-      return;
-    }
-    const target = this.game[roomId].keyword['_id'];
-    this.game[roomId].target = target[curRound];
-    this.server.to(roomId).emit('round', this.game[roomId]);
-  }*/
-
   // 답변
   async handleAnswer(@MessageBody() { roomId, chat }: Chat) {
     const check = await this.socketService.findWord(chat);
@@ -312,10 +298,20 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
+      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
-    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
+    }
+    this.handleReady(roomId, client);
+    this.lastService.handleShuffle(this.game[roomId]);
     await this.lastService.handleStart(
       roomId,
       this.roomInfo[roomId],
@@ -360,10 +356,20 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
+      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
-    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
+    }
+    this.handleReady(roomId, client);
+    this.kungService.handleShuffle(this.game[roomId]);
     await this.kungService.handleStart(
       roomId,
       this.roomInfo[roomId],
