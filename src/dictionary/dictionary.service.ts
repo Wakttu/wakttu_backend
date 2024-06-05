@@ -27,16 +27,10 @@ export class DictionaryService {
     return await this.prisma.wakttu_ko.delete({ where: { id } });
   }
 
-  async getWord(length: number) {
+  async getWord(length: number): Promise<string> {
     const list: string[] = await this.prisma
-      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} LIMIT 10000`;
-    let idx;
-    if (list.length < 10000) {
-      idx = Math.floor(Math.random() * list.length);
-    } else {
-      idx = Math.floor(Math.random() * 10000);
-    }
-    return list[idx];
+      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} ORDER BY random() LIMIT 1`;
+    return list[0];
   }
 
   async checkManner(keyword: string) {
