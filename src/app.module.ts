@@ -11,7 +11,6 @@ import { DictionaryModule } from './dictionary/dictionary.module';
 import { RoomModule } from './room/room.module';
 import { KungModule } from './kung/kung.module';
 import { LastModule } from './last/last.module';
-import { MemeModule } from './meme/meme.module';
 import { QuizModule } from './quiz/quiz.module';
 @Module({
   imports: [
@@ -26,7 +25,6 @@ import { QuizModule } from './quiz/quiz.module';
     RoomModule,
     KungModule,
     LastModule,
-    MemeModule,
     QuizModule,
   ],
   controllers: [AppController],
