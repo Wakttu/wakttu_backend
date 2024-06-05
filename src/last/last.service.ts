@@ -39,4 +39,13 @@ export class LastService {
     game.target = target[curRound];
     this.server.to(roomId).emit('last.round', game);
   }
+
+  handleShuffle(game: Game) {
+    const arr = game.users;
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    game.users = arr;
+  }
 }
