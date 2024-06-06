@@ -91,6 +91,7 @@ export class SocketGateway
     if (!client.request.user) return;
     const roomId = this.user[client.id].roomId;
     if (roomId) {
+      this.handleExitReady(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
@@ -198,6 +199,7 @@ export class SocketGateway
     if (!client.rooms.has(roomId)) {
       return;
     }
+    this.handleExitReady(roomId, client);
     await this.socketService.exitRoom(this.user[client.id].id);
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
@@ -249,6 +251,15 @@ export class SocketGateway
       this.game[roomId].users.splice(index, 1);
     }
     this.server.to(roomId).emit('ready', this.game[roomId].users);
+  }
+
+  handleExitReady(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const index = this.game[roomId].users.indexOf(client.id);
+    if (index === -1) return;
+    this.game[roomId].users.splice(index, 1);
   }
 
   // Get 변수
