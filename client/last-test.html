@@ -1,246 +1,242 @@
 <!doctype html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>끝말잇기테스트</title>
-    <link rel="stylesheet" href="last.css" />
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-      crossorigin="anonymous"
-    />
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-      crossorigin="anonymous"
-    ></script>
-  </head>
 
-  <body>
-    <div class="d-flex flex-column">
-      <!--User List-->
-      <h2>접속한 유저목록</h2>
-      <div class="d-flex" id="userList"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>끝말잇기테스트</title>
+  <link rel="stylesheet" href="last.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+</head>
 
-      <!--Button-->
-      <h2>Button zone</h2>
-      <div class="d-flex flex-low">
-        <button onclick="createRoom()">방생성</button>
-        <button onclick="roomList()">방정보확인</button>
-        <button onclick="openModal()">모달확인</button>
-      </div>
-      <!--Room List-->
-      <div>
-        <h2>방리스트</h2>
-        <div id="roomList" class="d-flex flex-wrap"></div>
-      </div>
+<body>
+  <div class="d-flex flex-column">
+    <!--User List-->
+    <h2>접속한 유저목록</h2>
+    <div class="d-flex" id="userList"></div>
+
+    <!--Button-->
+    <h2>Button zone</h2>
+    <div class="d-flex flex-low">
+      <button onclick="createRoom()">방생성</button>
+      <button onclick="roomList()">방정보확인</button>
+      <button onclick="openModal()">모달확인</button>
     </div>
-    <!--Modal-->
-    <div class="modal">
-      <div class="modal_body">
-        <h2 id="modal_title"></h2>
-        <button class="mx-1" onclick="exit()">나가기</button>
-        <button class="mx-1" onclick="ready()">Ready</button>
-        <button class="mx-1" onclick="start()">start</button>
-        <button class="mx-1" onclick="info()">Info</button>
-        <button class="mx-1" onclick="round()">Round</button>
-        <div class="border" id="roomUserList">
-          <h4>유저목록</h4>
-          <div class="d-flex" id="roomUserList"></div>
-        </div>
-        <div class="border" id="game"></div>
-        <div class="border" id="log"></div>
-        <div class="d-flex justify-content-center">
-          <div>
-            <input type="text" name="chat" id="chat" /><button onclick="chat()">
-              보내기
-            </button>
-          </div>
+    <!--Room List-->
+    <div>
+      <h2>방리스트</h2>
+      <div id="roomList" class="d-flex flex-wrap"></div>
+    </div>
+  </div>
+  <!--Modal-->
+  <div class="modal">
+    <div class="modal_body">
+      <h2 id="modal_title"></h2>
+      <button class="mx-1" onclick="closeModal()">나가기</button>
+      <button class="mx-1" onclick="ready()">Ready</button>
+      <button class="mx-1" onclick="start()">start</button>
+      <button class="mx-1" onclick="info()">Info</button>
+      <button class="mx-1" onclick="round()">Round</button>
+      <div class="border" id="roomUserList">
+        <h4>유저목록</h4>
+        <div class="d-flex" id="roomUserList"></div>
+      </div>
+      <div class="border" id="game"></div>
+      <div class="border" id="log"></div>
+      <div class="d-flex justify-content-center">
+        <div>
+          <input type="text" name="chat" id="chat" /><button onclick="chat()">
+            보내기
+          </button>
         </div>
       </div>
     </div>
-  </body>
-  <script src="https://port-0-wakttu-backend-2aat2cluozach9.sel5.cloudtype.app/socket.io/socket.io.js"></script>
+  </div>
+</body>
+<script src="https://port-0-wakttu-backend-2aat2cluozach9.sel5.cloudtype.app/socket.io/socket.io.js"></script>
 
-  <script>
-    const socket = io('/wakttu');
+<script>
+  const socket = io('/wakttu');
 
-    // user 목록
-    let users = {};
+  // user 목록
+  let users = {};
 
-    // room 목록
-    let rooms = {};
+  // room 목록
+  let rooms = {};
 
-    // 들어갈 room 정보
-    let roomId;
-    let password;
-    let roomInfo;
+  // 들어갈 room 정보
+  let roomId;
+  let password;
+  let roomInfo;
 
-    // user list 받는 event : Backend에서 this.user
-    socket.on('list', (data) => {
-      console.log('event:list');
-      const userList = document.querySelector('#userList');
-      userList.innerHTML = '';
-      for (let i in data) {
-        let div = document.createElement('div');
-        div.className += 'mx-1';
-        div.innerText = data[i].name;
-        users[i] = data[i];
-        userList.appendChild(div);
-      }
-    });
-
-    // room 생성 받는 event : createRoom
-    socket.on('createRoom', (data) => {
-      console.log('event:createRoom');
-      roomId = data['roomId'];
-      password = data['password'];
-      openModal();
-    });
-
-    function createRoom() {
-      let data = {
-        title: '방의 제목',
-        type: 0,
-        round: 6,
-        option: ['품어', '매너'],
-        total: 8,
-      };
-      socket.emit('createRoom', data);
+  // user list 받는 event : Backend에서 this.user
+  socket.on('list', (data) => {
+    console.log('event:list');
+    const userList = document.querySelector('#userList');
+    userList.innerHTML = '';
+    for (let i in data) {
+      let div = document.createElement('div');
+      div.className += 'mx-1';
+      div.innerText = data[i].name;
+      users[i] = data[i];
+      userList.appendChild(div);
     }
+  });
 
-    // room list 받는 event : DB에 생성된 방정보
-    socket.on('roomList', (data) => {
-      console.log('event:roomList');
-      const roomList = document.querySelector('#roomList');
-      roomList.innerHTML = '';
-      for (let i in data) {
-        let div = document.createElement('div');
-        div.className += 'mx-1';
-        div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" data-password="${data[i].password}" onclick="enter(this);">
+  // room 생성 받는 event : createRoom
+  socket.on('createRoom', (data) => {
+    console.log('event:createRoom');
+    roomId = data['roomId'];
+    password = data['password'];
+    openModal();
+  });
+
+  function createRoom() {
+    let data = {
+      title: '방의 제목',
+      type: 0,
+      round: 6,
+      option: ['품어', '매너', '외수'],
+      total: 8,
+    };
+    socket.emit('createRoom', data);
+  }
+
+  // room list 받는 event : DB에 생성된 방정보
+  socket.on('roomList', (data) => {
+    console.log('event:roomList');
+    const roomList = document.querySelector('#roomList');
+    roomList.innerHTML = '';
+    for (let i in data) {
+      let div = document.createElement('div');
+      div.className += 'mx-1';
+      div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" data-password="${data[i].password}" onclick="enter(this);">
             <div class="card-body">
                 <h5 class="card-title">${data[i].title}</h5>
                 <p class="card-text">round:${data[i].round}|total:${data[i].users.length}/${data[i].total}|option:${data[i].option}</p>
 
             </div>
         </div>`;
-        rooms[i] = data[i];
-        roomList.appendChild(div);
-      }
-    });
-
-    function roomList() {
-      socket.emit('roomList');
+      rooms[i] = data[i];
+      roomList.appendChild(div);
     }
+  });
 
-    // enter Room
-    socket.on('enter', (data) => {
-      const modal_title = document.querySelector('#modal_title');
-      const roomUserList = document.querySelector('#roomUserList');
-      roomUserList.innerHTML = '';
-      modal_title.innerText = data['title'];
-      const users = data['users'];
-      for (let i = 0; i < users.length; i++) {
-        roomUserList.innerHTML += `<div class="mx-1">${users[i].name}</div>`;
-      }
-      openModal();
-    });
+  function roomList() {
+    socket.emit('roomList');
+  }
 
-    function enter(data) {
-      if (data) {
-        roomId = data.dataset['id'];
-      }
-      socket.emit('enter', { roomId, password: null });
+  // enter Room
+  socket.on('enter', (data) => {
+    const modal_title = document.querySelector('#modal_title');
+    const roomUserList = document.querySelector('#roomUserList');
+    roomUserList.innerHTML = '';
+    modal_title.innerText = data['title'];
+    const users = data['users'];
+    for (let i = 0; i < users.length; i++) {
+      roomUserList.innerHTML += `<div class="mx-1">${users[i].name}</div>`;
     }
+    openModal();
+  });
 
-    // exit Room
-    socket.on('exit', (data) => {
-      const roomUserList = document.querySelector('#roomUserList');
-      roomUserList.innerHTML = '';
-      const users = data['users'];
-      for (let i = 0; i < users.length; i++) {
-        roomUserList.innerHTML += `<div class="mx-1">${users[i].name}</div>`;
-      }
-    });
-
-    function exit() {
-      socket.emit('exit', roomId);
-      closeModal();
+  function enter(data) {
+    if (data) {
+      roomId = data.dataset['id'];
     }
+    socket.emit('enter', { roomId, password: null });
+  }
 
-    // chat
-    socket.on('chat', (data) => {
-      const log = document.querySelector('#log');
-      log.innerHTML += `<p>${data['name']}: ${data['chat']}</p>`;
-    });
+  // exit Room
+  socket.on('exit', (data) => {
 
-    function chat() {
-      const message = document.querySelector('#chat').value;
-      socket.emit('chat', { roomId: roomId, chat: message });
+    const roomUserList = document.querySelector('#roomUserList');
+    roomUserList.innerHTML = '';
+    const users = data['users'];
+    for (let i = 0; i < users.length; i++) {
+      roomUserList.innerHTML += `<div class="mx-1">${users[i].name}</div>`;
     }
+  });
 
-    // Round
-    socket.on('ready', (data) => {
-      console.log('ready', data);
-    });
+  function exit() {
+    socket.emit('exit', roomId);
+  }
 
-    function ready() {
-      socket.emit('ready', roomId);
-    }
+  // chat
+  socket.on('chat', (data) => {
+    const log = document.querySelector('#log');
+    log.innerHTML += `<p>${data['name']}: ${data['chat']}</p>`;
+  });
 
-    // last Start
-    socket.on('last.start', (data) => {
-      console.log('start', data);
-    });
+  function chat() {
+    const message = document.querySelector('#chat').value;
+    socket.emit('chat', { roomId: roomId, chat: message });
+  }
 
-    function start() {
-      socket.emit('last.start', roomId);
-    }
+  // Round
+  socket.on('ready', (data) => {
+    console.log('ready', data);
+  });
 
-    // last Round
-    socket.on('last.round', (data) => {
-      console.log(data);
-    });
+  function ready() {
+    socket.emit('ready', roomId);
+  }
 
-    function round() {
-      socket.emit('last.round', roomId);
-    }
+  // last Start
+  socket.on('last.start', (data) => {
+    console.log('start', data);
+  });
 
-    // last game
-    socket.on('last.game', (data) => {
-      const game = document.querySelector('#game');
-      game.innerHTML = `<p>${data['answer']}</p>`;
-    });
+  function start() {
+    socket.emit('last.start', roomId);
+  }
 
-    // Info
-    socket.on('info', (data) => {
-      console.log('info', data);
-    });
+  // last Round
+  socket.on('last.round', (data) => {
+    console.log(data);
+  });
 
-    function info() {
-      socket.emit('info');
-    }
-  </script>
+  function round() {
+    socket.emit('last.round', roomId);
+  }
 
-  <script>
-    socket.on('alarm', (data) => {
-      console.log('alarm', data);
-    });
-    roomList();
+  // last game
+  socket.on('last.game', (data) => {
+    const game = document.querySelector('#game');
+    game.innerHTML = `<p>${data['answer']}</p>`;
+  });
 
-    const modal = document.querySelector('.modal');
-    const btnOpenModal = document.querySelector('.modal_button');
+  // Info
+  socket.on('info', (data) => {
+    console.log('info', data);
+  });
 
-    function openModal() {
-      modal.style.display = 'flex';
-      enter();
-    }
+  function info() {
+    socket.emit('info');
+  }
+</script>
 
-    function closeModal() {
-      modal.style.display = 'none';
-      exit();
-    }
-  </script>
+<script>
+  socket.on('alarm', (data) => {
+    console.log('alarm', data);
+  });
+  roomList();
+
+  const modal = document.querySelector('.modal');
+  const btnOpenModal = document.querySelector('.modal_button');
+
+  function openModal() {
+    modal.style.display = 'flex';
+    enter();
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    exit();
+  }
+</script>
+
 </html>

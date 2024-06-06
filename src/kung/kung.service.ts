@@ -47,13 +47,4 @@ export class KungService {
     this.rules[roomId].ban[index] = keyword;
     this.server.to(roomId).emit('kung.ban', this.rules[roomId]);
   }
-
-  handleShuffle(game: Game) {
-    const arr = game.users;
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    game.users = arr;
-  }
 }
