@@ -33,10 +33,11 @@ export class DictionaryService {
     return list[0];
   }
 
-  async checkManner(keyword: string) {
-    return await this.prisma.wakttu_ko.findMany({
-      where: { id: { startsWith: keyword } },
-      take: 10,
+  async checkManner(keyword: string): Promise<boolean> {
+    const res = await this.prisma.wakttu_manner.findUnique({
+      where: { id: keyword },
     });
+    if (res) return true;
+    return false;
   }
 }

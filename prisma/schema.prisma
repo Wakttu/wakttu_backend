@@ -50,11 +50,15 @@ model wakttu_ko {
   wakta Boolean @default(false)
 }
 
-model wakttu_quiz{
-  id Int @id @default(autoincrement())
-  type  String
-  qestion String 
-  answer String
-  hint String[]
-  tag String[]
+model wakttu_quiz {
+  id      Int      @id @default(autoincrement())
+  type    String
+  qestion String
+  answer  String
+  hint    String[]
+  tag     String[]
+}
+
+model wakttu_manner {
+  id String @id @map("_id") @db.VarChar
 }

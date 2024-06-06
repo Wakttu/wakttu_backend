@@ -5,6 +5,7 @@ import { RoomService } from 'src/room/room.service';
 import { CreateRoom, Room } from 'src/room/entities/room.entity';
 import { UserService } from 'src/user/user.service';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
+import { Game } from './socket.gateway';
 @Injectable()
 export class SocketService {
   constructor(
@@ -74,5 +75,66 @@ export class SocketService {
     password: string | undefined,
   ): Promise<boolean> {
     return await this.roomService.checkPassword(roomId, password);
+  }
+
+  shuffle(game: Game) {
+    const arr = game.users;
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    game.users = arr;
+  }
+
+  async checkManner(keyword: string): Promise<boolean> {
+    const flag = await this.dicService.checkManner(keyword);
+    if (flag) return true;
+    return false;
+  }
+
+  checkWakta(type: string): boolean {
+    if (type === 'WAKTA') return true;
+    return false;
+  }
+
+  checkInjeong(type: string): boolean {
+    if (type === 'INJEONG') return true;
+    return false;
+  }
+
+  getOption(option: string[]): boolean[] {
+    const flag: boolean[] = [false, false, false];
+    if (option.includes('매너')) {
+      flag[0] = true;
+    }
+    if (option.includes('품어')) {
+      flag[1] = true;
+    }
+    if (option.includes('외수')) {
+      flag[2] = true;
+    }
+    return flag;
+  }
+
+  async checkOption(
+    option: boolean[],
+    keyword: string,
+    type: string,
+  ): Promise<any> {
+    if (option[0]) {
+      const flag0 = await this.checkManner(keyword);
+      if (!flag0) return { success: false, message: '한방 단어 금지!' };
+    }
+
+    if (!option[1]) {
+      const flag1 = this.checkWakta(type);
+      if (flag1) return { success: false, message: '품어 단어 금지!' };
+    }
+
+    if (!option[2]) {
+      const flag2 = this.checkInjeong(type);
+      if (flag2) return { success: false, message: '외수 단어 금지!' };
+    }
+    return { success: true, message: '성공' };
   }
 }

@@ -37,6 +37,7 @@ export class Game {
   users: string[];
   keyword: string;
   target: string;
+  option: boolean[];
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -90,6 +91,7 @@ export class SocketGateway
     if (!client.request.user) return;
     const roomId = this.user[client.id].roomId;
     if (roomId) {
+      this.handleExitReady(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
@@ -126,15 +128,17 @@ export class SocketGateway
   ) {
     if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
       switch (this.roomInfo[roomId].type) {
+        // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
           await this.handleLastAnswer({ roomId, chat });
           break;
         case 1:
           await this.handleKungAnswer({ roomId, chat });
           break;
-        case 2:
+        /* case 2:
           await this.handleAnswer({ roomId, chat });
           break;
+          */
       }
     } else
       this.server
@@ -195,6 +199,7 @@ export class SocketGateway
     if (!client.rooms.has(roomId)) {
       return;
     }
+    this.handleExitReady(roomId, client);
     await this.socketService.exitRoom(this.user[client.id].id);
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
@@ -248,49 +253,13 @@ export class SocketGateway
     this.server.to(roomId).emit('ready', this.game[roomId].users);
   }
 
-  // 게임 시작시 주제 단어 선정
-  @SubscribeMessage('start')
-  async handleStart(
+  handleExitReady(
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].name) {
-      return;
-    }
-    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
-      return;
-    this.game[roomId].total = this.game[roomId].users.length;
-    this.game[roomId].keyword = await this.socketService.setWord(
-      this.roomInfo[roomId].round,
-    );
-    await this.socketService.setStart(roomId, this.roomInfo[roomId].start);
-    this.server.to(roomId).emit('start', this.game[roomId]);
-  }
-
-  /* 모듈분리까지 잠깐 주석처리
-  @SubscribeMessage('round')
-  handleRound(@MessageBody() roomId: string) {
-    const curRound = this.game[roomId].round++;
-    const lastRound = this.roomInfo[roomId].round;
-    if (curRound === lastRound) {
-      this.server.emit('end', { msg: 'end' });
-      return;
-    }
-    const target = this.game[roomId].keyword['_id'];
-    this.game[roomId].target = target[curRound];
-    this.server.to(roomId).emit('round', this.game[roomId]);
-  }*/
-
-  // 답변
-  async handleAnswer(@MessageBody() { roomId, chat }: Chat) {
-    const check = await this.socketService.findWord(chat);
-    if (check) {
-      this.game[roomId].turn++;
-      this.game[roomId].turn %= this.game[roomId].total;
-      const target = check['id'];
-      this.game[roomId].target = target[target.length - 1];
-    }
-    this.server.to(roomId).emit('turn', this.game[roomId]);
+    const index = this.game[roomId].users.indexOf(client.id);
+    if (index === -1) return;
+    this.game[roomId].users.splice(index, 1);
   }
 
   // Get 변수
@@ -312,10 +281,25 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
+      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
-    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
+    }
+
+    this.handleReady(roomId, client);
+    this.socketService.shuffle(this.game[roomId]);
+    this.game[roomId].option = this.socketService.getOption(
+      this.roomInfo[roomId].option,
+    );
+
     await this.lastService.handleStart(
       roomId,
       this.roomInfo[roomId],
@@ -336,8 +320,13 @@ export class SocketGateway
     @MessageBody() { roomId, chat }: { roomId: string; chat: string },
   ) {
     const check = await this.socketService.findWord(chat);
+    const checkOption = await this.socketService.checkOption(
+      this.game[roomId].option,
+      check['id'].slice(-1),
+      check['type'],
+    );
     let success = false;
-    if (check) {
+    if (check && checkOption.success) {
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
       const target = check['id'];
@@ -348,6 +337,7 @@ export class SocketGateway
       success: success,
       answer: chat,
       game: this.game[roomId],
+      message: checkOption.message,
     });
   }
   /*
@@ -360,10 +350,23 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
+      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
-    if (this.game[roomId].users.length !== this.roomInfo[roomId].users.length)
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
+    }
+    this.handleReady(roomId, client);
+    this.socketService.shuffle(this.game[roomId]);
+    this.game[roomId].option = this.socketService.getOption(
+      this.roomInfo[roomId].option,
+    );
     await this.kungService.handleStart(
       roomId,
       this.roomInfo[roomId],
