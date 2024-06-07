@@ -24,20 +24,26 @@ interface Chat {
 
 export class Game {
   constructor() {
-    this.host = '';
-    this.round = 0;
-    this.turn = 0;
-    this.users = [];
+    this.host = ''; // 호스트
+    this.round = 0; // 현재 라운드
+    this.turn = 0; // 현재 누구의 턴인지 자리 index 값
+    this.users = []; // 유저들의 정보가 들어있는 칸 위의 turn과 index를 같이사용
+    this.chain = 0; // 현재 몇 체인인지 보여주는 정보
+    this.roundTime = 60000; // 라운드 남은 시간 처음시작 60초
+    this.turnTIme = 20000; // 턴 남은 시간 처음시작 20초
   }
-  host: string;
-  type: number;
-  round: number;
-  turn: number;
-  total: number;
-  users: string[];
-  keyword: string;
-  target: string;
-  option: boolean[];
+  host: string; // 호스트
+  type: number; // 게임종류 0:끝말잇기 1:쿵쿵따 2:왁타버스 퀴즈
+  round: number; // 현재 라운드
+  turn: number; // 현재 누구의 턴인가 보여주는 index
+  total: number; // 총인원수
+  users: string[]; // user 들의 정보가 들어가잇음.
+  keyword: string; // 바탕단어 (이세계아이돌)
+  target: string; // 현재 게임 진행에서 사용될 단어 (세)
+  option: boolean[]; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
+  chain: number; // 현재 체인정보
+  roundTime: number; // 남은 라운드시간 정보
+  turnTIme: number; // 남은 턴 시간 정보
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -120,6 +126,15 @@ export class SocketGateway
     client.emit('roomList', roomList);
   }
 
+  // 로비 챗
+  @SubscribeMessage('lobby.chat')
+  async handleLobbyChat(
+    @MessageBody() chat: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.server.emit('lobby.chat', { user: this.user[client.id], chat: chat });
+  }
+
   // 게임 방에서 대화
   @SubscribeMessage('chat')
   async handleMessage(
@@ -143,7 +158,7 @@ export class SocketGateway
     } else
       this.server
         .to(roomId)
-        .emit('chat', { name: this.user[client.id].name, chat: chat });
+        .emit('chat', { user: this.user[client.id], chat: chat });
   }
 
   // 게임 방 생성
@@ -392,8 +407,13 @@ export class SocketGateway
       return;
     }
     const check = await this.socketService.findWord(chat);
+    const checkOption = await this.socketService.checkOption(
+      this.game[roomId].option,
+      check['id'].slice(-1),
+      check['type'],
+    );
     let success = false;
-    if (check) {
+    if (check && checkOption.success) {
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
       const target = check['id'];
@@ -404,6 +424,7 @@ export class SocketGateway
       success: success,
       answer: chat,
       game: this.game[roomId],
+      message: checkOption.message,
     });
   }
 
