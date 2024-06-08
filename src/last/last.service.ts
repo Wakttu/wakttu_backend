@@ -3,21 +3,14 @@ import { Room } from 'src/room/entities/room.entity';
 import { Game, SocketGateway } from 'src/socket/socket.gateway';
 import { SocketService } from 'src/socket/socket.service';
 
-class Rule {
-  mission: string;
-}
-
 @Injectable()
 export class LastService {
   constructor(
     @Inject(forwardRef(() => SocketGateway))
-    private readonly socketGateway: SocketGateway,
+    private socketGateway: SocketGateway,
     private readonly socketService: SocketService,
   ) {}
   public server;
-  public rules: {
-    [roomId: string]: Rule;
-  } = {};
 
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
     game.total = game.users.length;
@@ -28,7 +21,7 @@ export class LastService {
     this.server.to(roomId).emit('last.start', game);
   }
 
-  handleRound(roomId: string, roomInfo: Room, game: Game) {
+  async handleRound(roomId: string, roomInfo: Room, game: Game) {
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
@@ -37,6 +30,18 @@ export class LastService {
     }
     const target = game.keyword['_id'];
     game.target = target[curRound];
+    game.mission = await this.handleGetMission();
     this.server.to(roomId).emit('last.round', game);
+  }
+
+  async handleCheckMission(chat: string, game: Game) {
+    if (chat.includes(game.mission)) {
+      game.mission = await this.socketService.getMission();
+    }
+    return;
+  }
+
+  async handleGetMission() {
+    return await this.socketService.getMission();
   }
 }
