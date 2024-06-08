@@ -86,6 +86,10 @@ export class SocketService {
     game.users = arr;
   }
 
+  async getMission(): Promise<string> {
+    return await this.dicService.getMission();
+  }
+
   async checkManner(keyword: string): Promise<boolean> {
     const flag = await this.dicService.checkManner(keyword);
     if (flag) return true;
