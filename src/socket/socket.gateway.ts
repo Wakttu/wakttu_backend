@@ -20,6 +20,8 @@ import { LastService } from 'src/last/last.service';
 interface Chat {
   roomId: string;
   chat: string;
+  roundTime: number | undefined;
+  turnTime: number | undefined;
 }
 
 export class Game {
@@ -30,7 +32,7 @@ export class Game {
     this.users = []; // 유저들의 정보가 들어있는 칸 위의 turn과 index를 같이사용
     this.chain = 0; // 현재 몇 체인인지 보여주는 정보
     this.roundTime = 60000; // 라운드 남은 시간 처음시작 60초
-    this.turnTIme = 20000; // 턴 남은 시간 처음시작 20초
+    this.turnTime = 20000; // 턴 남은 시간 처음시작 20초
   }
   host: string; // 호스트
   type: number; // 게임종류 0:끝말잇기 1:쿵쿵따 2:왁타버스 퀴즈
@@ -43,7 +45,8 @@ export class Game {
   option: boolean[]; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
   chain: number; // 현재 체인정보
   roundTime: number; // 남은 라운드시간 정보
-  turnTIme: number; // 남은 턴 시간 정보
+  turnTime: number; // 남은 턴 시간 정보
+  mission: string | undefined; // 끝말잇기에서 사용될 미션단어
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -138,17 +141,17 @@ export class SocketGateway
   // 게임 방에서 대화
   @SubscribeMessage('chat')
   async handleMessage(
-    @MessageBody() { roomId, chat }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
-          await this.handleLastAnswer({ roomId, chat });
+          await this.handleLastAnswer({ roomId, chat, roundTime, turnTime });
           break;
         case 1:
-          await this.handleKungAnswer({ roomId, chat });
+          await this.handleKungAnswer({ roomId, chat, roundTime, turnTime });
           break;
         /* case 2:
           await this.handleAnswer({ roomId, chat });
@@ -323,8 +326,8 @@ export class SocketGateway
   }
 
   @SubscribeMessage('last.round')
-  handleLastRound(@MessageBody() roomId: string) {
-    this.lastService.handleRound(
+  async handleLastRound(@MessageBody() roomId: string) {
+    await this.lastService.handleRound(
       roomId,
       this.roomInfo[roomId],
       this.game[roomId],
@@ -332,16 +335,30 @@ export class SocketGateway
   }
 
   async handleLastAnswer(
-    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
+    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
   ) {
+    if (chat[0] !== this.game[roomId].target) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '시작 단어가 맞지 않습니다.' });
+      return;
+    }
     const check = await this.socketService.findWord(chat);
-    const checkOption = await this.socketService.checkOption(
-      this.game[roomId].option,
-      check['id'].slice(-1),
-      check['type'],
-    );
+
+    let checkOption = undefined;
+    if (check) {
+      checkOption = await this.socketService.checkOption(
+        this.game[roomId].option,
+        check['id'].slice(-1),
+        check['type'],
+      );
+    }
+
     let success = false;
-    if (check && checkOption.success) {
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = turnTime;
+    if (checkOption && checkOption.success) {
+      await this.lastService.handleCheckMission(chat, this.game[roomId]);
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
       const target = check['id'];
@@ -352,7 +369,7 @@ export class SocketGateway
       success: success,
       answer: chat,
       game: this.game[roomId],
-      message: checkOption.message,
+      message: checkOption ? checkOption.message : '없는 단어 입니다.',
     });
   }
   /*
@@ -398,8 +415,14 @@ export class SocketGateway
     );
   }
   async handleKungAnswer(
-    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
+    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
   ) {
+    if (chat[0] !== this.game[roomId].target) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '시작 단어가 맞지 않습니다.' });
+      return;
+    }
     if (chat.length !== 3) {
       this.server
         .to(roomId)
@@ -407,12 +430,18 @@ export class SocketGateway
       return;
     }
     const check = await this.socketService.findWord(chat);
-    const checkOption = await this.socketService.checkOption(
-      this.game[roomId].option,
-      check['id'].slice(-1),
-      check['type'],
-    );
+
+    let checkOption = undefined;
+    if (check) {
+      checkOption = await this.socketService.checkOption(
+        this.game[roomId].option,
+        check['id'].slice(-1),
+        check['type'],
+      );
+    }
     let success = false;
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = turnTime;
     if (check && checkOption.success) {
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
@@ -424,7 +453,7 @@ export class SocketGateway
       success: success,
       answer: chat,
       game: this.game[roomId],
-      message: checkOption.message,
+      message: checkOption ? checkOption.message : '없는 단어 입니다.',
     });
   }
 

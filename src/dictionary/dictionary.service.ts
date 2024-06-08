@@ -40,4 +40,10 @@ export class DictionaryService {
     if (res) return true;
     return false;
   }
+
+  async getMission(): Promise<string> {
+    const list: string[] = await this.prisma
+      .$queryRaw`SELECT _id FROM "public"."wakttu_manner" ORDER BY random() LIMIT 1`;
+    return list[0]['_id'];
+  }
 }
