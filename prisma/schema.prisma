@@ -41,16 +41,17 @@ model Room {
   users     User[]
 }
 
-model wakttu_ko {
+model Dictionary {
   id    String  @id @map("_id") @db.VarChar
   type  String?
   mean  String?
   meta  Json?   @db.Json
   hit   Int     @default(0)
   wakta Boolean @default(false)
+  @@map("wakttu_ko")
 }
 
-model wakttu_quiz {
+model Quiz {
   id          Int      @id @default(autoincrement())
   type        String
   qestion     String
@@ -60,8 +61,10 @@ model wakttu_quiz {
   tag         String[]
   select      String[]
   meta        Json?    @db.Json
+  @@map("wakttu_quiz")
 }
 
-model wakttu_manner {
+model Manner {
   id String @id @map("_id") @db.VarChar
+  @@map("wakttu_manner")
 }

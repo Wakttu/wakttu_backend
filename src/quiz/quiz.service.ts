@@ -7,16 +7,16 @@ import { UpdateQuizDto } from './dto/update-quize.dto';
 export class QuizService {
   constructor(private readonly prisma: PrismaService) {}
   async create(data: CreateQuizDto) {
-    return await this.prisma.wakttu_quiz.create({ data });
+    return await this.prisma.quiz.create({ data });
   }
 
   async findById(id: number) {
-    return await this.prisma.wakttu_quiz.findUnique({
+    return await this.prisma.quiz.findUnique({
       where: { id },
     });
   }
   async findByTag(tag: string) {
-    return await this.prisma.wakttu_quiz.findMany({
+    return await this.prisma.quiz.findMany({
       where: {
         tag: {
           has: tag,
@@ -25,14 +25,14 @@ export class QuizService {
     });
   }
   async update(id: number, data: UpdateQuizDto) {
-    return await this.prisma.wakttu_quiz.update({
+    return await this.prisma.quiz.update({
       where: { id },
       data,
     });
   }
 
   async remove(id: number) {
-    return await this.prisma.wakttu_quiz.delete({ where: { id } });
+    return await this.prisma.quiz.delete({ where: { id } });
   }
 
   async getList(take: number) {

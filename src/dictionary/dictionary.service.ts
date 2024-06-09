@@ -7,24 +7,24 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class DictionaryService {
   constructor(private readonly prisma: PrismaService) {}
   async create(data: CreateDictionaryDto) {
-    return await this.prisma.wakttu_ko.create({ data });
+    return await this.prisma.dictionary.create({ data });
   }
 
   async findById(id: string) {
-    return await this.prisma.wakttu_ko.findUnique({
+    return await this.prisma.dictionary.findUnique({
       where: { id },
     });
   }
 
   async update(id: string, data: UpdateDictionaryDto) {
-    return await this.prisma.wakttu_ko.update({
+    return await this.prisma.dictionary.update({
       where: { id },
       data,
     });
   }
 
   async remove(id: string) {
-    return await this.prisma.wakttu_ko.delete({ where: { id } });
+    return await this.prisma.dictionary.delete({ where: { id } });
   }
 
   async getWord(length: number): Promise<string> {
@@ -34,7 +34,7 @@ export class DictionaryService {
   }
 
   async checkManner(keyword: string): Promise<boolean> {
-    const res = await this.prisma.wakttu_manner.findUnique({
+    const res = await this.prisma.manner.findUnique({
       where: { id: keyword },
     });
     if (res) return true;

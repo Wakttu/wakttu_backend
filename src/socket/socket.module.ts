@@ -13,7 +13,7 @@ import { WakQuizModule } from 'src/wak-quiz/wak-quiz.module';
     UserModule,
     RoomModule,
     DictionaryModule,
-    WakQuizModule,
+    forwardRef(() => WakQuizModule),
     forwardRef(() => LastModule),
     forwardRef(() => KungModule),
   ],
