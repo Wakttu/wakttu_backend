@@ -20,8 +20,9 @@ export class CreateQuizDto {
     example: '품어',
     description: '문제의 답을 담고있는 colum',
   })
-  @IsString()
-  answer: string;
+  @IsArray()
+  @IsString({ each: true })
+  answer: string[];
 
   @ApiProperty({
     example: '해설이 들어가는 부분',
