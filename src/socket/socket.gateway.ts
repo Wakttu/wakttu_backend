@@ -50,7 +50,7 @@ export class Game {
 }
 
 @UseGuards(SocketAuthenticatedGuard)
-@WebSocketGateway({ namespace: 'wakttu' })
+@WebSocketGateway({ namespace: 'wakttu', cors: { origin: '*' } })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
