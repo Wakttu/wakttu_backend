@@ -190,7 +190,7 @@ model wakttu_quiz {
   id          Int      @id @default(autoincrement())
   type        String
   qestion     String
-  answer      String
+  answer      String[]
   description String
   hint        String[]
   tag         String[]
