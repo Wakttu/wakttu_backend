@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quize.dto';
+import { Quiz } from './entities/quiz.entity';
 
 @Injectable()
 export class QuizService {
@@ -35,7 +36,7 @@ export class QuizService {
     return await this.prisma.quiz.delete({ where: { id } });
   }
 
-  async getList(take: number) {
+  async getList(take: number): Promise<Quiz[]> {
     return await this.prisma
       .$queryRaw`SELECT * From "public"."wakttu_quiz" ORDER BY random() LIMIT ${take}`;
   }

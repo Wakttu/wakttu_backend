@@ -17,6 +17,7 @@ import { Room } from 'src/room/entities/room.entity';
 import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
 import { WakQuizService } from 'src/wak-quiz/wak-quiz.service';
+import { Quiz } from 'src/quiz/entities/quiz.entity';
 
 interface Chat {
   roomId: string;
@@ -41,13 +42,14 @@ export class Game {
   turn: number; // 현재 누구의 턴인가 보여주는 index
   total: number; // 총인원수
   users: string[]; // user 들의 정보가 들어가잇음.
-  keyword: string; // 바탕단어 (이세계아이돌)
-  target: string; // 현재 게임 진행에서 사용될 단어 (세)
-  option: boolean[]; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
+  keyword: string | undefined; // 바탕단어 (이세계아이돌)
+  target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
+  option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
   chain: number; // 현재 체인정보
   roundTime: number; // 남은 라운드시간 정보
   turnTime: number; // 남은 턴 시간 정보
   mission: string | undefined; // 끝말잇기에서 사용될 미션단어
+  quiz: Quiz[] | undefined; // 퀴즈 정보
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -159,10 +161,6 @@ export class SocketGateway
         case 1:
           await this.handleKungAnswer({ roomId, chat, roundTime, turnTime });
           break;
-        /* case 2:
-          await this.handleAnswer({ roomId, chat });
-          break;
-          */
       }
     } else
       this.server
@@ -473,5 +471,52 @@ export class SocketGateway
     index %= this.game[roomId].total;
     this.kungService.handleBan(roomId, index, keyword);
     client.emit('alarm', { message: '금지단어 설정완료' });
+  }
+
+  @SubscribeMessage('wak-quiz.start')
+  async handleWakQuizStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      return;
+    }
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      return;
+    }
+    this.handleReady(roomId, client);
+    this.socketService.shuffle(this.game[roomId]);
+    await this.wakQuizService.handleStart(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+  @SubscribeMessage('wak-quiz.round')
+  handleWakQuizRound(@MessageBody() roomId: string) {
+    this.wakQuizService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+  async handleWakQuizAnswer(
+    @MessageBody() { roomId, chat }: Chat,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const index = this.game[roomId].users.indexOf(client.id);
+    this.wakQuizService.handleAnswer(roomId, index, chat);
+    this.server.to(roomId).emit('wak-quiz.game', {
+      success: true,
+      message: '답입력완료!',
+      game: this.game[roomId],
+    });
   }
 }
