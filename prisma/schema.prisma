@@ -51,12 +51,13 @@ model wakttu_ko {
 }
 
 model wakttu_quiz {
-  id      Int      @id @default(autoincrement())
-  type    String
-  qestion String
-  answer  String
-  hint    String[]
-  tag     String[]
+  id          Int      @id @default(autoincrement())
+  type        String
+  qestion     String
+  answer      String
+  description String
+  hint        String[]
+  tag         String[]
 }
 
 model wakttu_manner {

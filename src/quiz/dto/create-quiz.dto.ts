@@ -24,6 +24,13 @@ export class CreateQuizDto {
   answer: string;
 
   @ApiProperty({
+    example: '해설이 들어가는 부분',
+    description: '문제의 해설이 들어가는 부분입니다.',
+  })
+  @IsString()
+  description: string;
+
+  @ApiProperty({
     example: ['이걸모르면 짭치죠.', '아프리카 넘어와서 유행해진 말입니다!'],
     description: '게임에서 주어질 힌트',
   })
