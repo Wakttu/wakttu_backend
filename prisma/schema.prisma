@@ -159,7 +159,6 @@ model User {
   provider     String
   password     String?
   roomId       String?
-  refreshToken String?
   room         Room?   @relation(fields: [roomId], references: [id])
 }
 
