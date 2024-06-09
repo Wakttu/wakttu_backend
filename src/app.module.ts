@@ -12,10 +12,15 @@ import { RoomModule } from './room/room.module';
 import { KungModule } from './kung/kung.module';
 import { LastModule } from './last/last.module';
 import { QuizModule } from './quiz/quiz.module';
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),
+    }),
+    ConfigModule.forRoot({
+      envFilePath: '.env',
     }),
     SocketModule,
     PrismaModule,
