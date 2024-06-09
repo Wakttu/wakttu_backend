@@ -46,4 +46,12 @@ export class CreateQuizDto {
   @IsArray()
   @IsString({ each: true })
   tag: string[];
+
+  @ApiProperty({
+    example: ['징버거', '주르르', '고세구', '우왁굳'],
+    description: '정답에 관한 인물 혹은 단어에 관한 tag정보',
+  })
+  @IsArray({})
+  @IsString({ each: true })
+  select: string[];
 }
