@@ -6,12 +6,15 @@ import { CreateRoom, Room } from 'src/room/entities/room.entity';
 import { UserService } from 'src/user/user.service';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Game } from './socket.gateway';
+import { QuizService } from 'src/quiz/quiz.service';
+import { Quiz } from 'src/quiz/entities/quiz.entity';
 @Injectable()
 export class SocketService {
   constructor(
     private readonly dicService: DictionaryService,
     private readonly roomService: RoomService,
     private readonly userService: UserService,
+    private readonly quizService: QuizService,
   ) {}
 
   async findWord(word: string): Promise<Dictionary | null> {
@@ -140,5 +143,9 @@ export class SocketService {
       if (flag2) return { success: false, message: '외수 단어 금지!' };
     }
     return { success: true, message: '성공' };
+  }
+
+  async getQuizList(take: number): Promise<Quiz[]> {
+    return await this.quizService.getList(take);
   }
 }
