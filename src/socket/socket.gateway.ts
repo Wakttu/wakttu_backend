@@ -16,6 +16,7 @@ import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
 import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
+import { WakQuizService } from 'src/wak-quiz/wak-quiz.service';
 
 interface Chat {
   roomId: string;
@@ -59,6 +60,8 @@ export class SocketGateway
     private readonly lastService: LastService,
     @Inject(forwardRef(() => KungService))
     private readonly kungService: KungService,
+    @Inject(forwardRef(() => WakQuizService))
+    private readonly wakQuizService: WakQuizService,
     private readonly socketService: SocketService,
   ) {}
 
@@ -89,9 +92,12 @@ export class SocketGateway
 
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
+    // 다시열릴시 존재하는 방 모두 삭제
     await this.socketService.deleteAllRoom();
+    // 서버를 service와 연결
     this.lastService.server = this.server;
-    this.kungService.server = this.server; // 서버를 service와 연결
+    this.kungService.server = this.server;
+    this.wakQuizService.server = this.server;
     console.log('socket is open!');
   }
 

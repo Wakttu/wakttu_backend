@@ -13,6 +13,7 @@ import { KungModule } from './kung/kung.module';
 import { LastModule } from './last/last.module';
 import { QuizModule } from './quiz/quiz.module';
 import { ConfigModule } from '@nestjs/config';
+import { WakQuizModule } from './wak-quiz/wak-quiz.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ConfigModule } from '@nestjs/config';
     KungModule,
     LastModule,
     QuizModule,
+    WakQuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],

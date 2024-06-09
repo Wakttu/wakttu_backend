@@ -194,6 +194,8 @@ model wakttu_quiz {
   description String
   hint        String[]
   tag         String[]
+  select      String[]
+  meta        Json?    @db.Json
 }
 
 model wakttu_manner {
