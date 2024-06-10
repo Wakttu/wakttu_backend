@@ -208,7 +208,12 @@
     // wak-quiz game
     socket.on('wak-quiz.game', (data) => {
         const log = document.querySelector('#log');
-        log.innerHTML = `<p>${data['answer']}</p>`;
+        console.log(data);
+        const answer = data['answer'];
+        for (let i = 0; i < answer.length; i++) {
+            log.innerHTML += `<p>${answer[i].index} : ${answer[i].submit}</p>`;
+        }
+
     });
 
     // Info
@@ -220,9 +225,6 @@
         socket.emit('info');
     }
 
-    socket.on('wak-quiz.answer', data => {
-        console.log(data);
-    })
 </script>
 <script>
     socket.on('alarm', (data) => {
