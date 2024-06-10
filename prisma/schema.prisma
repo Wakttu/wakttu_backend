@@ -206,3 +206,8 @@ model Manner {
 
   @@map("wakttu_manner")
 }
+
+model Emoji {
+  id String @id @map("_id") @db.VarChar
+  name String
+}
