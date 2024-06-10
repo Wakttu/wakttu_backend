@@ -152,7 +152,10 @@ export class SocketGateway
     @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
+    if (
+      this.game[roomId].users[this.game[roomId].turn] === client.id ||
+      this.game[roomId].turn == -1
+    ) {
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
@@ -160,6 +163,9 @@ export class SocketGateway
           break;
         case 1:
           await this.handleKungAnswer({ roomId, chat, roundTime, turnTime });
+          break;
+        case 2:
+          await this.handleWakQuizAnswer({ roomId, chat }, client);
           break;
       }
     } else
@@ -279,9 +285,11 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
-    if (index === -1) return;
-    this.game[roomId].users.splice(index, 1);
+    if (this.game[roomId].users) {
+      const index = this.game[roomId].users.indexOf(client.id);
+      if (index === -1) return;
+      this.game[roomId].users.splice(index, 1);
+    }
   }
 
   // Get 변수
@@ -508,15 +516,10 @@ export class SocketGateway
     );
   }
   async handleWakQuizAnswer(
-    @MessageBody() { roomId, chat }: Chat,
+    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
     @ConnectedSocket() client: Socket,
   ) {
     const index = this.game[roomId].users.indexOf(client.id);
-    this.wakQuizService.handleAnswer(roomId, index, chat);
-    this.server.to(roomId).emit('wak-quiz.game', {
-      success: true,
-      message: '답입력완료!',
-      game: this.game[roomId],
-    });
+    this.wakQuizService.handleAnswer(roomId, index, chat, this.game[roomId]);
   }
 }

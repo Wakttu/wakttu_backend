@@ -9,6 +9,9 @@ class Answer {
 }
 
 class Rule {
+  constructor() {
+    this.answer = [];
+  }
   answer: Answer[];
 }
 
@@ -27,6 +30,7 @@ export class WakQuizService {
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
     game.total = game.users.length;
     game.quiz = await this.socketService.getQuizList(roomInfo.round);
+    game.turn = -1;
     roomInfo.start = (
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
@@ -45,7 +49,17 @@ export class WakQuizService {
     this.server.to(roomId).emit('wak-quiz.round', game);
   }
 
-  handleAnswer(roomId: string, index: number, submit: string) {
+  handleAnswer(roomId: string, index: number, submit: string, game: Game) {
+    const check = this.rules[roomId].answer.findIndex(
+      (answer) => answer.index == index,
+    );
+    if (check !== -1) {
+      return;
+    }
     this.rules[roomId].answer.push({ index, submit });
+    this.server.to(roomId).emit('wak-quiz.game', {
+      game: game,
+      answer: this.rules[roomId].answer,
+    });
   }
 }
