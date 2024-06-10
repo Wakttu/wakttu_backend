@@ -9,6 +9,9 @@ class Answer {
 }
 
 class Rule {
+  constructor() {
+    this.answer = [];
+  }
   answer: Answer[];
 }
 
@@ -47,5 +50,6 @@ export class WakQuizService {
 
   handleAnswer(roomId: string, index: number, submit: string) {
     this.rules[roomId].answer.push({ index, submit });
+    this.server.to(roomId).emit('wak-quiz.answer', this.rules[roomId]);
   }
 }
