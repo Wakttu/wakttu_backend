@@ -14,7 +14,7 @@ export class CreateQuizDto {
     description: '단어에 대하여 문제',
   })
   @IsString()
-  qestion: string;
+  question: string;
 
   @ApiProperty({
     example: '품어',

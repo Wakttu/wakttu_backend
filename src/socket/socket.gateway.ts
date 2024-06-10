@@ -279,9 +279,11 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
-    if (index === -1) return;
-    this.game[roomId].users.splice(index, 1);
+    if (this.game[roomId].users) {
+      const index = this.game[roomId].users.indexOf(client.id);
+      if (index === -1) return;
+      this.game[roomId].users.splice(index, 1);
+    }
   }
 
   // Get 변수

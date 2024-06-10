@@ -153,13 +153,13 @@ model Stats {
 }
 
 model User {
-  id           String  @id
-  name         String  @unique
-  score        Int     @default(0)
-  provider     String
-  password     String?
-  roomId       String?
-  room         Room?   @relation(fields: [roomId], references: [id])
+  id       String  @id
+  name     String  @unique
+  score    Int     @default(0)
+  provider String
+  password String?
+  roomId   String?
+  room     Room?   @relation(fields: [roomId], references: [id])
 }
 
 model Room {
@@ -183,23 +183,26 @@ model Dictionary {
   meta  Json?   @db.Json
   hit   Int     @default(0)
   wakta Boolean @default(false)
+
   @@map("wakttu_ko")
 }
 
 model Quiz {
   id          Int      @id @default(autoincrement())
   type        String
-  qestion     String
-  answer      String[]
-  description String
+  question    String
   hint        String[]
   tag         String[]
+  description String
+  answer      String[]
   select      String[]
   meta        Json?    @db.Json
+
   @@map("wakttu_quiz")
 }
 
 model Manner {
   id String @id @map("_id") @db.VarChar
+
   @@map("wakttu_manner")
 }
