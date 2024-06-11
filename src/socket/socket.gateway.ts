@@ -311,16 +311,14 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
-      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
     if (
       this.game[roomId].users.length + 1 !==
       this.roomInfo[roomId].users.length
     ) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
     }
 
@@ -394,16 +392,14 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
-      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
     if (
       this.game[roomId].users.length + 1 !==
       this.roomInfo[roomId].users.length
     ) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
     }
     this.handleReady(roomId, client);
@@ -478,7 +474,6 @@ export class SocketGateway
     index += 1;
     index %= this.game[roomId].total;
     this.kungService.handleBan(roomId, index, keyword);
-    client.emit('alarm', { message: '금지단어 설정완료' });
   }
 
   @SubscribeMessage('wak-quiz.start')
@@ -487,16 +482,14 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
-      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
     if (
       this.game[roomId].users.length + 1 !==
       this.roomInfo[roomId].users.length
     ) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
     }
     this.handleReady(roomId, client);
