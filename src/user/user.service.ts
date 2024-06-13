@@ -93,4 +93,11 @@ export class UserService {
     });
     return response.room;
   }
+
+  async getKeyboard(id: string) {
+    return await this.prisma.user.findUnique({
+      where: { id },
+      select: { keyboard: true, emoji: true },
+    });
+  }
 }
