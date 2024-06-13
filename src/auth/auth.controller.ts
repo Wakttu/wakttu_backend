@@ -48,21 +48,6 @@ export class AuthController {
       },
     },
   })
-  @Post('local')
-  @UseGuards(LocalGuard)
-  async login(@Res() res: Response): Promise<any> {
-    res.redirect('/list.html');
-  }
-
-  @ApiOperation({ summary: 'Local Login' })
-  @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string' },
-        password: { type: 'string' },
-      },
-    },
-  })
   @Post('login')
   @UseGuards(LocalGuard)
   async localLogin(@Req() req: Request): Promise<any> {
@@ -126,5 +111,20 @@ export class AuthController {
   @Post('check/name')
   async checkName(@Body('name') name: string): Promise<any> {
     return await this.authService.checkName(name);
+  }
+
+  @ApiOperation({ summary: 'Local Login testing' })
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string' },
+        password: { type: 'string' },
+      },
+    },
+  })
+  @Post('local testing')
+  @UseGuards(LocalGuard)
+  async login(@Res() res: Response): Promise<any> {
+    res.redirect('/socket.html');
   }
 }
