@@ -14,13 +14,7 @@ export class UserService {
   async findById(id: string) {
     const response = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        name: true,
-        score: true,
-        roomId: true,
-        password: true,
-      },
+      include: { keyboard: { include: { emoji: true } } },
     });
     return response;
   }
