@@ -5,18 +5,27 @@ import { ValidationPipe } from '@nestjs/common';
 import * as passport from 'passport';
 import { SessionAdapter } from './session.adapter';
 import * as session from 'express-session';
+import * as MongoDBStore from 'connect-mongodb-session';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
+  const MongoStore = MongoDBStore(session);
+
+  const store = new MongoStore({
+    uri: process.env.SESSION_DB_URI,
+    databaseName: process.env.SESSION_DB_NAME,
+    collection: process.env.SESSION_DB_COLLECTION,
+  });
+
   const sessionMiddleware = session({
     secret: process.env.SECRET, // 세션을 암호화하기 위한 암호기 설정
-    resave: false, // 모든 request마다 기존에 있던 session에 아무런 변경 사항이 없을 시에도 그 session을 다시 저장하는 옵션
-    // saveUnitialized: 초기화되지 않은 세션을 저장할지 여부를 나타낸다.
+    resave: false, // 모든 request마다 기존에 있던 session에 아무런 변경 사항이 없을 시에도 그 session을 다시 저장하는 옵션.
     saveUninitialized: false,
-    // 세션 쿠키에 대한 설정을 나타낸다.
     cookie: {
       maxAge: 60000 * 60, // 1 hour
       httpOnly: true,
     },
+    store: store,
   });
   app.use(sessionMiddleware);
   app.useWebSocketAdapter(new SessionAdapter(sessionMiddleware, app));
