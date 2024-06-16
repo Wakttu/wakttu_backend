@@ -162,6 +162,8 @@ model User {
   room     Room?          @relation(fields: [roomId], references: [id])
   keyboard Keyboard?
   emoji    UserGetEmoji[]
+  character Character?
+  item     UserGetItem[]
 }
 
 model Room {
@@ -233,5 +235,43 @@ model UserGetEmoji {
 
   @@id([userId, emojiId])
   @@map("user_get_emoji")
+}
+
+model Character {
+  user User @relation(fields: [userId],references: [id])
+  userId String @unique
+  skin Item @relation("skin",fields: [skinId],references: [id])
+	skinId String
+	head Item @relation("head",fields: [headId],references: [id])
+  headId String
+	hand Item @relation("hand",fields: [handId],references: [id])
+  handId String 
+	eye Item @relation("eye",fields: [eyeId],references: [id])
+  eyeId String
+}
+
+model Item {
+  id String @id @map("_id")
+  name String
+  categroy String
+  description String
+  author String
+  url String
+  user UserGetItem[]
+  skin Character[] @relation("skin")
+  head Character[] @relation("head")
+  hand Character[] @relation("hand")
+  eye Character[] @relation("eye")
+}
+
+model UserGetItem {
+   user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  item     Item    @relation(fields: [itemId], references: [id])
+  itemId   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, itemId])
+  @@map("user_get_item")
 }
 
