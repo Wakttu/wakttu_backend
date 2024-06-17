@@ -439,10 +439,11 @@ export class SocketGateway
         game: this.game[roomId],
         message: '시작단어와 일치하지 않습니다.',
       });
+      return;
     }
     if (chat.length !== 3) {
       this.server.to(roomId).emit('kung.game', {
-        success: fail,
+        success: false,
         answer: chat,
         game: this.game[roomId],
         message: '세글자가 아닙니다',
