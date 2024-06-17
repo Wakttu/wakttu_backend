@@ -45,4 +45,12 @@ export class LastService {
   async handleGetMission() {
     return await this.socketService.getMission();
   }
+
+  handleNextTurn(game: Game, keyword: string) {
+    game.users[game.turn].score += 100;
+    game.turn += 1;
+    game.turn %= game.total;
+    game.chain += 1;
+    game.target = keyword[keyword.length - 1];
+  }
 }
