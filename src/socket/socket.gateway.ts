@@ -41,7 +41,7 @@ export class Game {
   round: number; // 현재 라운드
   turn: number; // 현재 누구의 턴인가 보여주는 index
   total: number; // 총인원수
-  users: string[]; // user 들의 정보가 들어가잇음.
+  users: { id: string; score: number }[]; // user의 socketId 정보가 들어가있음.
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
@@ -153,7 +153,7 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (
-      this.game[roomId].users[this.game[roomId].turn] === client.id ||
+      this.game[roomId].users[this.game[roomId].turn].id === client.id ||
       this.game[roomId].turn == -1
     ) {
       switch (this.roomInfo[roomId].type) {
@@ -272,9 +272,9 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
+    const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
     if (index === -1) {
-      this.game[roomId].users.push(client.id);
+      this.game[roomId].users.push({ id: client.id, score: 0 });
     } else {
       this.game[roomId].users.splice(index, 1);
     }
@@ -286,7 +286,9 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].users) {
-      const index = this.game[roomId].users.indexOf(client.id);
+      const index = this.game[roomId].users.findIndex(
+        (x) => x.id === client.id,
+      );
       if (index === -1) return;
       this.game[roomId].users.splice(index, 1);
     }
@@ -352,7 +354,7 @@ export class SocketGateway
     this.game[roomId].turnTime = turnTime;
     if (chat[0] !== this.game[roomId].target) {
       this.server.to(roomId).emit('last.game', {
-        success: false,
+        success: success,
         answer: chat,
         game: this.game[roomId],
         message: '시작 단어가 일치하지 않습니다.',
@@ -372,13 +374,10 @@ export class SocketGateway
 
     if (checkOption && checkOption.success) {
       await this.lastService.handleCheckMission(chat, this.game[roomId]);
-      this.game[roomId].turn += 1;
-      this.game[roomId].turn %= this.game[roomId].total;
-      this.game[roomId].chain += 1;
-      const target = check['id'];
-      this.game[roomId].target = target[target.length - 1];
+      this.lastService.handleNextTurn(this.game[roomId], check['id']);
       success = true;
     }
+
     this.server.to(roomId).emit('last.game', {
       success: success,
       answer: chat,
@@ -434,7 +433,7 @@ export class SocketGateway
     this.game[roomId].turnTime = turnTime;
     if (chat[0] !== this.game[roomId].target) {
       this.server.to(roomId).emit('kung.game', {
-        success: false,
+        success: success,
         answer: chat,
         game: this.game[roomId],
         message: '시작단어와 일치하지 않습니다.',
@@ -443,7 +442,7 @@ export class SocketGateway
     }
     if (chat.length !== 3) {
       this.server.to(roomId).emit('kung.game', {
-        success: false,
+        success: success,
         answer: chat,
         game: this.game[roomId],
         message: '세글자가 아닙니다',
@@ -461,11 +460,7 @@ export class SocketGateway
       );
     }
     if (check && checkOption.success) {
-      this.game[roomId].turn += 1;
-      this.game[roomId].turn %= this.game[roomId].total;
-      this.game[roomId].chain += 1;
-      const target = check['id'];
-      this.game[roomId].target = target[target.length - 1];
+      this.kungService.handleNextTurn(this.game[roomId], check['id']);
       success = true;
     }
     this.server.to(roomId).emit('kung.game', {
@@ -523,7 +518,7 @@ export class SocketGateway
     @MessageBody() { roomId, chat }: { roomId: string; chat: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
+    const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
     this.wakQuizService.handleAnswer(roomId, index, chat, this.game[roomId]);
   }
 }
