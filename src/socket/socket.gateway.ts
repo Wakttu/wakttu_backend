@@ -347,10 +347,16 @@ export class SocketGateway
   async handleLastAnswer(
     @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
   ) {
+    let success = false;
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = turnTime;
     if (chat[0] !== this.game[roomId].target) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '시작 단어가 맞지 않습니다.' });
+      this.server.to(roomId).emit('last.game', {
+        success: false,
+        answer: chat,
+        game: this.game[roomId],
+        message: '시작 단어가 일치하지 않습니다.',
+      });
       return;
     }
     const check = await this.socketService.findWord(chat);
@@ -364,13 +370,11 @@ export class SocketGateway
       );
     }
 
-    let success = false;
-    this.game[roomId].roundTime = roundTime;
-    this.game[roomId].turnTime = turnTime;
     if (checkOption && checkOption.success) {
       await this.lastService.handleCheckMission(chat, this.game[roomId]);
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
+      this.game[roomId].chain += 1;
       const target = check['id'];
       this.game[roomId].target = target[target.length - 1];
       success = true;
@@ -425,16 +429,24 @@ export class SocketGateway
   async handleKungAnswer(
     @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
   ) {
+    let success = false;
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = turnTime;
     if (chat[0] !== this.game[roomId].target) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '시작 단어가 맞지 않습니다.' });
-      return;
+      this.server.to(roomId).emit('kung.game', {
+        success: false,
+        answer: chat,
+        game: this.game[roomId],
+        message: '시작단어와 일치하지 않습니다.',
+      });
     }
     if (chat.length !== 3) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '길이가 3이지 않습니다.' });
+      this.server.to(roomId).emit('kung.game', {
+        success: fail,
+        answer: chat,
+        game: this.game[roomId],
+        message: '세글자가 아닙니다',
+      });
       return;
     }
     const check = await this.socketService.findWord(chat);
@@ -447,12 +459,10 @@ export class SocketGateway
         check['type'],
       );
     }
-    let success = false;
-    this.game[roomId].roundTime = roundTime;
-    this.game[roomId].turnTime = turnTime;
     if (check && checkOption.success) {
       this.game[roomId].turn += 1;
       this.game[roomId].turn %= this.game[roomId].total;
+      this.game[roomId].chain += 1;
       const target = check['id'];
       this.game[roomId].target = target[target.length - 1];
       success = true;

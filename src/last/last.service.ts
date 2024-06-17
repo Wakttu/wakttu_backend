@@ -31,6 +31,7 @@ export class LastService {
     const target = game.keyword['_id'];
     game.target = target[curRound];
     game.mission = await this.handleGetMission();
+    game.chain = 1;
     this.server.to(roomId).emit('last.round', game);
   }
 
