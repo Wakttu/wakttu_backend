@@ -122,7 +122,7 @@ export class AuthController {
       },
     },
   })
-  @Post('local testing')
+  @Get('test')
   @UseGuards(LocalGuard)
   async login(@Res() res: Response): Promise<any> {
     res.redirect('/socket.html');
