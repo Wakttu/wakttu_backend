@@ -15,4 +15,9 @@ export class AppController {
   isLoggined(@Req() req: Request): any {
     return req.user;
   }
+
+  @Get('/test')
+  getSession(@Req() req: Request): any {
+    return req.session;
+  }
 }
