@@ -13,6 +13,7 @@ import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LocalGuard } from './local-auth.guard';
 import { Request, Response } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { IsLoginedGuard } from './isLogined-auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -22,6 +23,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Oauth Naver Login' })
   @Get('naver')
   @UseGuards(NaverAuthGuard)
+  @UseGuards(IsLoginedGuard)
   async naverLogin(): Promise<void> {}
 
   @ApiOperation({ summary: 'Oauth Naver login Callback' })
@@ -50,6 +52,7 @@ export class AuthController {
   })
   @Post('login')
   @UseGuards(LocalGuard)
+  @UseGuards(IsLoginedGuard)
   async localLogin(@Req() req: Request): Promise<any> {
     const json = JSON.parse(JSON.stringify(req.user));
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -68,6 +71,7 @@ export class AuthController {
     },
   })
   @Post('signup')
+  @UseGuards(IsLoginedGuard)
   async signup(@Body() user: CreateUserDto): Promise<any> {
     return await this.authService.signup(user);
   }
@@ -122,7 +126,7 @@ export class AuthController {
       },
     },
   })
-  @Get('test')
+  @Post('test')
   @UseGuards(LocalGuard)
   async login(@Res() res: Response): Promise<any> {
     res.redirect('/socket.html');
