@@ -24,6 +24,7 @@ interface Chat {
   chat: string;
   roundTime: number | undefined;
   turnTime: number | undefined;
+  score: number | undefined;
 }
 
 export class Game {
@@ -41,7 +42,7 @@ export class Game {
   round: number; // 현재 라운드
   turn: number; // 현재 누구의 턴인가 보여주는 index
   total: number; // 총인원수
-  users: { id: string; score: number }[]; // user의 socketId 정보가 들어가있음.
+  users: { id: string; score: number }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
@@ -157,7 +158,7 @@ export class SocketGateway
   // 게임 방에서 대화
   @SubscribeMessage('chat')
   async handleMessage(
-    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
     if (
@@ -167,10 +168,22 @@ export class SocketGateway
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
-          await this.handleLastAnswer({ roomId, chat, roundTime, turnTime });
+          await this.handleLastAnswer({
+            roomId,
+            chat,
+            roundTime,
+            turnTime,
+            score,
+          });
           break;
         case 1:
-          await this.handleKungAnswer({ roomId, chat, roundTime, turnTime });
+          await this.handleKungAnswer({
+            roomId,
+            chat,
+            roundTime,
+            turnTime,
+            score,
+          });
           break;
         case 2:
           await this.handleWakQuizAnswer({ roomId, chat }, client);
@@ -355,7 +368,7 @@ export class SocketGateway
   }
 
   async handleLastAnswer(
-    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
   ) {
     let success = false;
     this.game[roomId].roundTime = roundTime;
@@ -382,7 +395,7 @@ export class SocketGateway
 
     if (checkOption && checkOption.success) {
       await this.lastService.handleCheckMission(chat, this.game[roomId]);
-      this.lastService.handleNextTurn(this.game[roomId], check['id']);
+      this.lastService.handleNextTurn(this.game[roomId], check['id'], score);
       success = true;
     }
 
@@ -434,7 +447,7 @@ export class SocketGateway
     );
   }
   async handleKungAnswer(
-    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
   ) {
     let success = false;
     this.game[roomId].roundTime = roundTime;
@@ -468,7 +481,7 @@ export class SocketGateway
       );
     }
     if (check && checkOption.success) {
-      this.kungService.handleNextTurn(this.game[roomId], check['id']);
+      this.kungService.handleNextTurn(this.game[roomId], check['id'], score);
       success = true;
     }
     this.server.to(roomId).emit('kung.game', {
