@@ -25,7 +25,11 @@ export class LastService {
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
-      this.server.to(roomId).emit('end', { message: 'end' });
+      roomInfo = await this.socketService.setStart(roomId, true);
+      game.users.splice(0, game.total);
+      this.server
+        .to(roomId)
+        .emit('last.end', { game: game, roomInfo: roomInfo });
       return;
     }
     const target = game.keyword['_id'];
