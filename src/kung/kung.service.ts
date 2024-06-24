@@ -31,11 +31,16 @@ export class KungService {
     this.rules[roomId] = new Rule(roomInfo.users.length);
     this.server.to(roomId).emit('kung.start', game);
   }
-  handleRound(roomId: string, roomInfo: Room, game: Game) {
+
+  async handleRound(roomId: string, roomInfo: Room, game: Game) {
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
-      this.server.to(roomId).emit('end', { message: 'end' });
+      roomInfo = await this.socketService.setStart(roomId, true);
+      game.users.splice(0, game.total);
+      this.server
+        .to(roomId)
+        .emit('kung.end', { game: game, roomInfo: roomInfo });
       return;
     }
     const target = game.keyword['_id'];
