@@ -14,6 +14,7 @@ import { LastModule } from './last/last.module';
 import { QuizModule } from './quiz/quiz.module';
 import { ConfigModule } from '@nestjs/config';
 import { WakQuizModule } from './wak-quiz/wak-quiz.module';
+import { WakgamesModule } from './wakgames/wakgames.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { WakQuizModule } from './wak-quiz/wak-quiz.module';
       rootPath: join(__dirname, '..', 'client'),
     }),
     ConfigModule.forRoot({
+      isGlobal: true,
       envFilePath: '.env',
     }),
     SocketModule,
@@ -33,6 +35,7 @@ import { WakQuizModule } from './wak-quiz/wak-quiz.module';
     LastModule,
     QuizModule,
     WakQuizModule,
+    WakgamesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
