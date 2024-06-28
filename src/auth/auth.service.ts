@@ -2,10 +2,14 @@ import { Injectable, UnauthorizedException, Req } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
+import { WakgamesService } from 'src/wakgames/wakgames.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly wakgamesService: WakgamesService,
+  ) {}
 
   async OAuthLogin(user) {
     const response = await this.userService.findById(user.id);
@@ -30,12 +34,6 @@ export class AuthService {
 
   async passworMatch(password: string, hash: string): Promise<boolean> {
     return await bcrypt.compare(password, hash);
-  }
-
-  async login(): Promise<any> {
-    return {
-      message: 'Login successful',
-    };
   }
 
   async logout(@Req() request: Request): Promise<any> {
@@ -74,5 +72,27 @@ export class AuthService {
     if (checkName)
       return { status: 403, success: false, message: '이미 존재하는 닉네임' };
     return { status: 201, success: true, message: '사용가능한 닉네임' };
+  }
+
+  async getToken(auth: object) {
+    const { data, response } = await this.wakgamesService.getToken(auth);
+    if (response.status >= 400 && response.status < 500) {
+      throw new UnauthorizedException();
+    }
+
+    return data;
+  }
+
+  async WaktaLogin(auth) {
+    const data = {
+      id: 'as',
+      name: 'df',
+      provider: 'waktaverse.games',
+      password: undefined,
+    };
+    const response = await this.userService.findById(data.id);
+    if (!response) return await this.userService.create(data);
+
+    return response;
   }
 }

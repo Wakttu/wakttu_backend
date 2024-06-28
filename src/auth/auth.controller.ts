@@ -6,12 +6,13 @@ import {
   Res,
   Post,
   Body,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { NaverAuthGuard } from './naver-auth.guard';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LocalGuard } from './local-auth.guard';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { IsLoginedGuard } from './isLogined-auth.guard';
 
@@ -117,18 +118,13 @@ export class AuthController {
     return await this.authService.checkName(name);
   }
 
-  @ApiOperation({ summary: 'Local Login testing' })
-  @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string' },
-        password: { type: 'string' },
-      },
-    },
-  })
-  @Post('test')
-  @UseGuards(LocalGuard)
-  async login(@Res() res: Response): Promise<any> {
-    res.redirect('/socket.html');
+  @Get('wakta/callback')
+  async waktaCallback(@Query() query, @Req() req, @Res() res) {
+    if (query.code) {
+      req.session.auth.code = query.code;
+      const data = await this.authService.getToken(req.session.auth);
+      console.log(data);
+      return res.redirect('https://waktaverse.games/oauth/authorize?success=1');
+    } else return 'fail';
   }
 }
