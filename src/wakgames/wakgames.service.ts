@@ -41,11 +41,11 @@ export class WakgamesService extends WakGames {
     return await this.gameLink.getProfile(accessToken);
   }
 
-  async getArchieve(accessToken: string) {
+  async getAchieve(accessToken: string) {
     return await this.gameLink.getAchieves(accessToken);
   }
 
-  async postArchieve(id: string, accessToken: string) {
+  async postAchieve(id: string, accessToken: string) {
     return await this.gameLink.postAchieve({ id }, accessToken);
   }
 

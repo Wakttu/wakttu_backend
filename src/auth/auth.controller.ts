@@ -130,16 +130,12 @@ export class AuthController {
   async waktaCallback(@Query() query, @Req() req, @Res() res) {
     if (query.code) {
       req.session.auth.code = query.code;
-      console.log(req.session.auth);
       const data = await this.authService.waktaLogin(req.session.auth);
       const { accessToken, refreshToken, user } = data;
 
       req.session.accessToken = accessToken;
       req.session.refreshToken = refreshToken;
       req.session.user = user;
-      req.session.destroy(function () {
-        req.session.auth;
-      });
 
       return res.redirect('https://waktaverse.games/oauth/authorize?success=1');
     } else throw new BadRequestException();
