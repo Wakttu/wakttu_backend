@@ -17,17 +17,17 @@ model kkutu_ko {
 }
 
 model User {
-  id        String         @id
-  name      String         @unique
-  score     Int            @default(0)
-  provider  String
-  password  String?
-  roomId    String?
-  character Character?
-  keyboard  Keyboard?
-  room      Room?          @relation(fields: [roomId], references: [id])
-  emoji     UserGetEmoji[]
-  item      UserGetItem[]
+  id           String         @id
+  name         String
+  score        Int            @default(0)
+  provider     String
+  password     String?
+  roomId       String?
+  character    Character?
+  keyboard     Keyboard?
+  room         Room?          @relation(fields: [roomId], references: [id])
+  emoji        UserGetEmoji[]
+  item         UserGetItem[]
 }
 
 model Room {
@@ -137,4 +137,13 @@ model UserGetItem {
 
   @@id([userId, itemId])
   @@map("user_get_item")
+}
+
+model wakttu_meme {
+  id      String   @id @map("_id") @db.VarChar
+  keyword String
+  mean    String
+  info    String
+  tag     String[]
+  meta    Json?
 }

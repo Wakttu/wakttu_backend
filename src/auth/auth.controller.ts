@@ -6,12 +6,14 @@ import {
   Res,
   Post,
   Body,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { NaverAuthGuard } from './naver-auth.guard';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LocalGuard } from './local-auth.guard';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { IsLoginedGuard } from './isLogined-auth.guard';
 
@@ -117,18 +119,38 @@ export class AuthController {
     return await this.authService.checkName(name);
   }
 
-  @ApiOperation({ summary: 'Local Login testing' })
-  @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string' },
-        password: { type: 'string' },
-      },
-    },
-  })
-  @Post('test')
-  @UseGuards(LocalGuard)
-  async login(@Res() res: Response): Promise<any> {
-    res.redirect('/socket.html');
+  @Get('wakta')
+  async waktaOauth(@Req() req: Request) {
+    const data = await this.authService.waktaOauth();
+    req.session.auth = data;
+    return data;
+  }
+
+  @Get('wakta/callback')
+  async waktaCallback(@Query() query, @Req() req, @Res() res) {
+    if (query.code) {
+      req.session.auth.code = query.code;
+      console.log(req.session.auth);
+      const data = await this.authService.waktaLogin(req.session.auth);
+      const { accessToken, refreshToken, user } = data;
+
+      req.session.accessToken = accessToken;
+      req.session.refreshToken = refreshToken;
+      req.session.user = user;
+      req.session.destroy(function () {
+        req.session.auth;
+      });
+
+      return res.redirect('https://waktaverse.games/oauth/authorize?success=1');
+    } else throw new BadRequestException();
+  }
+
+  @Get('wakta/refresh')
+  async waktaRefresh(@Req() req: Request) {
+    const { accessToken, refreshToken } =
+      await this.authService.waktaUpdateToken(req.session.refreshToken);
+    req.session.accessToken = accessToken;
+    req.session.refreshToken = refreshToken;
+    return { status: 201, accessToken, refreshToken };
   }
 }
