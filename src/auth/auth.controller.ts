@@ -7,6 +7,7 @@ import {
   Post,
   Body,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { NaverAuthGuard } from './naver-auth.guard';
@@ -118,13 +119,39 @@ export class AuthController {
     return await this.authService.checkName(name);
   }
 
+  @Get('wakta')
+  async waktaOauth(@Req() req: Request) {
+    const data = await this.authService.waktaOauth();
+    console.log(data);
+    req.session.auth = data;
+    return data;
+  }
+
   @Get('wakta/callback')
   async waktaCallback(@Query() query, @Req() req, @Res() res) {
     if (query.code) {
       req.session.auth.code = query.code;
-      const data = await this.authService.getToken(req.session.auth);
-      console.log(data);
+      console.log(req.session.auth);
+      const data = await this.authService.waktaLogin(req.session.auth);
+      const { accessToken, refreshToken, user } = data;
+
+      req.session.accessToken = accessToken;
+      req.session.refreshToken = refreshToken;
+      req.session.user = user;
+      req.session.destroy(function () {
+        req.session.auth;
+      });
+
       return res.redirect('https://waktaverse.games/oauth/authorize?success=1');
-    } else return 'fail';
+    } else throw new BadRequestException();
+  }
+
+  @Get('wakta/refresh')
+  async waktaRefresh(@Req() req: Request) {
+    const { accessToken, refreshToken } =
+      await this.authService.waktaUpdateToken(req.session.refreshToken);
+    req.session.accessToken = accessToken;
+    req.session.refreshToken = refreshToken;
+    return { status: 201, accessToken, refreshToken };
   }
 }

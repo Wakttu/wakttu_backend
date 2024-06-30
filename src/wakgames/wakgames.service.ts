@@ -28,9 +28,11 @@ export class WakgamesService extends WakGames {
     return await this.oauth.token(query);
   }
 
-  async getProfile({ accessToken, refreshToken, idToken }) {}
+  async updateToken(refreshToken) {
+    return await this.oauth.refresh(refreshToken);
+  }
 
-  getSDK() {
-    console.log(this);
+  async getProfile(accessToken) {
+    return await this.gameLink.getProfile(accessToken);
   }
 }
