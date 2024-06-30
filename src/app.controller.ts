@@ -21,17 +21,4 @@ export class AppController {
   getSession(@Req() req: Request): any {
     return req.session;
   }
-
-  @Get('sdk')
-  getSDK() {
-    console.log('sdk');
-    return this.wakgamesService.getSDK();
-  }
-
-  @Get('sdk/oauth')
-  getOauth(@Req() req: Request) {
-    const data = this.wakgamesService.getAuth();
-    req.session.auth = data;
-    return data;
-  }
 }
