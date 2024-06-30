@@ -1,21 +1,32 @@
 <!doctype html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <body>
-    <form action="/auth/test" method="post">
-      email: <input type="text" name="email" /><br />
-      password:<input type="password" name="password" /><br />
-      <button type="submit">로그인</button>
-    </form>
-  </body>
-  <script src="https://port-0-wakttu-backend-2aat2cluozach9.sel5.cloudtype.app/socket.io/socket.io.js"></script>
 
-  <script>
-    const socket = io('/wakttu');
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <form action="/auth/test" method="post">
+    email: <input type="text" name="email" /><br />
+    password:<input type="password" name="password" /><br />
+    <button type="submit">로그인</button>
+  </form>
+</body>
+<script src="https://port-0-wakttu-backend-2aat2cluozach9.sel5.cloudtype.app/socket.io/socket.io.js"></script>
+
+<script>
+  const socket = io('/wakttu');
+  console.log(socket);
+
+  async function getData() {
+    const response = await fetch("http://localhost:1945/test");
+    const data = await response.json();
+    console.log(data);
     console.log(socket);
-  </script>
+  }
+  getData();
+</script>
+
 </html>

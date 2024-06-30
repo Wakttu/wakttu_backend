@@ -4,6 +4,11 @@ import { WakGames } from '@wakgames/gamesdk';
 
 type grantType = 'authorization_code';
 
+export type stats = {
+  id: string;
+  val: number;
+}[];
+
 @Injectable()
 export class WakgamesService extends WakGames {
   constructor(private readonly configService: ConfigService) {
@@ -28,11 +33,27 @@ export class WakgamesService extends WakGames {
     return await this.oauth.token(query);
   }
 
-  async updateToken(refreshToken) {
+  async updateToken(refreshToken: string) {
     return await this.oauth.refresh(refreshToken);
   }
 
-  async getProfile(accessToken) {
+  async getProfile(accessToken: string) {
     return await this.gameLink.getProfile(accessToken);
+  }
+
+  async getArchieve(accessToken: string) {
+    return await this.gameLink.getAchieves(accessToken);
+  }
+
+  async postArchieve(id: string, accessToken: string) {
+    return await this.gameLink.postAchieve({ id }, accessToken);
+  }
+
+  async getStat(id: string, accessToken: string) {
+    return await this.gameLink.getStat({ id }, accessToken);
+  }
+
+  async putStat(stats: stats, accessToken: string) {
+    return await this.gameLink.putStat({ stats }, accessToken);
   }
 }
