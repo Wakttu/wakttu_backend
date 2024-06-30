@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, Req } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Req,
+  BadRequestException,
+} from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
@@ -74,25 +79,49 @@ export class AuthService {
     return { status: 201, success: true, message: '사용가능한 닉네임' };
   }
 
-  async getToken(auth: object) {
-    const { data, response } = await this.wakgamesService.getToken(auth);
-    if (response.status >= 400 && response.status < 500) {
-      throw new UnauthorizedException();
-    }
-
-    return data;
+  async waktaOauth() {
+    return this.wakgamesService.getAuth();
   }
 
-  async WaktaLogin(auth) {
-    const data = {
-      id: 'as',
-      name: 'df',
-      provider: 'waktaverse.games',
-      password: undefined,
-    };
-    const response = await this.userService.findById(data.id);
-    if (!response) return await this.userService.create(data);
+  async waktaLogin(auth) {
+    let { data, response } = await this.wakgamesService.getToken(auth);
+    if (response.status !== 201) throw new UnauthorizedException();
 
-    return response;
+    const { accessToken, refreshToken, idToken } = data;
+
+    ({ data, response } = await this.wakgamesService.getProfile(accessToken));
+    if (response.status === 400) throw new BadRequestException();
+
+    const user = await this.userService.findById(String(idToken));
+    if (!user) {
+      const newUser = await this.userService.create({
+        id: String(idToken),
+        name: data.name,
+        provider: 'waktaverse.games',
+        password: undefined,
+      });
+
+      return {
+        accessToken: accessToken as string,
+        refreshToken: refreshToken as string,
+        user: newUser,
+      };
+    }
+
+    return {
+      accessToken: accessToken as string,
+      refreshToken: refreshToken as string,
+      user: user,
+    };
+  }
+
+  async waktaUpdateToken(token) {
+    const { accessToken, refreshToken } =
+      await this.wakgamesService.updateToken(token);
+    if (!accessToken || !refreshToken) throw new UnauthorizedException();
+    return {
+      accessToken: accessToken as string,
+      refreshToken: refreshToken as string,
+    };
   }
 }

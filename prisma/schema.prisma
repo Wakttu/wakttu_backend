@@ -23,7 +23,6 @@ model User {
   provider     String
   password     String?
   roomId       String?
-  refreshToken String?
   character    Character?
   keyboard     Keyboard?
   room         Room?          @relation(fields: [roomId], references: [id])
