@@ -116,8 +116,8 @@ export class AuthService {
   }
 
   async waktaUpdateToken(token) {
-    const { accessToken, refreshToken } =
-      await this.wakgamesService.updateToken(token);
+    const data = await this.wakgamesService.updateToken(token);
+    const { accessToken, refreshToken } = data;
     if (!accessToken || !refreshToken) throw new UnauthorizedException();
     return {
       accessToken: accessToken as string,
