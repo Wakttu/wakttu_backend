@@ -122,7 +122,6 @@ export class AuthController {
   @Get('wakta')
   async waktaOauth(@Req() req: Request) {
     const data = await this.authService.waktaOauth();
-    console.log(data);
     req.session.auth = data;
     return data;
   }
