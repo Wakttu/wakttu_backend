@@ -8,6 +8,7 @@ import {
   Body,
   Query,
   BadRequestException,
+  Session,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { NaverAuthGuard } from './naver-auth.guard';
@@ -120,9 +121,9 @@ export class AuthController {
   }
 
   @Get('wakta')
-  async waktaOauth(@Req() req: Request) {
+  async waktaOauth(@Session() session: Record<string, any>) {
     const data = await this.authService.waktaOauth();
-    req.session.auth = data;
+    session.auth = data;
     return data;
   }
 

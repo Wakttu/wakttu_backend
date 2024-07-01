@@ -45,15 +45,15 @@ export class WakgamesService extends WakGames {
     return await this.gameLink.getAchieves(accessToken);
   }
 
-  async postAchieve(id: string, accessToken: string) {
-    return await this.gameLink.postAchieve({ id }, accessToken);
+  async postAchieve(query: any, accessToken: string) {
+    return await this.gameLink.postAchieve(query, accessToken);
   }
 
   async getStat(id: string, accessToken: string) {
     return await this.gameLink.getStat({ id }, accessToken);
   }
 
-  async putStat(stats: stats, accessToken: string) {
-    return await this.gameLink.putStat({ stats }, accessToken);
+  async putStat(body: any, accessToken: string) {
+    return await this.gameLink.putStat(body, accessToken);
   }
 }
