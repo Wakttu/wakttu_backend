@@ -6,6 +6,7 @@ import {
   Put,
   Query,
   Session,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { WakgamesService } from './wakgames.service';
 
@@ -19,14 +20,15 @@ export class WakgamesController {
       session.accessToken,
     );
     if (response.status === 401) {
-      let { data, response } = await this.wakgamesService.updateToken(
+      const { data, response } = await this.wakgamesService.updateToken(
         session.refreshToken,
       );
-      console.log(data, response);
+      if (response.status !== 200) throw new UnauthorizedException();
       session.accessToken = data.accessToken;
       session.refreshToken = data.refreshToken;
+      return await this.getProfile(session);
     }
-    return { data, response };
+    return data;
   }
 
   @Get('achieve')
@@ -34,18 +36,44 @@ export class WakgamesController {
     const { data, response } = await this.wakgamesService.getAchieve(
       session.accessToken,
     );
-    console.log(data, response);
-    return { data, response };
+    if (response.status === 401) {
+      const { data, response } = await this.wakgamesService.updateToken(
+        session.refreshToken,
+      );
+      if (response.status !== 200) throw new UnauthorizedException();
+      session.accessToken = data.accessToken;
+      session.refreshToken = data.refreshToken;
+      return await this.getAchieve(session);
+    }
+    return data;
   }
 
-  @Post('acheive')
+  @Post('achieve')
   async postAchieve(@Query() query, @Session() session: Record<string, any>) {
     const { data, response } = await this.wakgamesService.postAchieve(
       query,
       session.accessToken,
     );
-    console.log(data, response);
-    return { data, response };
+    if (response.status === 401) {
+      const { data, response } = await this.wakgamesService.updateToken(
+        session.refreshToken,
+      );
+      if (response.status !== 200) throw new UnauthorizedException();
+      session.accessToken = data.accessToken;
+      session.refreshToken = data.refreshToken;
+      return await this.postAchieve(query, session);
+    } else if (response.status === 409) {
+      return {
+        status: response.status,
+        message: '이미 달성된 도전과제입니다!',
+      };
+    } else if (response.status === 404) {
+      return {
+        status: response.status,
+        message: '해당 도전 과제를 찾을 수 없습니다.',
+      };
+    }
+    return data;
   }
 
   @Get('stat')
@@ -57,8 +85,16 @@ export class WakgamesController {
       id,
       session.accessToken,
     );
-    console.log(data, response);
-    return { data, response };
+    if (response.status === 401) {
+      const { data, response } = await this.wakgamesService.updateToken(
+        session.refreshToken,
+      );
+      if (response.status !== 200) throw new UnauthorizedException();
+      session.accessToken = data.accessToken;
+      session.refreshToken = data.refreshToken;
+      return await this.getStat(id, session);
+    }
+    return data;
   }
 
   @Put('stat')
@@ -67,7 +103,15 @@ export class WakgamesController {
       body,
       session.accessToken,
     );
-    console.log(data, response);
-    return { data, response };
+    if (response.status === 401) {
+      const { data, response } = await this.wakgamesService.updateToken(
+        session.refreshToken,
+      );
+      if (response.status !== 200) throw new UnauthorizedException();
+      session.accessToken = data.accessToken;
+      session.refreshToken = data.refreshToken;
+      return await this.putStat(body, session);
+    }
+    return data;
   }
 }
