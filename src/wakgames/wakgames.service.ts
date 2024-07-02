@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { WakGames } from '@wakgames/gamesdk';
+import { WakGames } from '@wakgames/backend-sdk';
 
 type grantType = 'authorization_code';
 
