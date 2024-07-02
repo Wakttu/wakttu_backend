@@ -43,7 +43,7 @@ export class AuthService {
 
   async logout(@Req() request: Request): Promise<any> {
     request.session.destroy(() => {});
-    return 'Logout Success';
+    return { success: true, message: 'Logout Success' };
   }
 
   async signup({ id, name, password }) {

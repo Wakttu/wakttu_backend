@@ -2,7 +2,6 @@ import { INestApplicationContext } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Server, ServerOptions } from 'socket.io';
 import express from 'express';
-import * as passport from 'passport';
 
 export class SessionAdapter extends IoAdapter {
   private session: express.RequestHandler;
@@ -22,8 +21,7 @@ export class SessionAdapter extends IoAdapter {
       next();
     });
     server.use(wrap(this.session));
-    server.use(wrap(passport.initialize()));
-    server.use(wrap(passport.session()));
+
     return server;
   }
 }
