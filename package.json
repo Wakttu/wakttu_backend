@@ -37,7 +37,7 @@
     "@types/passport": "^1.0.16",
     "@types/passport-local": "^1.0.38",
     "@types/passport-naver": "^1.0.4",
-    "@wakgames/gamesdk": "github:iqeq1945/Waktaverse-Games-GameSdk-Nodejs",
+    "@wakgames/backend-sdk": "git+https://github.com/kms0219kms/Waktaverse-Games-BackendSdk-Nodejs.git#prebuilt/7d3f07c",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
