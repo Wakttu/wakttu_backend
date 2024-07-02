@@ -9,7 +9,11 @@ import {
 export class IsLoginedGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    if (!request.isAuthenticated()) return true;
-    throw new ForbiddenException('is Logined!');
+    const check = this.checkUser(request.session);
+    if (!check) throw new ForbiddenException();
+    return true;
+  }
+  checkUser(session) {
+    return session.user ? false : true;
   }
 }

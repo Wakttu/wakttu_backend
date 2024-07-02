@@ -24,7 +24,7 @@ export class AuthService {
   }
 
   async LocalLogin(user) {
-    const response = await this.userService.findById(user.id);
+    const response = await this.userService.findById(user.email || user.id);
     if (!response) throw new UnauthorizedException('해당하는 유저가 없습니다.');
 
     const passwordMatch: boolean = await this.passworMatch(
@@ -42,11 +42,8 @@ export class AuthService {
   }
 
   async logout(@Req() request: Request): Promise<any> {
-    request.session.destroy(() => {
-      return {
-        message: 'Logout successful',
-      };
-    });
+    request.session.destroy(() => {});
+    return 'Logout Success';
   }
 
   async signup({ id, name, password }) {
