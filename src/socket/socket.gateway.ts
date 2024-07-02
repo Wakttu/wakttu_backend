@@ -10,8 +10,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { Inject, /*UseGuards*/ forwardRef } from '@nestjs/common';
-//import { SocketAuthenticatedGuard } from 'src/auth/socket-auth.guard';
+import { Inject, /*UseGuards,*/ forwardRef } from '@nestjs/common';
+//import { SocketAuthenticatedGuard } from 'src/socket/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
 import { KungService } from 'src/kung/kung.service';
@@ -130,8 +130,10 @@ export class SocketGateway
 
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
-    //if (!client.request.user) return;
-    const roomId = this.user[client.id].roomId;
+    if (!client.request.user) return;
+    const roomId = this.user[client.id]
+      ? this.user[client.id].roomId
+      : undefined;
     if (roomId) {
       this.handleExitReady(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
