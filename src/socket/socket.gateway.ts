@@ -88,14 +88,16 @@ export class SocketGateway
 
   // 접속시 수행되는 코드
   handleConnection(@ConnectedSocket() client: any) {
-    if (!client.request.user) return;
+    const user = client.request.session.user;
+    if (!user) return;
     for (const key in this.user) {
-      if (this.user[key].id === client.request.user.id) {
+      if (this.user[key].id === user.id) {
+        client.emit('alarm', { message: '이미 접속중인 유저입니다!' });
         client.disconnect();
         return;
       }
     }
-    this.user[client.id] = client.request.user;
+    this.user[client.id] = user;
     this.server.emit('list', this.user);
   }
 
@@ -112,7 +114,8 @@ export class SocketGateway
 
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
-    if (!client.request.user) return;
+    const user = client.request.session.user;
+    if (!user) return;
     const roomId = this.user[client.id]
       ? this.user[client.id].roomId
       : undefined;
@@ -201,7 +204,7 @@ export class SocketGateway
     @MessageBody() data: CreateRoomDto,
     @ConnectedSocket() client: any,
   ) {
-    this.user[client.id] = client.request.user;
+    this.user[client.id] = client.request.session.user;
     const info = await this.socketService.createRoom(
       this.user[client.id].id,
       data,

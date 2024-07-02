@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import * as passport from 'passport';
 import { SessionAdapter } from './session.adapter';
 import * as session from 'express-session';
 import * as MongoDBStore from 'connect-mongodb-session';
@@ -48,10 +47,6 @@ async function bootstrap() {
     }),
   );
 
-  // Passport를 초기화하는 미들웨어, 이를 통해 Passport의 인증/인가를 사용할 수 있다.
-  app.use(passport.initialize());
-  // Passport 세션을 사용하기 위한 미들웨어이다. 이를 통해 Passport는 세션을 기반으로 사용자의 인증 상태를 유지 관리 할 수 있다.
-  app.use(passport.session());
   await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { IsLoginedGuard } from './isLogined-auth.guard';
+import { IsNotLoginedGuard } from './isNotLogined-auth.guard';
 import { LocalAuthenticatedGuard } from './local-auth.guard';
 import { LoginUserDto } from 'src/user/dto/login-user.dto';
 
@@ -40,7 +40,7 @@ export class AuthController {
   })
   @Post('login')
   @UseGuards(LocalAuthenticatedGuard)
-  @UseGuards(IsLoginedGuard)
+  @UseGuards(IsNotLoginedGuard)
   async localLogin(
     @Body() body: LoginUserDto,
     @Session() session,
@@ -62,7 +62,7 @@ export class AuthController {
     },
   })
   @Post('signup')
-  @UseGuards(IsLoginedGuard)
+  @UseGuards(IsNotLoginedGuard)
   async signup(@Body() user: CreateUserDto): Promise<any> {
     return await this.authService.signup(user);
   }
