@@ -25,12 +25,17 @@ export class LastService {
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
-      this.server.to(roomId).emit('end', { message: 'end' });
+      roomInfo = await this.socketService.setStart(roomId, true);
+      game.users.splice(0, game.total);
+      this.server
+        .to(roomId)
+        .emit('last.end', { game: game, roomInfo: roomInfo });
       return;
     }
     const target = game.keyword['_id'];
     game.target = target[curRound];
     game.mission = await this.handleGetMission();
+    game.chain = 1;
     this.server.to(roomId).emit('last.round', game);
   }
 
@@ -43,5 +48,13 @@ export class LastService {
 
   async handleGetMission() {
     return await this.socketService.getMission();
+  }
+
+  handleNextTurn(game: Game, keyword: string, score: number) {
+    game.users[game.turn].score += score;
+    game.turn += 1;
+    game.turn %= game.total;
+    game.chain += 1;
+    game.target = keyword[keyword.length - 1];
   }
 }

@@ -1,11 +1,20 @@
-import { Injectable, UnauthorizedException, Req } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Req,
+  BadRequestException,
+} from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
+import { WakgamesService } from 'src/wakgames/wakgames.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly wakgamesService: WakgamesService,
+  ) {}
 
   async OAuthLogin(user) {
     const response = await this.userService.findById(user.id);
@@ -15,7 +24,7 @@ export class AuthService {
   }
 
   async LocalLogin(user) {
-    const response = await this.userService.findById(user.id);
+    const response = await this.userService.findById(user.email || user.id);
     if (!response) throw new UnauthorizedException('해당하는 유저가 없습니다.');
 
     const passwordMatch: boolean = await this.passworMatch(
@@ -32,18 +41,9 @@ export class AuthService {
     return await bcrypt.compare(password, hash);
   }
 
-  async login(): Promise<any> {
-    return {
-      message: 'Login successful',
-    };
-  }
-
   async logout(@Req() request: Request): Promise<any> {
-    request.session.destroy(() => {
-      return {
-        message: 'Logout successful',
-      };
-    });
+    request.session.destroy(() => {});
+    return { success: true, message: 'Logout Success' };
   }
 
   async signup({ id, name, password }) {
@@ -74,5 +74,51 @@ export class AuthService {
     if (checkName)
       return { status: 403, success: false, message: '이미 존재하는 닉네임' };
     return { status: 201, success: true, message: '사용가능한 닉네임' };
+  }
+
+  async waktaOauth() {
+    return this.wakgamesService.getAuth();
+  }
+
+  async waktaLogin(auth) {
+    let { data, response } = await this.wakgamesService.getToken(auth);
+    if (response.status !== 201) throw new UnauthorizedException();
+
+    const { accessToken, refreshToken, idToken } = data;
+
+    ({ data, response } = await this.wakgamesService.getProfile(accessToken));
+    if (response.status === 400) throw new BadRequestException();
+
+    const user = await this.userService.findById(String(idToken));
+    if (!user) {
+      const newUser = await this.userService.create({
+        id: String(idToken),
+        name: data.name,
+        provider: 'waktaverse.games',
+        password: undefined,
+      });
+
+      return {
+        accessToken: accessToken as string,
+        refreshToken: refreshToken as string,
+        user: newUser,
+      };
+    }
+
+    return {
+      accessToken: accessToken as string,
+      refreshToken: refreshToken as string,
+      user: user,
+    };
+  }
+
+  async waktaUpdateToken(token) {
+    const data = await this.wakgamesService.updateToken(token);
+    const { accessToken, refreshToken } = data;
+    if (!accessToken || !refreshToken) throw new UnauthorizedException();
+    return {
+      accessToken: accessToken as string,
+      refreshToken: refreshToken as string,
+    };
   }
 }

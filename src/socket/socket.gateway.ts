@@ -24,6 +24,7 @@ interface Chat {
   chat: string;
   roundTime: number | undefined;
   turnTime: number | undefined;
+  score: number | undefined;
 }
 
 export class Game {
@@ -41,7 +42,7 @@ export class Game {
   round: number; // 현재 라운드
   turn: number; // 현재 누구의 턴인가 보여주는 index
   total: number; // 총인원수
-  users: string[]; // user 들의 정보가 들어가잇음.
+  users: { id: string; score: number }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
@@ -173,17 +174,35 @@ export class SocketGateway
   // 게임 방에서 대화
   @SubscribeMessage('chat')
   async handleMessage(
-    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].users[this.game[roomId].turn] === client.id) {
+    if (
+      this.game[roomId].users[this.game[roomId].turn].id === client.id ||
+      this.game[roomId].turn == -1
+    ) {
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
-          await this.handleLastAnswer({ roomId, chat, roundTime, turnTime });
+          await this.handleLastAnswer({
+            roomId,
+            chat,
+            roundTime,
+            turnTime,
+            score,
+          });
           break;
         case 1:
-          await this.handleKungAnswer({ roomId, chat, roundTime, turnTime });
+          await this.handleKungAnswer({
+            roomId,
+            chat,
+            roundTime,
+            turnTime,
+            score,
+          });
+          break;
+        case 2:
+          await this.handleWakQuizAnswer({ roomId, chat }, client);
           break;
       }
     } else
@@ -289,9 +308,9 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
+    const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
     if (index === -1) {
-      this.game[roomId].users.push(client.id);
+      this.game[roomId].users.push({ id: client.id, score: 0 });
     } else {
       this.game[roomId].users.splice(index, 1);
     }
@@ -302,9 +321,13 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
-    if (index === -1) return;
-    this.game[roomId].users.splice(index, 1);
+    if (this.game[roomId].users) {
+      const index = this.game[roomId].users.findIndex(
+        (x) => x.id === client.id,
+      );
+      if (index === -1) return;
+      this.game[roomId].users.splice(index, 1);
+    }
   }
 
   // Get 변수
@@ -326,16 +349,14 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
-      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
     if (
       this.game[roomId].users.length + 1 !==
       this.roomInfo[roomId].users.length
     ) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
     }
 
@@ -362,12 +383,18 @@ export class SocketGateway
   }
 
   async handleLastAnswer(
-    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
   ) {
+    let success = false;
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = turnTime;
     if (chat[0] !== this.game[roomId].target) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '시작 단어가 맞지 않습니다.' });
+      this.server.to(roomId).emit('last.game', {
+        success: success,
+        answer: chat,
+        game: this.game[roomId],
+        message: '시작 단어가 일치하지 않습니다.',
+      });
       return;
     }
     const check = await this.socketService.findWord(chat);
@@ -381,17 +408,12 @@ export class SocketGateway
       );
     }
 
-    let success = false;
-    this.game[roomId].roundTime = roundTime;
-    this.game[roomId].turnTime = turnTime;
     if (checkOption && checkOption.success) {
       await this.lastService.handleCheckMission(chat, this.game[roomId]);
-      this.game[roomId].turn += 1;
-      this.game[roomId].turn %= this.game[roomId].total;
-      const target = check['id'];
-      this.game[roomId].target = target[target.length - 1];
+      this.lastService.handleNextTurn(this.game[roomId], check['id'], score);
       success = true;
     }
+
     this.server.to(roomId).emit('last.game', {
       success: success,
       answer: chat,
@@ -409,16 +431,14 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
-      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
     if (
       this.game[roomId].users.length + 1 !==
       this.roomInfo[roomId].users.length
     ) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
     }
     this.handleReady(roomId, client);
@@ -442,18 +462,27 @@ export class SocketGateway
     );
   }
   async handleKungAnswer(
-    @MessageBody() { roomId, chat, roundTime, turnTime }: Chat,
+    @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
   ) {
+    let success = false;
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = turnTime;
     if (chat[0] !== this.game[roomId].target) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '시작 단어가 맞지 않습니다.' });
+      this.server.to(roomId).emit('kung.game', {
+        success: success,
+        answer: chat,
+        game: this.game[roomId],
+        message: '시작단어와 일치하지 않습니다.',
+      });
       return;
     }
     if (chat.length !== 3) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '길이가 3이지 않습니다.' });
+      this.server.to(roomId).emit('kung.game', {
+        success: success,
+        answer: chat,
+        game: this.game[roomId],
+        message: '세글자가 아닙니다',
+      });
       return;
     }
     const check = await this.socketService.findWord(chat);
@@ -466,14 +495,8 @@ export class SocketGateway
         check['type'],
       );
     }
-    let success = false;
-    this.game[roomId].roundTime = roundTime;
-    this.game[roomId].turnTime = turnTime;
     if (check && checkOption.success) {
-      this.game[roomId].turn += 1;
-      this.game[roomId].turn %= this.game[roomId].total;
-      const target = check['id'];
-      this.game[roomId].target = target[target.length - 1];
+      this.kungService.handleNextTurn(this.game[roomId], check['id'], score);
       success = true;
     }
     this.server.to(roomId).emit('kung.game', {
@@ -493,7 +516,6 @@ export class SocketGateway
     index += 1;
     index %= this.game[roomId].total;
     this.kungService.handleBan(roomId, index, keyword);
-    client.emit('alarm', { message: '금지단어 설정완료' });
   }
 
   @SubscribeMessage('wak-quiz.start')
@@ -502,16 +524,14 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (this.game[roomId].host !== this.user[client.id].name) {
-      this.server.to(roomId).emit('alarm', { message: '방장이 아닙니다.' });
+      client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
     if (
       this.game[roomId].users.length + 1 !==
       this.roomInfo[roomId].users.length
     ) {
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
       return;
     }
     this.handleReady(roomId, client);
@@ -531,15 +551,10 @@ export class SocketGateway
     );
   }
   async handleWakQuizAnswer(
-    @MessageBody() { roomId, chat }: Chat,
+    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const index = this.game[roomId].users.indexOf(client.id);
-    this.wakQuizService.handleAnswer(roomId, index, chat);
-    this.server.to(roomId).emit('wak-quiz.game', {
-      success: true,
-      message: '답입력완료!',
-      game: this.game[roomId],
-    });
+    const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
+    this.wakQuizService.handleAnswer(roomId, index, chat, this.game[roomId]);
   }
 }

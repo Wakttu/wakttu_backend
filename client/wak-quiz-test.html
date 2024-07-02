@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>쿵쿵따 테스트</title>
+    <link rel="stylesheet" href="wak-quiz.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="d-flex flex-column">
+        <!--User List-->
+        <h2>접속한 유저목록</h2>
+        <div class="d-flex" id="userList"></div>
+
+        <!--Button-->
+        <h2>Button zone</h2>
+        <div class="d-flex flex-low">
+            <button onclick="createRoom()">방생성</button>
+            <button onclick="roomList()">방정보확인</button>
+            <button onclick="openModal()">모달확인</button>
+        </div>
+        <!--Room List-->
+        <div>
+            <h2>방리스트</h2>
+            <div id="roomList" class="d-flex flex-wrap"></div>
+        </div>
+    </div>
+    <!--Modal-->
+    <div class="modal">
+        <div class="modal_body">
+            <h2 id="modal_title"></h2>
+            <button class="mx-1" onclick="closeModal()">나가기</button>
+            <button class="mx-1" onclick="ready()">Ready</button>
+            <button class="mx-1" onclick="start()">start</button>
+            <button class="mx-1" onclick="info()">Info</button>
+            <button class="mx-1" onclick="round()">Round</button>
+            <div class="border" id="roomUserList">
+                <h4>유저목록</h4>
+                <div class="d-flex" id="roomUserList"></div>
+            </div>
+            <div class="border" id="game"></div>
+            <div class="border" id="log"></div>
+            <div class="d-flex justify-content-center">
+                <div>
+                    <input type="text" name="chat" id="chat" /><button onclick="chat()">
+                        보내기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="https://port-0-wakttu-backend-2aat2cluozach9.sel5.cloudtype.app/socket.io/socket.io.js"></script>
+
+<script>
+    const socket = io('/wakttu');
+
+    // user 목록
+    let users = {};
+
+    // room 목록
+    let rooms = {};
+
+    // 들어갈 room 정보
+    let roomId;
+    let password;
+    let roomInfo;
+
+    // user list 받는 event : Backend에서 this.user
+    socket.on('list', (data) => {
+        console.log('event:list');
+        const userList = document.querySelector('#userList');
+        userList.innerHTML = '';
+        for (let i in data) {
+            let div = document.createElement('div');
+            div.className += 'mx-1';
+            div.innerText = data[i].name;
+            users[i] = data[i];
+            userList.appendChild(div);
+        }
+    });
+
+    // room 생성 받는 event : createRoom
+    socket.on('createRoom', (data) => {
+        console.log('event:createRoom');
+        roomId = data['roomId'];
+        password = data['password'];
+        openModal();
+    });
+
+    function createRoom() {
+        let data = {
+            title: '왁퀴즈',
+            type: 2,
+            round: 6,
+            option: ['품어', '매너', '외수'],
+            total: 8,
+        };
+        socket.emit('createRoom', data);
+    }
+
+    // room list 받는 event : DB에 생성된 방정보
+    socket.on('roomList', (data) => {
+        console.log('event:roomList');
+        const roomList = document.querySelector('#roomList');
+        roomList.innerHTML = '';
+        for (let i in data) {
+            let div = document.createElement('div');
+            div.className += 'mx-1';
+            div.innerHTML = `<div class="card m-2 p-2" style="width: 360px;" data-id="${data[i].id}" data-password="${data[i].password}" onclick="enter(this);">
+            <div class="card-body">
+                <h5 class="card-title">${data[i].title}</h5>
+                <p class="card-text">round:${data[i].round}|total:${data[i].users.length}/${data[i].total}|option:${data[i].option}</p>
+
+            </div>
+        </div>`;
+            rooms[i] = data[i];
+            roomList.appendChild(div);
+        }
+    });
+
+    function roomList() {
+        socket.emit('roomList');
+    }
+
+    // enter Room
+    socket.on('enter', (data) => {
+        const modal_title = document.querySelector('#modal_title');
+        const roomUserList = document.querySelector('#roomUserList');
+        roomUserList.innerHTML = '';
+        modal_title.innerText = data['title'];
+        const users = data['users'];
+        for (let i = 0; i < users.length; i++) {
+            roomUserList.innerHTML += `<div class="mx-1">${users[i].name}</div>`;
+        }
+        openModal();
+    });
+
+    function enter(data) {
+        if (data) {
+            roomId = data.dataset['id'];
+        }
+        socket.emit('enter', { roomId, password: null });
+    }
+
+    // exit Room
+    socket.on('exit', (data) => {
+        const roomUserList = document.querySelector('#roomUserList');
+        roomUserList.innerHTML = '';
+        const users = data['users'];
+        for (let i = 0; i < users.length; i++) {
+            roomUserList.innerHTML += `<div class="mx-1">${users[i].name}</div>`;
+        }
+    });
+
+    function exit() {
+        socket.emit('exit', roomId);
+    }
+
+    // chat
+    socket.on('chat', (data) => {
+        const log = document.querySelector('#log');
+        log.innerHTML += `<p>${data['user']['name']}: ${data['chat']}</p>`;
+    });
+
+    function chat() {
+        const message = document.querySelector('#chat').value;
+        socket.emit('chat', { roomId: roomId, chat: message });
+    }
+
+    // ready
+    socket.on('ready', (data) => {
+        console.log('ready', data);
+    });
+
+    function ready() {
+        socket.emit('ready', roomId);
+    }
+
+    // wak-quiz Start
+    socket.on('wak-quiz.start', (data) => {
+        console.log('start', data);
+    });
+
+    function start() {
+        socket.emit('wak-quiz.start', roomId);
+    }
+
+    // wak-quiz Round
+    socket.on('wak-quiz.round', (data) => {
+        console.log("round", data);
+        const game = document.querySelector('#game');
+        const target = data.target;
+        game.innerHTML = `<p>문제:${target.question}</p><p>문제형식:${target.type}<p/><p>선택지:${target.select}<p/><p>설명:${target.description}<p/><p>힌트:${target.hint}<p/><p>정답:${target.answer}<p/>`;
+    });
+
+    function round() {
+        socket.emit('wak-quiz.round', roomId);
+    }
+
+    // wak-quiz game
+    socket.on('wak-quiz.game', (data) => {
+        const log = document.querySelector('#log');
+        console.log(data);
+        const answer = data['answer'];
+        for (let i = 0; i < answer.length; i++) {
+            log.innerHTML += `<p>${answer[i].index} : ${answer[i].submit}</p>`;
+        }
+
+    });
+
+    // Info
+    socket.on('info', (data) => {
+        console.log('info', data);
+    });
+
+    function info() {
+        socket.emit('info');
+    }
+
+</script>
+<script>
+    socket.on('alarm', (data) => {
+        console.log('alarm', data);
+    });
+    roomList();
+
+    const modal = document.querySelector('.modal');
+    const btnOpenModal = document.querySelector('.modal_button');
+
+    function openModal() {
+        modal.style.display = 'flex';
+        enter();
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        exit();
+    }
+</script>
+
+</html>

@@ -6,69 +6,48 @@ import {
   Res,
   Post,
   Body,
+  Query,
+  BadRequestException,
+  Session,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { NaverAuthGuard } from './naver-auth.guard';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { LocalGuard } from './local-auth.guard';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { IsNotLoginedGuard } from './isNotLogined-auth.guard';
+import { LocalAuthenticatedGuard } from './local-auth.guard';
+import { LoginUserDto } from 'src/user/dto/login-user.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Oauth Naver Login' })
-  @Get('naver')
-  @UseGuards(NaverAuthGuard)
-  async naverLogin(): Promise<void> {}
-
-  @ApiOperation({ summary: 'Oauth Naver login Callback' })
-  @Get('naver/callback')
-  @UseGuards(NaverAuthGuard)
-  async naverLoginCallback(@Req() req, @Res() res): Promise<void> {
-    const user = req.user;
-    await this.authService.OAuthLogin(user);
-    return res.redirect('/list.html');
-  }
-
   @ApiOperation({ summary: 'logout' })
   @Get('logout')
-  logout(@Req() request: Request): Promise<any> {
-    return this.authService.logout(request);
+  async logout(@Req() request: Request): Promise<any> {
+    return await this.authService.logout(request);
   }
 
   @ApiOperation({ summary: 'Local Login' })
   @ApiBody({
     schema: {
       properties: {
-        email: { type: 'string' },
-        password: { type: 'string' },
-      },
-    },
-  })
-  @Post('local')
-  @UseGuards(LocalGuard)
-  async login(@Res() res: Response): Promise<any> {
-    res.redirect('/list.html');
-  }
-
-  @ApiOperation({ summary: 'Local Login' })
-  @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string' },
+        id: { type: 'string' },
         password: { type: 'string' },
       },
     },
   })
   @Post('login')
-  @UseGuards(LocalGuard)
-  async localLogin(@Req() req: Request): Promise<any> {
-    const json = JSON.parse(JSON.stringify(req.user));
+  @UseGuards(LocalAuthenticatedGuard)
+  @UseGuards(IsNotLoginedGuard)
+  async localLogin(
+    @Body() body: LoginUserDto,
+    @Session() session,
+  ): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...user } = json;
+    const { password, ...user } = await this.authService.LocalLogin(body);
+    session.user = user;
     return user;
   }
 
@@ -83,23 +62,15 @@ export class AuthController {
     },
   })
   @Post('signup')
+  @UseGuards(IsNotLoginedGuard)
   async signup(@Body() user: CreateUserDto): Promise<any> {
     return await this.authService.signup(user);
   }
 
   @ApiOperation({ summary: 'check to login User' })
   @Get('status')
-  async user(@Req() req: any) {
-    if (req.user) {
-      return {
-        data: req.user,
-        msg: 'Authenticated',
-      };
-    } else {
-      return {
-        msg: 'Not Authenticated',
-      };
-    }
+  async user(@Session() session) {
+    return session;
   }
 
   @ApiOperation({ summary: 'check duplicate inspection of id' })
@@ -126,5 +97,36 @@ export class AuthController {
   @Post('check/name')
   async checkName(@Body('name') name: string): Promise<any> {
     return await this.authService.checkName(name);
+  }
+
+  @Get('wakta')
+  async waktaOauth(@Session() session: Record<string, any>) {
+    const data = await this.authService.waktaOauth();
+    session.auth = data;
+    return data;
+  }
+
+  @Get('wakta/callback')
+  async waktaCallback(@Query() query, @Req() req, @Res() res) {
+    if (query.code) {
+      req.session.auth.code = query.code;
+      const data = await this.authService.waktaLogin(req.session.auth);
+      const { accessToken, refreshToken, user } = data;
+
+      req.session.accessToken = accessToken;
+      req.session.refreshToken = refreshToken;
+      req.session.user = user;
+
+      return res.redirect('https://waktaverse.games/oauth/authorize?success=1');
+    } else throw new BadRequestException();
+  }
+
+  @Get('wakta/refresh')
+  async waktaRefresh(@Req() req: Request) {
+    const { accessToken, refreshToken } =
+      await this.authService.waktaUpdateToken(req.session.refreshToken);
+    req.session.accessToken = accessToken;
+    req.session.refreshToken = refreshToken;
+    return { status: 201, accessToken, refreshToken };
   }
 }
