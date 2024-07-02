@@ -69,17 +69,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'check to login User' })
   @Get('status')
-  async user(@Req() req: any) {
-    if (req.user) {
-      return {
-        data: req.user,
-        msg: 'Authenticated',
-      };
-    } else {
-      return {
-        msg: 'Not Authenticated',
-      };
-    }
+  async user(@Session() session) {
+    return session;
   }
 
   @ApiOperation({ summary: 'check duplicate inspection of id' })
