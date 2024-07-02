@@ -17,17 +17,6 @@ model kkutu_ko {
 }
 
 model User {
-<<<<<<< HEAD
-  id             String           @id
-  name           String           @unique
-  score          Int              @default(0)
-  provider       String
-  password       String?
-  roomId         String?
-  Keyboard       Keyboard?
-  room           Room?            @relation(fields: [roomId], references: [id])
-  user_get_emoji user_get_emoji[]
-=======
   id           String         @id
   name         String
   score        Int            @default(0)
@@ -39,7 +28,6 @@ model User {
   room         Room?          @relation(fields: [roomId], references: [id])
   emoji        UserGetEmoji[]
   item         UserGetItem[]
->>>>>>> 490b49a0188934855140d44e32e0f8fedacc6d52
 }
 
 model Room {
@@ -87,31 +75,6 @@ model Manner {
   @@map("wakttu_manner")
 }
 
-<<<<<<< HEAD
-model Emoji {
-  id             String           @id @map("_id") @db.VarChar
-  name           String
-  url            String
-  user_get_emoji user_get_emoji[]
-  Keyboard       Keyboard[]
-}
-
-model Keyboard {
-  id     Int     @id @default(autoincrement()) @map("_id")
-  userId String  @unique
-  User   User    @relation(fields: [userId], references: [id])
-  Emoji  Emoji[]
-}
-
-model user_get_emoji {
-  userId     String
-  emojiId    String
-  created_at DateTime @default(now())
-  Emoji      Emoji    @relation(fields: [emojiId], references: [id])
-  User       User     @relation(fields: [userId], references: [id])
-
-  @@id([userId, emojiId])
-=======
 model Keyboard {
   id     Int     @id @default(autoincrement()) @map("_id")
   userId String  @unique
@@ -183,5 +146,4 @@ model wakttu_meme {
   info    String
   tag     String[]
   meta    Json?
->>>>>>> 490b49a0188934855140d44e32e0f8fedacc6d52
 }
