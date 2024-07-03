@@ -8,6 +8,7 @@ import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Game } from './socket.gateway';
 import { QuizService } from 'src/quiz/quiz.service';
 import { Quiz } from 'src/quiz/entities/quiz.entity';
+import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 @Injectable()
 export class SocketService {
   constructor(
@@ -28,6 +29,10 @@ export class SocketService {
   async createRoom(userId: string, data: CreateRoomDto): Promise<CreateRoom> {
     const room = await this.roomService.create(data);
     return await this.userService.roomCreate(userId, room.id);
+  }
+
+  async updateRoom(roomId: string, data: UpdateRoomDto): Promise<Room> {
+    return await this.roomService.update(roomId, data);
   }
 
   async deleteRoom(roomId: string): Promise<void> {
