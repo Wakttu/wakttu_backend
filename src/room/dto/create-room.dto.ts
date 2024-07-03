@@ -43,4 +43,9 @@ export class CreateRoomDto {
   @ApiProperty({ example: '8', description: '인원수설정하는값' })
   @IsNumber()
   total: number;
+
+  @ApiProperty({ example: '600000', description: '라운드 시간 ms 단위' })
+  @IsOptional()
+  @IsNumber()
+  time: number;
 }
