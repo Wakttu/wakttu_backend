@@ -62,4 +62,11 @@ export class KungService {
     game.chain += 1;
     game.target = keyword[keyword.length - 1];
   }
+
+  handleCheck(word: string, target: string, length: number) {
+    if (length !== 3) return { success: false, message: '길이가 3이 아님' };
+    if (word !== target) {
+      return { success: false, message: '시작단어가 일치하지 않음' };
+    }
+  }
 }
