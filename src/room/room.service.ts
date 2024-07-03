@@ -10,20 +10,10 @@ export class RoomService {
   async create(data: CreateRoomDto): Promise<CreateRoom | null> {
     return await this.prisma.room.create({
       data,
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        round: true,
-        option: true,
-        total: true,
-        start: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         users: {
           select: { id: true, name: true },
         },
-        password: true,
       },
     });
   }
@@ -43,16 +33,7 @@ export class RoomService {
         start,
         option: { hasEvery: option },
       },
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        round: true,
-        option: true,
-        total: true,
-        start: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         users: {
           select: { id: true, name: true },
         },
@@ -63,16 +44,7 @@ export class RoomService {
   async findById(id: string): Promise<Room | null> {
     return await this.prisma.room.findUnique({
       where: { id },
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        round: true,
-        option: true,
-        total: true,
-        start: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         users: {
           select: { id: true, name: true },
         },
@@ -84,16 +56,7 @@ export class RoomService {
     return await this.prisma.room.update({
       where: { id },
       data,
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        round: true,
-        option: true,
-        total: true,
-        start: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         users: {
           select: { id: true, name: true },
         },
@@ -109,16 +72,7 @@ export class RoomService {
           set: start,
         },
       },
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        round: true,
-        option: true,
-        total: true,
-        start: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
         users: {
           select: { id: true, name: true },
         },
