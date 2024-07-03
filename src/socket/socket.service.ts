@@ -104,14 +104,14 @@ export class SocketService {
     return false;
   }
 
-  checkWakta(type: string): boolean {
-    if (type === 'WAKTA') return true;
-    return false;
+  checkWakta(wakta: boolean): boolean {
+    return wakta === true;
   }
-
+  checkPoom(type: string): boolean {
+    return type === 'POOM';
+  }
   checkInjeong(type: string): boolean {
-    if (type === 'INJEONG') return true;
-    return false;
+    return type === 'INJEONG';
   }
 
   getOption(option: string[]): boolean[] {
@@ -139,7 +139,7 @@ export class SocketService {
     }
 
     if (!option[1]) {
-      const flag1 = this.checkWakta(type);
+      const flag1 = this.checkPoom(type);
       if (flag1) return { success: false, message: '품어 단어 금지!' };
     }
 
@@ -148,6 +148,12 @@ export class SocketService {
       if (flag2) return { success: false, message: '외수 단어 금지!' };
     }
     return { success: true, message: '성공' };
+  }
+
+  async check(_word: string, option: boolean[]) {
+    const word = await this.findWord(_word);
+    if (!word) return { success: false, message: '없는 단어입니다.' };
+    return await this.checkOption(option, word.id.slice(-1), word.type);
   }
 
   async getQuizList(take: number): Promise<Quiz[]> {

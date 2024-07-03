@@ -9,6 +9,7 @@ export class Room {
   users: any;
   createdAt: Date;
   updatedAt: Date;
+  time: number;
 }
 
 export class CreateRoom extends Room {

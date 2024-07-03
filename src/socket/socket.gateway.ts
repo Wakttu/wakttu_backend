@@ -389,40 +389,38 @@ export class SocketGateway
   async handleLastAnswer(
     @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
   ) {
-    let success = false;
     this.game[roomId].roundTime = roundTime;
     this.game[roomId].turnTime = turnTime;
-    if (chat[0] !== this.game[roomId].target) {
+    const checkLast = this.lastService.handleCheck(
+      chat[0],
+      this.game[roomId].target as string,
+    );
+
+    if (!checkLast.success) {
       this.server.to(roomId).emit('last.game', {
-        success: success,
+        success: checkLast.success,
         answer: chat,
         game: this.game[roomId],
-        message: '시작 단어가 일치하지 않습니다.',
+        message: checkLast.message,
       });
       return;
     }
-    const check = await this.socketService.findWord(chat);
 
-    let checkOption = undefined;
-    if (check) {
-      checkOption = await this.socketService.checkOption(
-        this.game[roomId].option,
-        check['id'].slice(-1),
-        check['type'],
-      );
+    const check = await this.socketService.check(
+      chat,
+      this.game[roomId].option,
+    );
+    if (check.success) {
+      score = this.socketService.checkWakta(check['wakta'])
+        ? score * 1.2
+        : score;
+      this.lastService.handleNextTurn(this.game[roomId], chat, score);
     }
-
-    if (checkOption && checkOption.success) {
-      await this.lastService.handleCheckMission(chat, this.game[roomId]);
-      this.lastService.handleNextTurn(this.game[roomId], check['id'], score);
-      success = true;
-    }
-
     this.server.to(roomId).emit('last.game', {
-      success: success,
+      success: check.success,
       answer: chat,
       game: this.game[roomId],
-      message: checkOption ? checkOption.message : '없는 단어 입니다.',
+      message: check.message,
     });
   }
   /*
@@ -468,46 +466,37 @@ export class SocketGateway
   async handleKungAnswer(
     @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
   ) {
-    let success = false;
     this.game[roomId].roundTime = roundTime;
     this.game[roomId].turnTime = turnTime;
-    if (chat[0] !== this.game[roomId].target) {
+    const checkKung = this.kungService.handleCheck(
+      chat[0],
+      this.game[roomId].target as string,
+      chat.length,
+    );
+    if (!checkKung.success) {
       this.server.to(roomId).emit('kung.game', {
-        success: success,
+        success: checkKung.success,
         answer: chat,
         game: this.game[roomId],
-        message: '시작단어와 일치하지 않습니다.',
+        message: checkKung.message,
       });
       return;
     }
-    if (chat.length !== 3) {
-      this.server.to(roomId).emit('kung.game', {
-        success: success,
-        answer: chat,
-        game: this.game[roomId],
-        message: '세글자가 아닙니다',
-      });
-      return;
-    }
-    const check = await this.socketService.findWord(chat);
-
-    let checkOption = undefined;
-    if (check) {
-      checkOption = await this.socketService.checkOption(
-        this.game[roomId].option,
-        check['id'].slice(-1),
-        check['type'],
-      );
-    }
-    if (check && checkOption.success) {
-      this.kungService.handleNextTurn(this.game[roomId], check['id'], score);
-      success = true;
+    const check = await this.socketService.check(
+      chat,
+      this.game[roomId].option,
+    );
+    if (check.success) {
+      score = this.socketService.checkWakta(check['wakta'])
+        ? score * 1.2
+        : score;
+      this.kungService.handleNextTurn(this.game[roomId], chat, score);
     }
     this.server.to(roomId).emit('kung.game', {
-      success: success,
+      success: check.success,
       answer: chat,
       game: this.game[roomId],
-      message: checkOption ? checkOption.message : '없는 단어 입니다.',
+      message: check.message,
     });
   }
 

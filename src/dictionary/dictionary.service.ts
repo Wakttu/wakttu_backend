@@ -16,6 +16,15 @@ export class DictionaryService {
     });
   }
 
+  async findAll(id: string) {
+    return await this.prisma.dictionary.findMany({
+      where: {
+        id: { startsWith: id },
+      },
+      take: 10,
+    });
+  }
+
   async update(id: string, data: UpdateDictionaryDto) {
     return await this.prisma.dictionary.update({
       where: { id },
