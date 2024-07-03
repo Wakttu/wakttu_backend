@@ -480,6 +480,7 @@ export class SocketGateway
         game: this.game[roomId],
         message: checkKung.message,
       });
+      return;
     }
     const check = await this.socketService.check(
       chat,

@@ -68,5 +68,6 @@ export class KungService {
     if (word !== target) {
       return { success: false, message: '시작단어가 일치하지 않음' };
     }
+    return { success: true, message: '통과' };
   }
 }
