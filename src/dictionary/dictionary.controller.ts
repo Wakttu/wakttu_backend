@@ -49,4 +49,10 @@ export class DictionaryController {
   async checkManner(@Param('keyword') keyword: string) {
     return await this.dictionaryService.checkManner(keyword);
   }
+
+  @ApiOperation({ summary: '입력한 단어로시작하는 단어' })
+  @Get('all/:id')
+  async findAll(@Param('id') id: string) {
+    return await this.dictionaryService.findAll(id);
+  }
 }
