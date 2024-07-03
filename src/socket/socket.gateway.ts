@@ -18,6 +18,7 @@ import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
 import { WakQuizService } from 'src/wak-quiz/wak-quiz.service';
 import { Quiz } from 'src/quiz/entities/quiz.entity';
+import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 
 interface Chat {
   roomId: string;
@@ -214,6 +215,21 @@ export class SocketGateway
     this.game[room.id] = new Game();
     this.game[room.id].host = this.user[client.id].name;
     client.emit('createRoom', { roomId: room.id, password });
+  }
+
+  // 게임 방 수정
+  @SubscribeMessage('updateRoom')
+  async handleUpdate(
+    @MessageBody() { roomId, data }: { roomId: string; data: UpdateRoomDto },
+    @ConnectedSocket() client: any,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      client.emit('alarm', { message: '방장이 아닙니다.' });
+      return;
+    }
+    const roomInfo = await this.socketService.updateRoom(roomId, data);
+    this.roomInfo[roomId] = roomInfo;
+    this.server.to(roomId).emit('updateRoom', this.roomInfo[roomId]);
   }
 
   // 게임 방 입장
