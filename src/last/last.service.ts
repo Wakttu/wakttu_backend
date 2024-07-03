@@ -63,5 +63,6 @@ export class LastService {
     if (word !== target) {
       return { success: false, message: '시작단어가 일치하지않음' };
     }
+    return { success: true, message: '성공' };
   }
 }

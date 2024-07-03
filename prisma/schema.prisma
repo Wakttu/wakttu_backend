@@ -17,22 +17,21 @@ model kkutu_ko {
 }
 
 model User {
-  id           String         @id
-  name         String
-  score        Int            @default(0)
-  provider     String
-  password     String?
-  roomId       String?
-  character    Character?
-  keyboard     Keyboard?
-  room         Room?          @relation(fields: [roomId], references: [id])
-  emoji        UserGetEmoji[]
-  item         UserGetItem[]
+  id        String         @id
+  name      String
+  score     Int            @default(0)
+  provider  String
+  password  String?
+  roomId    String?
+  character Character?
+  keyboard  Keyboard?
+  room      Room?          @relation(fields: [roomId], references: [id])
+  emoji     UserGetEmoji[]
+  item      UserGetItem[]
 }
 
 model Room {
   id        String   @id @default(uuid())
-  idx       Int      @default(autoincrement())
   title     String
   password  String?
   type      Int
@@ -41,8 +40,9 @@ model Room {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   round     Int
-  time      Int      @default(60000)
   total     Int
+  idx       Int      @default(autoincrement())
+  time      Int      @default(60000)
   users     User[]
 }
 
