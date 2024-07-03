@@ -15,6 +15,7 @@ export class LastService {
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
     game.total = game.users.length;
     game.keyword = await this.socketService.setWord(roomInfo.round);
+    game.roundTime = roomInfo.time;
     roomInfo.start = (
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
