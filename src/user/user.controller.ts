@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from './user.guard';
 import { IsLoginedGuard } from 'src/auth/isLogined-auth.guard';
 import { IsNotLoginedGuard } from 'src/auth/isNotLogined-auth.guard';
+import { ScoreUserDto } from './dto/score-user.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -55,5 +56,19 @@ export class UserController {
   @Patch(':id')
   async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return await this.userService.update(id, body);
+  }
+  @ApiOperation({ summary: 'Update Score' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+  })
+  @ApiBody({
+    description: 'update score',
+    type: ScoreUserDto,
+  })
+  @UseGuards(IsLoginedGuard, AuthGuard)
+  @Patch(':id')
+  async updateScore(@Param('id') id: string, @Body('score') score: number) {
+    return await this.userService.updateScore(id, score);
   }
 }
