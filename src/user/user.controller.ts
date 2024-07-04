@@ -1,7 +1,19 @@
-import { Get, Post, Body, Controller, Param } from '@nestjs/common';
+import {
+  Get,
+  Post,
+  Body,
+  Controller,
+  Param,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthGuard } from './user.guard';
+import { IsLoginedGuard } from 'src/auth/isLogined-auth.guard';
+import { IsNotLoginedGuard } from 'src/auth/isNotLogined-auth.guard';
 
 @ApiTags('User')
 @Controller('user')
@@ -13,8 +25,9 @@ export class UserController {
     name: 'id',
     type: 'string',
   })
+  @UseGuards(IsLoginedGuard, AuthGuard)
   @Get(':id')
-  async getUser(@Param() id: string) {
+  async getUser(@Param('id') id: string) {
     return await this.userService.findById(id);
   }
 
@@ -23,8 +36,24 @@ export class UserController {
     description: 'signup User',
     type: CreateUserDto,
   })
+  @UseGuards(IsNotLoginedGuard)
   @Post()
   async signUp(@Body() createUserDto: CreateUserDto) {
     return await this.userService.create(createUserDto);
+  }
+
+  @ApiOperation({ summary: 'Update User' })
+  @ApiParam({
+    name: 'id',
+    type: 'string',
+  })
+  @ApiBody({
+    description: 'update User',
+    type: UpdateUserDto,
+  })
+  @UseGuards(IsLoginedGuard, AuthGuard)
+  @Patch(':id')
+  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
+    return await this.userService.update(id, body);
   }
 }
