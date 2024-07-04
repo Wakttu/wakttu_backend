@@ -3,6 +3,7 @@ import { User } from './entities/user.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -15,10 +16,19 @@ export class UserService {
     return await this.prisma.user.create({ data });
   }
 
+  async update(id: string, data: UpdateUserDto): Promise<User> {
+    return await this.prisma.user.update({
+      where: { id },
+      data,
+      omit: {
+        password: true,
+      },
+    });
+  }
+
   async findById(id: string) {
     const response = await this.prisma.user.findUnique({
       where: { id },
-      include: { keyboard: { include: { emoji: true } } },
     });
     return response;
   }
@@ -26,12 +36,8 @@ export class UserService {
   async findByName(name: string) {
     const response = await this.prisma.user.findFirst({
       where: { name },
-      select: {
-        id: true,
-        name: true,
-        score: true,
-        roomId: true,
-        password: false,
+      omit: {
+        password: true,
       },
     });
     return response;
@@ -57,6 +63,7 @@ export class UserService {
     });
     return response.room;
   }
+
   async enter(id: string, roomId: string) {
     const response = await this.prisma.user.update({
       where: { id },
