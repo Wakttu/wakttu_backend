@@ -105,4 +105,16 @@ export class UserService {
       select: { keyboard: true, emoji: true },
     });
   }
+
+  async updateScore(id: string, score: number) {
+    return await this.prisma.user.update({
+      where: { id },
+      data: {
+        score: { increment: score },
+      },
+      select: {
+        score: true,
+      },
+    });
+  }
 }
