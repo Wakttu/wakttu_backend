@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+
 }
 
 datasource db {
@@ -24,7 +26,7 @@ model User {
   password  String?
   roomId    String?
   character Character?
-  keyboard  Keyboard?
+  keyboard  String[]
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
@@ -77,19 +79,11 @@ model Manner {
   @@map("wakttu_manner")
 }
 
-model Keyboard {
-  id     Int     @id @default(autoincrement()) @map("_id")
-  userId String  @unique
-  user   User    @relation(fields: [userId], references: [id])
-  emoji  Emoji[] @relation("EmojiToKeyboard")
-}
-
 model Emoji {
-  id        String         @id @map("_id") @db.VarChar
-  name      String
-  url       String
-  users     UserGetEmoji[]
-  keyboards Keyboard[]     @relation("EmojiToKeyboard")
+  id    String         @id @map("_id") @db.VarChar
+  name  String
+  url   String
+  users UserGetEmoji[]
 }
 
 model UserGetEmoji {
@@ -104,16 +98,12 @@ model UserGetEmoji {
 }
 
 model Character {
-  userId String @unique
-  skinId String
-  headId String
-  handId String
-  eyeId  String
-  eye    Item   @relation("eye", fields: [eyeId], references: [id])
-  hand   Item   @relation("hand", fields: [handId], references: [id])
-  head   Item   @relation("head", fields: [headId], references: [id])
-  skin   Item   @relation("skin", fields: [skinId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  userId String  @unique
+  skin   String  @default("S-1")
+  head   String?
+  hand   String?
+  eye    String?
+  user   User    @relation(fields: [userId], references: [id])
 }
 
 model Item {
@@ -123,10 +113,6 @@ model Item {
   description String
   author      String
   url         String
-  eye         Character[]   @relation("eye")
-  hand        Character[]   @relation("hand")
-  head        Character[]   @relation("head")
-  skin        Character[]   @relation("skin")
   user        UserGetItem[]
 }
 
