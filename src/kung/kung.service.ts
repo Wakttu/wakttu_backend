@@ -37,6 +37,9 @@ export class KungService {
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
+      this.server
+        .to(roomId)
+        .emit('last.result', { game: game, roomInfo: roomInfo });
       roomInfo = await this.socketService.setStart(roomId, true);
       game.users.splice(0, game.total);
       this.server
