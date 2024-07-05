@@ -33,7 +33,7 @@ export class CreateRoomDto {
   round: number;
 
   @ApiProperty({
-    example: '[1,0,1,0,1]',
+    example: '[매너, 품어]',
     description: '방의 옵션을 키고 끄는 내용을 정할수 있음.',
   })
   @IsOptional()
