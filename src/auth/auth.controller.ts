@@ -17,11 +17,15 @@ import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { IsNotLoginedGuard } from './isNotLogined-auth.guard';
 import { LocalAuthenticatedGuard } from './local-auth.guard';
 import { LoginUserDto } from 'src/user/dto/login-user.dto';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
 
   @ApiOperation({ summary: 'logout' })
   @Get('logout')
@@ -117,7 +121,7 @@ export class AuthController {
       req.session.refreshToken = refreshToken;
       req.session.user = user;
 
-      return res.redirect('https://waktaverse.games/oauth/authorize?success=1');
+      return res.redirect(this.configService.get<string>('REDIRECT_URL'));
     } else throw new BadRequestException();
   }
 
