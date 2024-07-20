@@ -55,7 +55,10 @@ export class Game {
 }
 
 @UseGuards(SocketAuthenticatedGuard)
-@WebSocketGateway({ namespace: 'wakttu', cors: { origin: '*' } })
+@WebSocketGateway({
+  namespace: 'wakttu',
+  cors: { origin: 'http://localhost:3000', credentials: true },
+})
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -90,7 +93,10 @@ export class SocketGateway
   // 접속시 수행되는 코드
   handleConnection(@ConnectedSocket() client: any) {
     const user = client.request.session.user;
-    if (!user) return;
+    if (!user) {
+      client.disconnect();
+      return;
+    }
     for (const key in this.user) {
       if (this.user[key].id === user.id) {
         client.emit('alarm', { message: '이미 접속중인 유저입니다!' });
