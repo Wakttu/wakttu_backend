@@ -8,7 +8,7 @@ import * as MongoDBStore from 'connect-mongodb-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: 'https://localhost:3000', credentials: true });
+  app.enableCors({ origin: true, credentials: true });
   const MongoStore = MongoDBStore(session);
 
   const store = new MongoStore({
@@ -26,6 +26,7 @@ async function bootstrap() {
       httpOnly: true,
       sameSite: 'none',
       secure: true,
+      domain: 'localhost',
     },
     store: store,
   });
