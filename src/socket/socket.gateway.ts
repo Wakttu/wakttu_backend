@@ -57,7 +57,7 @@ export class Game {
 @UseGuards(SocketAuthenticatedGuard)
 @WebSocketGateway({
   namespace: 'wakttu',
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: { origin: true, credentials: true },
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
