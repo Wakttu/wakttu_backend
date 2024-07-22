@@ -6,7 +6,6 @@ export class SocketAuthenticatedGuard implements CanActivate {
     const client = context.switchToWs().getClient();
     const request = client.request;
     client.user = request.session.user;
-    console.log(request.session);
     return this.checkUser(request.session);
   }
 
