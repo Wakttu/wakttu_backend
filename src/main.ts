@@ -25,7 +25,7 @@ async function bootstrap() {
       maxAge: 60000 * 60, // 1 hour
       httpOnly: true,
       sameSite: process.env.COOKIE_SAMESITE as 'none',
-      secure: 'auto',
+      secure: true,
     },
     store: store,
   });
