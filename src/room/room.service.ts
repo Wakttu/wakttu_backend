@@ -20,9 +20,9 @@ export class RoomService {
 
   async findByQuery(
     title: string = undefined,
-    start: boolean = false,
+    start: boolean = undefined,
     option: string[] = [],
-    take: number = 6,
+    take: number = undefined,
     skip: number = 0,
   ): Promise<Room[] | null> {
     return await this.prisma.room.findMany({
@@ -33,6 +33,16 @@ export class RoomService {
         start,
         option: { hasEvery: option },
       },
+      include: {
+        users: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+  }
+
+  async findAll(): Promise<Room[] | null> {
+    return await this.prisma.room.findMany({
       include: {
         users: {
           select: { id: true, name: true },
