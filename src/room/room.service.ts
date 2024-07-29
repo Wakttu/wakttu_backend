@@ -90,7 +90,7 @@ export class RoomService {
     });
   }
   async remove(id: string): Promise<any> {
-    return await this.prisma.room.delete({ where: { id } });
+    return await this.prisma.room.deleteMany({ where: { id } });
   }
 
   async removeAll(): Promise<any> {
