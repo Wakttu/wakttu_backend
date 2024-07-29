@@ -172,8 +172,9 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (
-      this.game[roomId].users[this.game[roomId].turn].id === client.id ||
-      this.game[roomId].turn == -1
+      this.roomInfo[roomId].start &&
+      (this.game[roomId].users[this.game[roomId].turn].id === client.id ||
+        this.game[roomId].turn == -1)
     ) {
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
@@ -261,7 +262,10 @@ export class SocketGateway
     );
     client.join(roomId);
     this.user[client.id].roomId = roomId;
-    this.server.to(roomId).emit('enter', this.roomInfo[roomId]);
+    this.server.to(roomId).emit('enter', {
+      roomInfo: this.roomInfo[roomId],
+      game: this.game[roomId],
+    });
   }
 
   // 게임방 퇴장
