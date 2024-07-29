@@ -279,7 +279,10 @@ export class SocketGateway
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
       this.game[roomId].host = this.roomInfo[roomId].users[0].name;
-      this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
+      this.server.to(roomId).emit('exit', {
+        roomInfo: this.roomInfo[roomId],
+        game: this.game[roomId],
+      });
     } else {
       delete this.roomInfo[roomId];
       delete this.game[roomId];
