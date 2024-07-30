@@ -282,7 +282,9 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      this.game[roomId].host = this.roomInfo[roomId].users[0].name;
+      const { id, name } = this.roomInfo[roomId].users[0];
+      this.game[roomId].host = name;
+      this.handleHostReady({ roomId, userId: id });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
@@ -345,6 +347,18 @@ export class SocketGateway
     if (this.game[roomId] && this.game[roomId].users) {
       const index = this.game[roomId].users.findIndex(
         (x) => x.id === client.id,
+      );
+      if (index === -1) return;
+      this.game[roomId].users.splice(index, 1);
+    }
+  }
+
+  handleHostReady(
+    @MessageBody() { roomId, userId }: { roomId: string; userId: string },
+  ) {
+    if (this.game[roomId] && this.game[roomId].users) {
+      const index = this.game[roomId].users.findIndex(
+        (x) => x.userId === userId,
       );
       if (index === -1) return;
       this.game[roomId].users.splice(index, 1);
