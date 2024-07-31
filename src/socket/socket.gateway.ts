@@ -251,12 +251,12 @@ export class SocketGateway
     if (!this.roomInfo[roomId]) return;
 
     if (this.roomInfo[roomId].total === this.roomInfo[roomId].users.length) {
-      client.emit('alarm', '인원이 가득찼습니다!');
+      client.emit('alarm', { message: '인원이 가득찼습니다!' });
       return;
     }
     const check = await this.socketService.checkPassword(roomId, password);
     if (!check) {
-      client.emit('alarm', '유효하지 않은 패스워드 입니다.');
+      client.emit('alarm', { message: '유효하지 않은 패스워드 입니다.' });
       return;
     }
 
@@ -322,7 +322,7 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     await this.handleExit(roomId, client);
-    client.emit('alarm', '퇴장 당하셨습니다.');
+    client.emit('alarm', { message: '퇴장 당하셨습니다.' });
   }
 
   // 유저들의 ready 확인
