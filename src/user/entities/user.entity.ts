@@ -3,4 +3,5 @@ export class User {
   name: string;
   provider: string;
   score: number;
+  [x: string]: any;
 }

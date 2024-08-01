@@ -1,21 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["omitApi"]
-
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-model kkutu_ko {
-  id    String  @id(map: "kkutu_kr_key") @map("_id") @db.VarChar(256)
-  type  String?
-  mean  String
-  hit   Int     @default(0)
-  flag  Int?
-  theme String?
 }
 
 model User {
@@ -25,7 +15,7 @@ model User {
   provider  String
   password  String?
   roomId    String?
-  character Character?
+  character Json           @default("{\"skin\": \"S-1\"}")
   keyboard  String[]
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
@@ -97,20 +87,12 @@ model UserGetEmoji {
   @@map("user_get_emoji")
 }
 
-model Character {
-  userId String  @unique
-  skin   String  @default("S-1")
-  head   String?
-  hand   String?
-  eye    String?
-  user   User    @relation(fields: [userId], references: [id])
-}
-
 model Item {
   id          String        @id @map("_id")
   name        String
   categroy    String
   description String
+  hint        String
   author      String
   url         String
   user        UserGetItem[]
