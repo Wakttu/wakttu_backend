@@ -9,6 +9,7 @@ import { Game } from './socket.gateway';
 import { QuizService } from 'src/quiz/quiz.service';
 import { Quiz } from 'src/quiz/entities/quiz.entity';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
+
 @Injectable()
 export class SocketService {
   constructor(
@@ -152,5 +153,11 @@ export class SocketService {
 
   async getQuizList(take: number): Promise<Quiz[]> {
     return await this.quizService.getList(take);
+  }
+
+  getColor() {
+    let randomHex = Math.floor(Math.random() * 0xffffff).toString(16);
+    randomHex = `#${randomHex.padStart(6, '0')}`;
+    return randomHex;
   }
 }

@@ -105,6 +105,7 @@ export class SocketGateway
       }
     }
     this.user[client.id] = user;
+    this.user[client.id].color = this.socketService.getColor();
     this.server.emit('list', this.user);
   }
 
