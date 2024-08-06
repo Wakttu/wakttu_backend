@@ -55,6 +55,10 @@ export class UserService {
               select: {
                 id: true,
                 name: true,
+                character: true,
+                score: true,
+                keyboard: true,
+                provider: true,
               },
             },
           },
@@ -77,6 +81,10 @@ export class UserService {
               select: {
                 id: true,
                 name: true,
+                character: true,
+                score: true,
+                keyboard: true,
+                provider: true,
               },
             },
           },
