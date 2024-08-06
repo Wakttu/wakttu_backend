@@ -42,7 +42,10 @@ export class RoomService {
       },
       include: {
         users: {
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
     });
@@ -63,7 +66,14 @@ export class RoomService {
       where: { id },
       include: {
         users: {
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            character: true,
+            score: true,
+            keyboard: true,
+            provider: true,
+          },
         },
       },
     });
@@ -75,7 +85,14 @@ export class RoomService {
       data,
       include: {
         users: {
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            character: true,
+            score: true,
+            keyboard: true,
+            provider: true,
+          },
         },
       },
     });
@@ -91,7 +108,14 @@ export class RoomService {
       },
       include: {
         users: {
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            character: true,
+            score: true,
+            keyboard: true,
+            provider: true,
+          },
         },
       },
     });
