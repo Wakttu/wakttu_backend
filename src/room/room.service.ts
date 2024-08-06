@@ -12,7 +12,14 @@ export class RoomService {
       data,
       include: {
         users: {
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            character: true,
+            score: true,
+            keyboard: true,
+            provider: true,
+          },
         },
       },
     });
