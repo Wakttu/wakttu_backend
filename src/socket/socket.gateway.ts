@@ -122,8 +122,6 @@ export class SocketGateway
 
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
-    const user = client.request.session.user;
-    if (!user) return;
     const roomId = this.user[client.id]
       ? this.user[client.id].roomId
       : undefined;
@@ -133,7 +131,10 @@ export class SocketGateway
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
         this.game[roomId].host = this.roomInfo[roomId].users[0].name;
-        this.server.to(roomId).emit('exit', this.roomInfo[roomId]);
+        this.server.to(roomId).emit('exit', {
+          roomInfo: this.roomInfo[roomId],
+          game: this.game[roomId],
+        });
       } else {
         delete this.roomInfo[roomId];
         delete this.game[roomId];
@@ -271,6 +272,16 @@ export class SocketGateway
       roomInfo: this.roomInfo[roomId],
       game: this.game[roomId],
     });
+    this.handleMessage(
+      {
+        roomId,
+        chat: '님이 입장하였습니다.',
+        score: 0,
+        roundTime: null,
+        turnTime: null,
+      },
+      client,
+    );
   }
 
   // 게임방 퇴장
