@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { Inject, UseGuards, forwardRef } from '@nestjs/common';
+import { Inject, Logger, UseGuards, forwardRef } from '@nestjs/common';
 import { SocketAuthenticatedGuard } from 'src/socket/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
@@ -90,6 +90,8 @@ export class SocketGateway
     [roomId: string]: Game;
   } = {};
 
+  private readonly logger = new Logger(SocketGateway.name);
+
   // 접속시 수행되는 코드
   handleConnection(@ConnectedSocket() client: any) {
     const user = client.request.session.user;
@@ -107,6 +109,7 @@ export class SocketGateway
     this.user[client.id] = user;
     this.user[client.id].color = this.socketService.getColor();
     this.server.emit('list', this.user);
+    this.logger.log(`connect :  ${this.user[client.id].name}`);
   }
 
   // 소켓서버가 열릴시 수행되는 코드
@@ -117,7 +120,7 @@ export class SocketGateway
     this.lastService.server = this.server;
     this.kungService.server = this.server;
     this.wakQuizService.server = this.server;
-    console.log('socket is open!');
+    this.logger.log('socket is open!');
   }
 
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
@@ -141,6 +144,7 @@ export class SocketGateway
         await this.socketService.deleteRoom(roomId);
       }
     }
+    this.logger.log(`discconnect :  ${this.user[client.id].name}`);
     delete this.user[client.id];
     this.server.emit('list', this.user);
   }
@@ -149,6 +153,7 @@ export class SocketGateway
   @SubscribeMessage('alarm')
   handleAlarm(@MessageBody() message: string) {
     this.server.emit('alarm', { message });
+    this.logger.log(`Alarm { message : ${message} }`);
   }
 
   // 서버에접속해있는 유저에게 현재 방들의 정보 List 전달
@@ -165,6 +170,9 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     this.server.emit('lobby.chat', { user: this.user[client.id], chat: chat });
+    this.logger.log(
+      `Lobby Chat { user:${this.user[client.id].name}, chat:${chat} }`,
+    );
   }
 
   // 게임 방에서 대화
@@ -173,6 +181,9 @@ export class SocketGateway
     @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
+    this.logger.log(
+      `Chat { roomId:${roomId}, user:${this.user[client.id].name}, chat:${chat} }`,
+    );
     if (
       this.roomInfo[roomId].start &&
       (this.game[roomId].users[this.game[roomId].turn].id === client.id ||
@@ -224,6 +235,7 @@ export class SocketGateway
     this.game[room.id] = new Game();
     this.game[room.id].host = this.user[client.id].name;
     client.emit('createRoom', { roomId: room.id, password });
+    this.logger.log(`createRoom { roomId:${room.id}, password:${password} }`);
   }
 
   // 게임 방 수정
@@ -239,6 +251,7 @@ export class SocketGateway
     const roomInfo = await this.socketService.updateRoom(roomId, data);
     this.roomInfo[roomId] = roomInfo;
     this.server.to(roomId).emit('updateRoom', this.roomInfo[roomId]);
+    this.logger.log(`updateRoom { roomId:${roomId} }`);
   }
 
   // 게임 방 입장
@@ -282,6 +295,9 @@ export class SocketGateway
       },
       client,
     );
+    this.logger.log(
+      `Enter { roomId:${roomId}, user:${this.user[client.id].name} }`,
+    );
   }
 
   // 게임방 퇴장
@@ -310,6 +326,9 @@ export class SocketGateway
       delete this.game[roomId];
       await this.socketService.deleteRoom(roomId);
     }
+    this.logger.log(
+      `Exit { roomId:${roomId}, user:${this.user[client.id].name} }`,
+    );
   }
 
   // 강퇴기능
@@ -326,6 +345,9 @@ export class SocketGateway
     );
 
     client.to(key).emit('kick helper', { socketId: key });
+    this.logger.log(
+      `Kick  { roomId:${roomId}, host:${this.user[client.id].name}, user:${this.user[key].name} }`,
+    );
   }
 
   @SubscribeMessage('kick helper')
@@ -335,6 +357,9 @@ export class SocketGateway
   ) {
     await this.handleExit(roomId, client);
     client.emit('alarm', { message: '퇴장 당하셨습니다.' });
+    this.logger.log(
+      `Kick helper { roomId:${roomId}, user:${this.user[client.id].name} }`,
+    );
   }
 
   // 유저들의 ready 확인
@@ -354,6 +379,9 @@ export class SocketGateway
       this.game[roomId].users.splice(index, 1);
     }
     this.server.to(roomId).emit('ready', this.game[roomId].users);
+    this.logger.log(
+      `Ready { roomId:${roomId}, user:${this.user[client.id].name} }`,
+    );
   }
 
   handleExitReady(
@@ -422,6 +450,7 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
+    this.logger.log(`Last Game Start { roomId:${roomId} }`);
   }
 
   @SubscribeMessage('last.round')
@@ -431,6 +460,7 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
+    this.logger.log(`Last Game Round { roomId:${roomId} }`);
   }
 
   async handleLastAnswer(
@@ -469,6 +499,8 @@ export class SocketGateway
       game: this.game[roomId],
       message: check.message,
     });
+
+    this.logger.log(`Last Game Answer { roomId:${roomId} }`);
   }
   /*
     쿵쿵따
@@ -500,6 +532,7 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
+    this.logger.log(`Kung Game Start { roomId:${roomId} }`);
   }
 
   @SubscribeMessage('kung.round')
@@ -509,6 +542,7 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
+    this.logger.log(`Kung Game Round { roomId:${roomId} }`);
   }
   async handleKungAnswer(
     @MessageBody() { roomId, chat, roundTime, turnTime, score }: Chat,
@@ -545,6 +579,7 @@ export class SocketGateway
       game: this.game[roomId],
       message: check.message,
     });
+    this.logger.log(`Kung Game Answer { roomId:${roomId} }`);
   }
 
   @SubscribeMessage('kung.ban')
