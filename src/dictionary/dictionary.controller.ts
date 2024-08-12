@@ -6,17 +6,22 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { DictionaryService } from './dictionary.service';
 import { CreateDictionaryDto } from './dto/create-dictionary.dto';
 import { UpdateDictionaryDto } from './dto/update-dictionary.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/roles/roles.decorator';
+import { RolesGuard } from 'src/roles/roles.guard';
 
+@UseGuards(RolesGuard)
 @ApiTags('Dictionary')
 @Controller('dictionary')
 export class DictionaryController {
   constructor(private readonly dictionaryService: DictionaryService) {}
 
+  @Roles(['manager', 'staff'])
   @ApiOperation({ summary: '사전 단어 추가' })
   @Post()
   async create(@Body() createDictionaryDto: CreateDictionaryDto) {
@@ -29,6 +34,7 @@ export class DictionaryController {
     return await this.dictionaryService.findById(id);
   }
 
+  @Roles(['manager', 'staff'])
   @ApiOperation({ summary: '사전 단어 수정' })
   @Patch(':id')
   async update(
@@ -38,6 +44,7 @@ export class DictionaryController {
     return await this.dictionaryService.update(id, updateDictionaryDto);
   }
 
+  @Roles(['manager'])
   @ApiOperation({ summary: '사전 단어 삭제' })
   @Delete(':id')
   async remove(@Param('id') id: string) {
