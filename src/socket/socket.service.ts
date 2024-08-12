@@ -10,6 +10,8 @@ import { QuizService } from 'src/quiz/quiz.service';
 import { Quiz } from 'src/quiz/entities/quiz.entity';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 
+const MODE = ['CLA', 'TIF', 'GSG', 'DDB'];
+
 @Injectable()
 export class SocketService {
   constructor(
@@ -102,9 +104,7 @@ export class SocketService {
   checkWakta(wakta: boolean): boolean {
     return wakta === true;
   }
-  checkPoom(type: string): boolean {
-    return type === 'POOM';
-  }
+
   checkInjeong(type: string): boolean {
     return type === 'INJEONG';
   }
@@ -114,11 +114,9 @@ export class SocketService {
     if (option.includes('매너')) {
       flag[0] = true;
     }
-    if (option.includes('품어')) {
-      flag[1] = true;
-    }
+
     if (option.includes('외수')) {
-      flag[2] = true;
+      flag[1] = true;
     }
     return flag;
   }
@@ -134,11 +132,6 @@ export class SocketService {
     }
 
     if (!option[1]) {
-      const flag1 = this.checkPoom(type);
-      if (flag1) return { success: false, message: '품어 단어 금지!' };
-    }
-
-    if (!option[2]) {
       const flag2 = this.checkInjeong(type);
       if (flag2) return { success: false, message: '외수 단어 금지!' };
     }
@@ -159,5 +152,14 @@ export class SocketService {
     let randomHex = Math.floor(Math.random() * 0xffffff).toString(16);
     randomHex = `#${randomHex.padStart(6, '0')}`;
     return randomHex;
+  }
+
+  setMode(total: number) {
+    const arr = [];
+    for (let i = 0; i < total; i++) {
+      const idx = Math.floor(Math.random() * 4);
+      arr.push(MODE[idx]);
+    }
+    return arr;
   }
 }

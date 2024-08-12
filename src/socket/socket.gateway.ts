@@ -46,12 +46,13 @@ export class Game {
   users: { id: string; score: number; userId: string }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
-  option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
+  option: boolean[] | undefined; // [매너,외수] 설정이 되어있을때 true,false로 확인 가능
   chain: number; // 현재 체인정보
   roundTime: number; // 남은 라운드시간 정보
   turnTime: number; // 남은 턴 시간 정보
   mission: string | undefined; // 끝말잇기에서 사용될 미션단어
   quiz: Quiz[] | undefined; // 퀴즈 정보
+  mode?: string[];
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -107,6 +108,7 @@ export class SocketGateway
     this.user[client.id] = user;
     this.user[client.id].color = this.socketService.getColor();
     this.server.emit('list', this.user);
+    this.socketService.setMode(10);
   }
 
   // 소켓서버가 열릴시 수행되는 코드
