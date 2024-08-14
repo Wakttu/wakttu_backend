@@ -145,6 +145,12 @@ export class SocketGateway
     this.server.emit('list', this.user);
   }
 
+  // user List
+  @SubscribeMessage('list')
+  handleUserList(@ConnectedSocket() client: Socket) {
+    client.emit('list', this.user);
+  }
+
   // server에 접속해있는 모든 클라이언트에게 msg 보내기
   @SubscribeMessage('alarm')
   handleAlarm(@MessageBody() message: string) {
