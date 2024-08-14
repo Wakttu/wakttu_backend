@@ -62,13 +62,11 @@ model Quiz {
 
   @@map("wakttu_quiz")
 }
-
 model Manner {
   id String @id @map("_id") @db.VarChar
 
   @@map("wakttu_manner")
 }
-
 model Emoji {
   id    String         @id @map("_id") @db.VarChar
   name  String
@@ -107,13 +105,4 @@ model UserGetItem {
 
   @@id([userId, itemId])
   @@map("user_get_item")
-}
-
-model wakttu_meme {
-  id      String   @id @map("_id") @db.VarChar
-  keyword String
-  mean    String
-  info    String
-  tag     String[]
-  meta    Json?
 }
