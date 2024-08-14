@@ -14,7 +14,9 @@ import { UpdateDictionaryDto } from './dto/update-dictionary.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/roles/roles.decorator';
 import { RolesGuard } from 'src/roles/roles.guard';
+import { SkipThrottle } from '@nestjs/throttler';
 
+@SkipThrottle()
 @UseGuards(RolesGuard)
 @ApiTags('Dictionary')
 @Controller('dictionary')

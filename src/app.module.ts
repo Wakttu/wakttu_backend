@@ -15,6 +15,7 @@ import { QuizModule } from './quiz/quiz.module';
 import { ConfigModule } from '@nestjs/config';
 import { WakQuizModule } from './wak-quiz/wak-quiz.module';
 import { WakgamesModule } from './wakgames/wakgames.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -25,6 +26,12 @@ import { WakgamesModule } from './wakgames/wakgames.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 5000,
+        limit: 10,
+      },
+    ]),
     SocketModule,
     PrismaModule,
     UserModule,

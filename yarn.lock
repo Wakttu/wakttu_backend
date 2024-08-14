@@ -830,6 +830,11 @@
   dependencies:
     tslib "2.6.3"
 
+"@nestjs/throttler@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/throttler/-/throttler-6.1.1.tgz#a29f8ea74fe750a19dbb25ff99bcb658ca0ac691"
+  integrity sha512-TTh6Ptwep+URJo/D2PNZ5/77HM9N9jXi7RSs8FOnjrW8MhWixdRrNkxMGERObQicEj8PTYyV+p6gmxHEBwJRrg==
+
 "@nestjs/websockets@^10.3.7":
   version "10.3.10"
   resolved "https://registry.yarnpkg.com/@nestjs/websockets/-/websockets-10.3.10.tgz#e7ec062e89112d82cecb6588b82da64af0939970"
@@ -5672,6 +5677,7 @@ word-wrap@^1.2.5:
   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
