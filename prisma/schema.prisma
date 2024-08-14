@@ -20,6 +20,8 @@ model User {
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
+  stat      Json?
+  achieve   Json?
 }
 
 model Room {
@@ -62,16 +64,20 @@ model Quiz {
 
   @@map("wakttu_quiz")
 }
+
 model Manner {
   id String @id @map("_id") @db.VarChar
 
   @@map("wakttu_manner")
 }
+
 model Emoji {
-  id    String         @id @map("_id") @db.VarChar
-  name  String
-  url   String
-  users UserGetEmoji[]
+  id          String         @id @map("_id") @db.VarChar
+  name        String
+  author      String
+  description String?
+  url         String
+  users       UserGetEmoji[]
 }
 
 model UserGetEmoji {
@@ -89,8 +95,8 @@ model Item {
   id          String        @id @map("_id")
   name        String
   categroy    String
-  description String
-  hint        String
+  description String?
+  hint        String?
   author      String
   url         String
   user        UserGetItem[]
