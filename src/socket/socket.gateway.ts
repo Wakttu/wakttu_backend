@@ -32,7 +32,7 @@ export class Game {
   constructor() {
     this.host = ''; // 호스트
     this.round = 0; // 현재 라운드
-    this.turn = -1; // 현재 누구의 턴인지 자리 index 값
+    this.turn = 0; // 현재 누구의 턴인지 자리 index 값
     this.users = []; // 유저들의 정보가 들어있는 칸 위의 turn과 index를 같이사용
     this.chain = 0; // 현재 몇 체인인지 보여주는 정보
     this.roundTime = 60000; // 라운드 남은 시간 처음시작 60초
@@ -145,8 +145,9 @@ export class SocketGateway
     this.server.emit('list', this.user);
   }
 
+  // user List
   @SubscribeMessage('list')
-  handleList(@ConnectedSocket() client: Socket) {
+  handleUserList(@ConnectedSocket() client: Socket) {
     client.emit('list', this.user);
   }
 
