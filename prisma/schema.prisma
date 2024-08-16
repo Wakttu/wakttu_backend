@@ -112,3 +112,10 @@ model UserGetItem {
   @@id([userId, itemId])
   @@map("user_get_item")
 }
+
+model Ban {
+  id        Int  @id @default(autoincrement())
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
