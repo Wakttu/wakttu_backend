@@ -41,6 +41,7 @@ export class LastService {
     game.target = target[curRound];
     game.mission = await this.handleGetMission();
     game.chain = 1;
+    game.total = game.users.length;
     this.server.to(roomId).emit('last.round', game);
   }
 
