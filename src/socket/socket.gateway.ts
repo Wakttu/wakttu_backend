@@ -372,6 +372,7 @@ export class SocketGateway
       );
       if (index === -1) return;
       this.game[roomId].users.splice(index, 1);
+      this.game[roomId].total = this.game[roomId].users.length;
     }
   }
 
