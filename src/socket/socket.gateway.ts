@@ -304,9 +304,9 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      const { id, name } = this.roomInfo[roomId].users[0];
+      const { userId, name } = this.roomInfo[roomId].users[0];
       this.game[roomId].host = name;
-      this.handleHostReady({ roomId, userId: id });
+      this.handleHostReady({ roomId, userId });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
