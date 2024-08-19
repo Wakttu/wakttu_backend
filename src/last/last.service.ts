@@ -13,6 +13,7 @@ export class LastService {
   public server;
 
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
+    game.turn = 0;
     game.total = game.users.length;
     game.keyword = await this.socketService.setWord(roomInfo.round);
     game.roundTime = roomInfo.time;
