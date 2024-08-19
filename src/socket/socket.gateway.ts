@@ -145,8 +145,9 @@ export class SocketGateway
     this.server.emit('list', this.user);
   }
 
+  // user List
   @SubscribeMessage('list')
-  handleList(@ConnectedSocket() client: Socket) {
+  handleUserList(@ConnectedSocket() client: Socket) {
     client.emit('list', this.user);
   }
 
@@ -303,9 +304,9 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      const { id, name } = this.roomInfo[roomId].users[0];
+      const { userId, name } = this.roomInfo[roomId].users[0];
       this.game[roomId].host = name;
-      this.handleHostReady({ roomId, userId: id });
+      this.handleHostReady({ roomId, userId });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
@@ -371,6 +372,7 @@ export class SocketGateway
       );
       if (index === -1) return;
       this.game[roomId].users.splice(index, 1);
+      this.game[roomId].total = this.game[roomId].users.length;
     }
   }
 

@@ -20,6 +20,8 @@ model User {
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
+  stat      Json?
+  achieve   Json?
 }
 
 model Room {
@@ -70,10 +72,12 @@ model Manner {
 }
 
 model Emoji {
-  id    String         @id @map("_id") @db.VarChar
-  name  String
-  url   String
-  users UserGetEmoji[]
+  id          String         @id @map("_id") @db.VarChar
+  name        String
+  author      String
+  description String?
+  url         String
+  users       UserGetEmoji[]
 }
 
 model UserGetEmoji {
@@ -91,8 +95,8 @@ model Item {
   id          String        @id @map("_id")
   name        String
   categroy    String
-  description String
-  hint        String
+  description String?
+  hint        String?
   author      String
   url         String
   user        UserGetItem[]
@@ -109,11 +113,9 @@ model UserGetItem {
   @@map("user_get_item")
 }
 
-model wakttu_meme {
-  id      String   @id @map("_id") @db.VarChar
-  keyword String
-  mean    String
-  info    String
-  tag     String[]
-  meta    Json?
+model Ban {
+  id        Int  @id @default(autoincrement())
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
 }
