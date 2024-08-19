@@ -43,7 +43,13 @@ export class Game {
   round: number; // 현재 라운드
   turn: number; // 현재 누구의 턴인가 보여주는 index
   total: number; // 총인원수
-  users: { id: string; score: number; userId: string }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
+  users: {
+    id: string;
+    score: number;
+    userId: string;
+    character: JSON;
+    name: string;
+  }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
@@ -355,6 +361,8 @@ export class SocketGateway
         id: client.id,
         score: 0,
         userId: this.user[client.id].id,
+        character: this.user[client.id].character,
+        name: this.user[client.id].name,
       });
     } else {
       this.game[roomId].users.splice(index, 1);
