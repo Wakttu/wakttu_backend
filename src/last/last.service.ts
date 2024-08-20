@@ -30,7 +30,7 @@ export class LastService {
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
-      roomInfo = await this.socketService.setStart(roomId, true);
+      roomInfo = await this.socketService.setStart(roomId, false);
       game.users.splice(0, game.total);
       this.server
         .to(roomId)
