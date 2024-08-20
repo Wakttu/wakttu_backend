@@ -483,6 +483,7 @@ export class SocketGateway
       answer: chat,
       game: this.game[roomId],
       message: check.message,
+      word: check.word,
     });
   }
   /*
@@ -559,6 +560,7 @@ export class SocketGateway
       answer: chat,
       game: this.game[roomId],
       message: check.message,
+      word: check.word,
     });
   }
 
