@@ -148,7 +148,12 @@ export class SocketService {
   async check(_word: string, option: boolean[]) {
     const word = await this.findWord(_word);
     if (!word) return { success: false, message: '없는 단어입니다.' };
-    return await this.checkOption(option, word.id.slice(-1), word.type);
+    const { success, message } = await this.checkOption(
+      option,
+      word.id.slice(-1),
+      word.type,
+    );
+    return { success, message, word };
   }
 
   async getQuizList(take: number): Promise<Quiz[]> {
