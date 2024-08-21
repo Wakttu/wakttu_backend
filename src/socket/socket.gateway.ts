@@ -453,20 +453,6 @@ export class SocketGateway
   ) {
     this.game[roomId].roundTime = roundTime;
     this.game[roomId].turnTime = turnTime;
-    const checkLast = this.lastService.handleCheck(
-      chat[0],
-      this.game[roomId].target as string,
-    );
-
-    if (!checkLast.success) {
-      this.server.to(roomId).emit('last.game', {
-        success: checkLast.success,
-        answer: chat,
-        game: this.game[roomId],
-        message: checkLast.message,
-      });
-      return;
-    }
 
     const check = await this.socketService.check(
       chat,
@@ -531,20 +517,7 @@ export class SocketGateway
   ) {
     this.game[roomId].roundTime = roundTime;
     this.game[roomId].turnTime = turnTime;
-    const checkKung = this.kungService.handleCheck(
-      chat[0],
-      this.game[roomId].target as string,
-      chat.length,
-    );
-    if (!checkKung.success) {
-      this.server.to(roomId).emit('kung.game', {
-        success: checkKung.success,
-        answer: chat,
-        game: this.game[roomId],
-        message: checkKung.message,
-      });
-      return;
-    }
+
     const check = await this.socketService.check(
       chat,
       this.game[roomId].option,
