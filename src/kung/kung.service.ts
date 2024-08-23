@@ -51,6 +51,8 @@ export class KungService {
     const target = game.keyword['_id'];
     game.target = target[curRound];
     game.chain = 1;
+    game.roundTime = roomInfo.time;
+    game.turnTime = this.socketService.getTurnTime(roomInfo.time);
     this.server.to(roomId).emit('kung.round', game);
   }
 
