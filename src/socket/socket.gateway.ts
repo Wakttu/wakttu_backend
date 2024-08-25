@@ -174,7 +174,6 @@ export class SocketGateway
   @SubscribeMessage('pong')
   handlePong(@MessageBody() roomId) {
     clearInterval(this.ping[roomId]);
-    this.handlePing(roomId);
   }
 
   // user List
