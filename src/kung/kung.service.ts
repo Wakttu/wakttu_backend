@@ -24,12 +24,14 @@ export class KungService {
 
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
     game.turn = 0;
+    game.round = 0;
+    game.target = '';
     game.total = game.users.length;
-    game.keyword = await this.socketService.setWord(roomInfo.round);
-    game.roundTime = await roomInfo.time;
+    game.roundTime = roomInfo.time;
     roomInfo.start = (
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
+    game.keyword = await this.socketService.setWord(roomInfo.round);
     this.rules[roomId] = new Rule(roomInfo.users.length);
     this.server.to(roomId).emit('kung.start', game);
   }
@@ -41,7 +43,7 @@ export class KungService {
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
-      roomInfo = await this.socketService.setStart(roomId, true);
+      roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
       game.users.splice(0, game.total);
       this.server
         .to(roomId)
