@@ -14,6 +14,8 @@ export class LastService {
 
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
     game.turn = 0;
+    game.round = 0;
+    game.target = '';
     game.total = game.users.length;
     game.roundTime = roomInfo.time;
     game.keyword = await this.socketService.setWord(roomInfo.round);
@@ -30,8 +32,12 @@ export class LastService {
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
-      roomInfo = await this.socketService.setStart(roomId, false);
+      const result = await this.socketService.setStart(roomId, roomInfo.start);
+      roomInfo.start = result.start;
+      roomInfo.users = result.users;
+      roomInfo = { ...result };
       game.users.splice(0, game.total);
+      game.turn = -1;
       this.server
         .to(roomId)
         .emit('last.end', { game: game, roomInfo: roomInfo });
