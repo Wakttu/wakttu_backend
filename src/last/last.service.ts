@@ -26,6 +26,7 @@ export class LastService {
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
+    if (!game) return;
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
