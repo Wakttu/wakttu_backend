@@ -159,12 +159,12 @@ export class SocketGateway
   @SubscribeMessage('ping')
   handlePing(@MessageBody() roomId: string) {
     let time = this.game[roomId].turnTime / 100;
-    const timeId = setInterval(async () => {
+    const timeId = setInterval(() => {
       this.server.emit('ping');
       time -= 1;
       if (time <= 0) {
-        await this.handlePong(roomId);
-        await this.handleLastRound(roomId);
+        clearInterval(timeId);
+        this.handleLastRound(roomId);
       }
     }, 100);
     this.ping[roomId] = timeId;
@@ -213,7 +213,8 @@ export class SocketGateway
     if (
       this.roomInfo[roomId].start &&
       (this.game[roomId].users[this.game[roomId].turn].id === client.id ||
-        this.game[roomId].turn == -1)
+        this.game[roomId].turn == -1) &&
+      roundTime !== null
     ) {
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
