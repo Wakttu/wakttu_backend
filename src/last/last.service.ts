@@ -33,6 +33,7 @@ export class LastService {
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
+      await this.socketService.setResult(game.users);
       const result = await this.socketService.setStart(roomId, roomInfo.start);
       roomInfo.start = result.start;
       roomInfo.users = result.users;

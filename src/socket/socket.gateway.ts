@@ -159,12 +159,12 @@ export class SocketGateway
   @SubscribeMessage('ping')
   handlePing(@MessageBody() roomId: string) {
     let time = this.game[roomId].turnTime / 100;
-    const timeId = setInterval(() => {
+    const timeId = setInterval(async () => {
       this.server.emit('ping');
       time -= 1;
-      if (time === 0) {
-        clearInterval(timeId);
-        this.handleLastRound(roomId);
+      if (time <= 0) {
+        await this.handlePong(roomId);
+        await this.handleLastRound(roomId);
       }
     }, 100);
     this.ping[roomId] = timeId;
