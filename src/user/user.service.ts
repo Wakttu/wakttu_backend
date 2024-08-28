@@ -125,4 +125,18 @@ export class UserService {
       },
     });
   }
+
+  async updateResult(
+    data: {
+      id: string;
+      score: number;
+      userId: string;
+      character: JSON;
+      name: string;
+    }[],
+  ) {
+    data.forEach(async (user) => {
+      await this.updateScore(user.userId, user.score);
+    });
+  }
 }
