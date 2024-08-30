@@ -160,7 +160,7 @@ export class SocketGateway
   handlePing(@MessageBody() roomId: string) {
     let time = this.game[roomId].turnTime / 100;
     const timeId = setInterval(() => {
-      this.server.emit('ping');
+      this.server.to(roomId).emit('ping');
       time -= 1;
       if (time <= 0) {
         clearInterval(timeId);
