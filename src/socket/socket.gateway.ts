@@ -216,6 +216,7 @@ export class SocketGateway
         this.game[roomId].turn == -1) &&
       roundTime !== null
     ) {
+      if (!this.ping[roomId]) return;
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
