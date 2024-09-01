@@ -29,7 +29,9 @@ export class UserController {
   @UseGuards(IsLoginedGuard, AuthGuard)
   @Get(':id')
   async getUser(@Param('id') id: string) {
-    return await this.userService.findById(id);
+    const response = await this.userService.findById(id);
+    delete response.password;
+    return response;
   }
 
   @ApiOperation({ summary: 'SignUp User' })
