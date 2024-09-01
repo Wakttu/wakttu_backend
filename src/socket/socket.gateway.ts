@@ -25,6 +25,7 @@ interface Chat {
   chat: string;
   roundTime: number | undefined;
   score: number | undefined;
+  success?: boolean;
 }
 
 export class Game {
@@ -109,8 +110,10 @@ export class SocketGateway
     }
     for (const key in this.user) {
       if (this.user[key].id === user.id) {
-        client.emit('alarm', { message: '이미 접속중인 유저입니다!' });
-        client.disconnect();
+        this.server
+          .to(key)
+          .emit('alarm', { message: '이미 접속중인 유저입니다!' });
+        this.handleDisconnect({ id: key });
         return;
       }
     }
@@ -158,13 +161,14 @@ export class SocketGateway
   // ping
   @SubscribeMessage('ping')
   handlePing(@MessageBody() roomId: string) {
+    if (this.ping[roomId]) this.handlePong(roomId);
     let time = this.game[roomId].turnTime / 100;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('ping');
-      time -= 1;
-      if (time <= 0) {
-        clearInterval(timeId);
-        this.handleLastRound(roomId);
+      time--;
+      if (time === 0) {
+        this.handlePong(roomId);
+        this.handleTurnEnd(roomId);
       }
     }, 100);
     this.ping[roomId] = timeId;
@@ -207,7 +211,7 @@ export class SocketGateway
   // 게임 방에서 대화
   @SubscribeMessage('chat')
   async handleMessage(
-    @MessageBody() { roomId, chat, roundTime, score }: Chat,
+    @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
     if (
@@ -224,8 +228,8 @@ export class SocketGateway
             roomId,
             chat,
             roundTime,
-
             score,
+            success,
           });
           break;
         case 1:
@@ -233,7 +237,6 @@ export class SocketGateway
             roomId,
             chat,
             roundTime,
-
             score,
           });
           break;
@@ -475,29 +478,50 @@ export class SocketGateway
     );
   }
 
+  @SubscribeMessage('last.turnStart')
+  async handleTurnStart(@MessageBody() roomId: string) {
+    this.server.to(roomId).emit('last.turnStart');
+  }
+
+  @SubscribeMessage('last.turnEnd')
+  async handleTurnEnd(@MessageBody() roomId: string) {
+    this.server.to(roomId).emit('last.turnEnd');
+  }
+
   async handleLastAnswer(
-    @MessageBody() { roomId, chat, roundTime, score }: Chat,
+    @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
   ) {
     this.game[roomId].roundTime = roundTime;
     this.game[roomId].turnTime = this.socketService.getTurnTime(roundTime);
-    const check = await this.socketService.check(
-      chat,
-      this.game[roomId].option,
-    );
-    if (check.success) {
-      score = this.socketService.checkWakta(check['wakta'])
-        ? score * 1.2
-        : score;
-      this.lastService.handleNextTurn(this.game[roomId], chat, score);
+    if (success) {
+      this.server.to(roomId).emit('last.game', {
+        success: false,
+        answer: chat,
+        game: this.game[roomId],
+        message: chat + '불가능',
+        word: undefined,
+      });
+    } else {
+      const check = await this.socketService.check(
+        chat,
+        this.game[roomId].option,
+      );
+      if (check.success) {
+        score = this.socketService.checkWakta(check['wakta'])
+          ? score * 1.2
+          : score;
+        this.lastService.handleNextTurn(this.game[roomId], chat, score);
+      }
+      this.server.to(roomId).emit('last.game', {
+        success: check.success,
+        answer: chat,
+        game: this.game[roomId],
+        message: check.message,
+        word: check.word,
+      });
     }
-    this.server.to(roomId).emit('last.game', {
-      success: check.success,
-      answer: chat,
-      game: this.game[roomId],
-      message: check.message,
-      word: check.word,
-    });
   }
+
   /*
     쿵쿵따
   */
