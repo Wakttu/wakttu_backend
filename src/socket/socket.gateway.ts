@@ -65,6 +65,7 @@ export class Game {
 @WebSocketGateway({
   namespace: 'wakttu',
   cors: { origin: true, credentials: true },
+  transports: ['websocket'],
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
