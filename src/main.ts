@@ -8,7 +8,14 @@ import * as MongoDBStore from 'connect-mongodb-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: true, credentials: true });
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'https://wakttu.kr',
+      'https://www.wakttu.kr',
+    ],
+    credentials: true,
+  });
   const MongoStore = MongoDBStore(session);
 
   const store = new MongoStore({
