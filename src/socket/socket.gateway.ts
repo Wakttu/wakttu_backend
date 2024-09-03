@@ -425,6 +425,14 @@ export class SocketGateway
     }
   }
 
+  // room Strart 풀기
+  @SubscribeMessage('start')
+  async handleStart(@MessageBody() roomId: string) {
+    const roomInfo = await this.socketService.setStart(roomId, true);
+    this.game[roomId].users = [];
+    this.server.to(roomId).emit('start', { roomInfo, game: this.game[roomId] });
+  }
+
   // Get 변수
   @SubscribeMessage('info')
   handleInfo(@ConnectedSocket() client: Socket) {
