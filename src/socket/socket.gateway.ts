@@ -169,7 +169,6 @@ export class SocketGateway
       time--;
       if (time === 0) {
         this.handlePong(roomId);
-        this.handleTurnEnd(roomId);
       }
     }, 100);
     this.ping[roomId] = timeId;
