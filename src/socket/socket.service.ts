@@ -277,23 +277,23 @@ export class SocketService {
   getTurnTime(roundTime: number) {
     let duration = 0;
     if (71000 <= roundTime && roundTime <= 120000) {
-      duration = 22000;
-    } else if (61000 <= roundTime && roundTime < 71000) {
       duration = 20000;
-    } else if (51000 <= roundTime && roundTime < 61000) {
+    } else if (61000 <= roundTime && roundTime < 71000) {
       duration = 18000;
-    } else if (41000 <= roundTime && roundTime < 51000) {
+    } else if (51000 <= roundTime && roundTime < 61000) {
       duration = 16000;
-    } else if (31000 <= roundTime && roundTime < 41000) {
+    } else if (41000 <= roundTime && roundTime < 51000) {
       duration = 14000;
-    } else if (21000 <= roundTime && roundTime < 31000) {
+    } else if (31000 <= roundTime && roundTime < 41000) {
       duration = 12000;
-    } else if (11000 <= roundTime && roundTime < 21000) {
+    } else if (21000 <= roundTime && roundTime < 31000) {
       duration = 10000;
+    } else if (11000 <= roundTime && roundTime < 21000) {
+      duration = 8000;
     } else if (5100 <= roundTime && roundTime < 11000) {
       duration = 5100;
     } else if (1 <= roundTime && roundTime < 5100) {
-      duration = Math.min(1000, roundTime);
+      duration = Math.min(1500, roundTime);
     } else {
       duration = 0;
     }
