@@ -500,7 +500,10 @@ export class SocketGateway
     @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
   ) {
     this.game[roomId].roundTime = roundTime;
-    this.game[roomId].turnTime = this.socketService.getTurnTime(roundTime);
+    this.game[roomId].turnTime = this.socketService.getTurnTime(
+      roundTime,
+      this.game[roomId].chain,
+    );
     if (success) {
       this.server.to(roomId).emit('last.game', {
         success: false,
