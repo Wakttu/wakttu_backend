@@ -38,7 +38,7 @@ export class DictionaryService {
 
   async getWord(length: number): Promise<string> {
     const list: string[] = await this.prisma
-      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} ORDER BY random() LIMIT 1`;
+      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} AND wakta = true ORDER BY random() LIMIT 1`;
     return list[0];
   }
 
