@@ -238,6 +238,7 @@ export class SocketGateway
             chat,
             roundTime,
             score,
+            success,
           });
           break;
         case 2:
@@ -572,28 +573,40 @@ export class SocketGateway
     );
   }
   async handleKungAnswer(
-    @MessageBody() { roomId, chat, roundTime, score }: Chat,
+    @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
   ) {
     this.game[roomId].roundTime = roundTime;
-    this.game[roomId].turnTime = this.socketService.getTurnTime(roundTime);
-
-    const check = await this.socketService.check(
-      chat,
-      this.game[roomId].option,
+    this.game[roomId].turnTime = this.socketService.getTurnTime(
+      roundTime,
+      this.game[roomId].chain,
     );
-    if (check.success) {
-      score = this.socketService.checkWakta(check['wakta'])
-        ? score * 1.2
-        : score;
-      this.kungService.handleNextTurn(this.game[roomId], chat, score);
+    if (success) {
+      this.server.to(roomId).emit('last.game', {
+        success: false,
+        answer: chat,
+        game: this.game[roomId],
+        message: chat + '불가능',
+        word: undefined,
+      });
+    } else {
+      const check = await this.socketService.check(
+        chat,
+        this.game[roomId].option,
+      );
+      if (check.success) {
+        score = this.socketService.checkWakta(check['wakta'])
+          ? score * 1.2
+          : score;
+        this.kungService.handleNextTurn(this.game[roomId], chat, score);
+      }
+      this.server.to(roomId).emit('kung.game', {
+        success: check.success,
+        answer: chat,
+        game: this.game[roomId],
+        message: check.message,
+        word: check.word,
+      });
     }
-    this.server.to(roomId).emit('kung.game', {
-      success: check.success,
-      answer: chat,
-      game: this.game[roomId],
-      message: check.message,
-      word: check.word,
-    });
   }
 
   @SubscribeMessage('kung.turnStart')
