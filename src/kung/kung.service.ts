@@ -42,7 +42,7 @@ export class KungService {
     if (curRound === lastRound) {
       this.server
         .to(roomId)
-        .emit('last.result', { game: game, roomInfo: roomInfo });
+        .emit('kung.result', { game: game, roomInfo: roomInfo });
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
       game.users.splice(0, game.total);
       this.server
