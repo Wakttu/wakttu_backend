@@ -596,6 +596,16 @@ export class SocketGateway
     });
   }
 
+  @SubscribeMessage('kung.turnStart')
+  async handleKTurnStart(@MessageBody() roomId: string) {
+    this.server.to(roomId).emit('kung.turnStart');
+  }
+
+  @SubscribeMessage('kung.turnEnd')
+  async handleKTurnEnd(@MessageBody() roomId: string) {
+    this.server.to(roomId).emit('kung.turnEnd');
+  }
+
   @SubscribeMessage('kung.ban')
   handleKungBan(
     @MessageBody() { roomId, keyword }: { roomId: string; keyword: string },
