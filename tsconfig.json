@@ -14,10 +14,9 @@
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
+    "resolveJsonModule": true,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
-    "moduleResolution": "Node",
-    "typeRoots": ["/types ", "./node_modules/@types"]
+    "noFallthroughCasesInSwitch": false
   }
 }

@@ -1,60 +1,60 @@
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestjsRedoxModule } from 'nestjs-redox';
+
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import secureSession from '@fastify/secure-session';
+
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { SessionAdapter } from './session.adapter';
-import * as session from 'express-session';
-import * as MongoDBStore from 'connect-mongodb-session';
+import { version } from '../package.json';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://wakttu.kr',
-      'https://www.wakttu.kr',
-    ],
-    credentials: true,
-  });
-  const MongoStore = MongoDBStore(session);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({ logger: true }),
+  );
 
-  const store = new MongoStore({
-    uri: process.env.SESSION_DB_URI,
-    databaseName: process.env.SESSION_DB_NAME,
-    collection: process.env.SESSION_DB_COLLECTION,
-  });
+  if (process.env.ENABLE_SWAGGER !== '0') {
+    const config = new DocumentBuilder()
+      .setTitle('Wakttu')
+      .setDescription('Wakttu API description')
+      .setVersion(version)
+      .build();
 
-  const sessionMiddleware = session({
-    secret: process.env.SECRET, // 세션을 암호화하기 위한 암호기 설정
-    resave: false, // 모든 request마다 기존에 있던 session에 아무런 변경 사항이 없을 시에도 그 session을 다시 저장하는 옵션.
-    saveUninitialized: false,
+    const document = SwaggerModule.createDocument(app, config);
+
+    await SwaggerModule.setup('docs', app, document);
+    await NestjsRedoxModule.setup('redoc', app, document);
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    app.enableCors({
+      origin: ['http://localhost:3000'],
+      credentials: true,
+    });
+  } else {
+    app.enableCors({
+      origin: ['https://wakttu.kr', 'https://www.wakttu.kr'],
+      credentials: true,
+    });
+  }
+
+  await app.register(secureSession, {
+    secret: process.env.SESSION_SECRET,
+    salt: process.env.SESSION_SALT,
     cookie: {
       maxAge: 60000 * 60, // 1 hour
       httpOnly: true,
     },
-    store: store,
   });
-  app.use(sessionMiddleware);
-  app.useWebSocketAdapter(new SessionAdapter(sessionMiddleware, app));
 
-  const config = new DocumentBuilder()
-    .setTitle('Wakttu')
-    .setDescription('Wakttu API description')
-    .setVersion('1.0.0')
-    .addTag('swagger')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-
-  SwaggerModule.setup('api', app, document);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
-
-  await app.listen(process.env.PORT || 3000);
+  if (process.env.NODE_ENV === 'development') {
+    await app.listen(3000);
+  } else {
+    await app.listen(3000, '0.0.0.0');
+  }
 }
 bootstrap();

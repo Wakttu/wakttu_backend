@@ -1,18 +1,18 @@
 import { Controller, Get, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { FastifyRequest } from 'fastify';
 
 @Controller()
 export class AppController {
   constructor() {}
 
-  // 세션로그인 되는지 확인용 코드
   @Get()
-  isLoggined(@Req() req: Request): any {
-    return req.user;
+  rootAccess() {
+    return { happy: 'hacking' };
   }
 
+  // 세션로그인 되는지 확인용 코드
   @Get('/test')
-  getSession(@Req() req: Request): any {
+  getSession(@Req() req: FastifyRequest): any {
     return req.session;
   }
 }

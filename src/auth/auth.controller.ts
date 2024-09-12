@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import * as secureSession from '@fastify/secure-session';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { IsNotLoginedGuard } from './isNotLogined-auth.guard';
 import { LocalAuthenticatedGuard } from './local-auth.guard';
@@ -47,11 +47,11 @@ export class AuthController {
   @UseGuards(IsNotLoginedGuard)
   async localLogin(
     @Body() body: LoginUserDto,
-    @Session() session,
+    @Session() session: secureSession.Session<Record<string, any>>,
   ): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...user } = await this.authService.LocalLogin(body);
-    session.user = user;
+    session.set('user', user);
     return user;
   }
 
@@ -106,31 +106,46 @@ export class AuthController {
   @Get('wakta')
   async waktaOauth(@Session() session: Record<string, any>) {
     const data = await this.authService.waktaOauth();
-    session.auth = data;
+    session.set('auth', data);
+
     return data;
   }
 
   @Get('wakta/callback')
-  async waktaCallback(@Query() query, @Req() req, @Res() res) {
+  async waktaCallback(
+    @Query() query,
+    @Res() res,
+    @Session() session: secureSession.Session<Record<string, any>>,
+  ) {
     if (query.code) {
-      req.session.auth.code = query.code;
-      const data = await this.authService.waktaLogin(req.session.auth);
+      session.set('auth', {
+        ...session.get('auth'),
+        code: query.code,
+      });
+
+      const data = await this.authService.waktaLogin(session.get('auth'));
       const { accessToken, refreshToken, user } = data;
 
-      req.session.accessToken = accessToken;
-      req.session.refreshToken = refreshToken;
-      req.session.user = user;
+      session.set('accessToken', accessToken);
+      session.set('refreshToken', refreshToken);
+      session.set('user', user);
 
-      return res.redirect(this.configService.get<string>('REDIRECT_URL'));
+      return res
+        .status(302)
+        .redirect(this.configService.get<string>('REDIRECT_URL'));
     } else throw new BadRequestException();
   }
 
   @Get('wakta/refresh')
-  async waktaRefresh(@Req() req: Request) {
+  async waktaRefresh(
+    @Session() session: secureSession.Session<Record<string, any>>,
+  ) {
     const { accessToken, refreshToken } =
-      await this.authService.waktaUpdateToken(req.session.refreshToken);
-    req.session.accessToken = accessToken;
-    req.session.refreshToken = refreshToken;
+      await this.authService.waktaUpdateToken(session.get('refreshToken'));
+
+    session.set('accessToken', accessToken);
+    session.set('refreshToken', refreshToken);
+
     return { status: 201, accessToken, refreshToken };
   }
 }

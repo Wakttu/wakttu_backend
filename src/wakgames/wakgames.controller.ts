@@ -17,15 +17,15 @@ export class WakgamesController {
   @Get()
   async getProfile(@Session() session: Record<string, any>) {
     const { data, response } = await this.wakgamesService.getProfile(
-      session.accessToken,
+      session.get('accessToken'),
     );
     if (response.status === 401) {
       const { data, response } = await this.wakgamesService.updateToken(
-        session.refreshToken,
+        session.get('refreshToken'),
       );
       if (response.status !== 200) throw new UnauthorizedException();
-      session.accessToken = data.accessToken;
-      session.refreshToken = data.refreshToken;
+      session.set('accessToken', data.accessToken);
+      session.set('refreshToken', data.refreshToken);
       return await this.getProfile(session);
     }
     return data;
@@ -34,15 +34,15 @@ export class WakgamesController {
   @Get('achieve')
   async getAchieve(@Session() session: Record<string, any>) {
     const { data, response } = await this.wakgamesService.getAchieve(
-      session.accessToken,
+      session.get('accessToken'),
     );
     if (response.status === 401) {
       const { data, response } = await this.wakgamesService.updateToken(
-        session.refreshToken,
+        session.get('refreshToken'),
       );
       if (response.status !== 200) throw new UnauthorizedException();
-      session.accessToken = data.accessToken;
-      session.refreshToken = data.refreshToken;
+      session.set('accessToken', data.accessToken);
+      session.set('refreshToken', data.refreshToken);
       return await this.getAchieve(session);
     }
     return data;
@@ -52,15 +52,15 @@ export class WakgamesController {
   async postAchieve(@Query() query, @Session() session: Record<string, any>) {
     const { data, response } = await this.wakgamesService.postAchieve(
       query,
-      session.accessToken,
+      session.get('accessToken'),
     );
     if (response.status === 401) {
       const { data, response } = await this.wakgamesService.updateToken(
-        session.refreshToken,
+        session.get('refreshToken'),
       );
       if (response.status !== 200) throw new UnauthorizedException();
-      session.accessToken = data.accessToken;
-      session.refreshToken = data.refreshToken;
+      session.set('accessToken', data.accessToken);
+      session.set('refreshToken', data.refreshToken);
       return await this.postAchieve(query, session);
     } else if (response.status === 409) {
       return {
@@ -83,15 +83,15 @@ export class WakgamesController {
   ) {
     const { data, response } = await this.wakgamesService.getStat(
       id,
-      session.accessToken,
+      session.get('accessToken'),
     );
     if (response.status === 401) {
       const { data, response } = await this.wakgamesService.updateToken(
-        session.refreshToken,
+        session.get('refreshToken'),
       );
       if (response.status !== 200) throw new UnauthorizedException();
-      session.accessToken = data.accessToken;
-      session.refreshToken = data.refreshToken;
+      session.set('accessToken', data.accessToken);
+      session.set('refreshToken', data.refreshToken);
       return await this.getStat(id, session);
     }
     return data;
@@ -101,15 +101,15 @@ export class WakgamesController {
   async putStat(@Body() body, @Session() session: Record<string, any>) {
     const { data, response } = await this.wakgamesService.putStat(
       body,
-      session.accessToken,
+      session.get('accessToken'),
     );
     if (response.status === 401) {
       const { data, response } = await this.wakgamesService.updateToken(
-        session.refreshToken,
+        session.get('refreshToken'),
       );
       if (response.status !== 200) throw new UnauthorizedException();
-      session.accessToken = data.accessToken;
-      session.refreshToken = data.refreshToken;
+      session.set('accessToken', data.accessToken);
+      session.set('refreshToken', data.refreshToken);
       return await this.putStat(body, session);
     }
     return data;

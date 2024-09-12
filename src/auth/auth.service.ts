@@ -1,12 +1,13 @@
 import {
   Injectable,
   UnauthorizedException,
-  Req,
   BadRequestException,
+  Session,
 } from '@nestjs/common';
-import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
-import { Request } from 'express';
+import * as secureSession from '@fastify/secure-session';
+
+import { UserService } from 'src/user/user.service';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
 
 @Injectable()
@@ -41,8 +42,8 @@ export class AuthService {
     return await bcrypt.compare(password, hash);
   }
 
-  async logout(@Req() request: Request): Promise<any> {
-    request.session.destroy(() => {});
+  logout(@Session() session: secureSession.Session<Record<string, any>>) {
+    session.regenerate();
     return { success: true, message: 'Logout Success' };
   }
 
