@@ -69,7 +69,7 @@ export class UserController {
     type: ScoreUserDto,
   })
   @UseGuards(IsLoginedGuard, AuthGuard)
-  @Patch(':id')
+  @Patch('score/:id')
   async updateScore(@Param('id') id: string, @Body('score') score: number) {
     return await this.userService.updateScore(id, score);
   }
