@@ -581,7 +581,7 @@ export class SocketGateway
       this.game[roomId].chain,
     );
     if (success) {
-      this.server.to(roomId).emit('last.game', {
+      this.server.to(roomId).emit('kung.game', {
         success: false,
         answer: chat,
         game: this.game[roomId],
