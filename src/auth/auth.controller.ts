@@ -29,8 +29,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'logout' })
   @Get('logout')
-  async logout(@Req() request: Request): Promise<any> {
-    return await this.authService.logout(request);
+  async logout(@Req() request): Promise<any> {
+    return this.authService.logout(request);
   }
 
   @ApiOperation({ summary: 'Local Login' })
