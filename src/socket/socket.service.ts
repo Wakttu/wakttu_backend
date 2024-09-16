@@ -228,19 +228,19 @@ export class SocketService {
   ): Promise<any> {
     if (option[0]) {
       const flag0 = await this.checkManner(keyword);
-      if (!flag0) return { success: false, message: '한방 단어 금지!' };
+      if (!flag0) return { success: false, message: '2' };
     }
 
     if (!option[1]) {
       const flag1 = this.checkPoom(type);
-      if (flag1) return { success: false, message: '품어 단어 금지!' };
+      if (flag1) return { success: false, message: '3' };
     }
 
     if (!option[2]) {
       const flag2 = this.checkInjeong(type);
-      if (flag2) return { success: false, message: '외수 단어 금지!' };
+      if (flag2) return { success: false, message: '4' };
     }
-    return { success: true, message: '성공' };
+    return { success: true, message: '0' };
   }
 
   /**
@@ -251,7 +251,7 @@ export class SocketService {
    */
   async check(_word: string, option: boolean[]) {
     const word = await this.findWord(_word);
-    if (!word) return { success: false, message: '없는 단어입니다.' };
+    if (!word) return { success: false, message: '1' };
     const { success, message } = await this.checkOption(
       option,
       word.id.slice(-1),

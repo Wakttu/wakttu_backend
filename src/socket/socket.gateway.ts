@@ -508,7 +508,7 @@ export class SocketGateway
         success: false,
         answer: chat,
         game: this.game[roomId],
-        message: chat + '불가능',
+        message: '5',
         word: undefined,
       });
     } else {
@@ -585,7 +585,7 @@ export class SocketGateway
         success: false,
         answer: chat,
         game: this.game[roomId],
-        message: chat + '불가능',
+        message: '5',
         word: undefined,
       });
     } else {
