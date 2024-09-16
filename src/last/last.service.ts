@@ -58,8 +58,9 @@ export class LastService {
   async handleCheckMission(chat: string, game: Game) {
     if (chat.includes(game.mission)) {
       game.mission = await this.socketService.getMission();
+      return true;
     }
-    return;
+    return false;
   }
 
   async handleGetMission() {
