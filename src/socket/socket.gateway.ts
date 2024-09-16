@@ -518,8 +518,13 @@ export class SocketGateway
       );
       if (check.success) {
         score = this.socketService.checkWakta(check['wakta'])
-          ? score * 1.2
+          ? score * 1.58
           : score;
+        const mission = await this.lastService.handleCheckMission(
+          chat,
+          this.game[roomId],
+        );
+        score = mission ? score * 1.2 : score;
         this.lastService.handleNextTurn(this.game[roomId], chat, score);
       }
       this.server.to(roomId).emit('last.game', {
@@ -595,7 +600,7 @@ export class SocketGateway
       );
       if (check.success) {
         score = this.socketService.checkWakta(check['wakta'])
-          ? score * 1.2
+          ? score * 1.58
           : score;
         this.kungService.handleNextTurn(this.game[roomId], chat, score);
       }

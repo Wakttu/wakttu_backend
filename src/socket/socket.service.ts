@@ -275,8 +275,14 @@ export class SocketService {
   }
 
   getTurnTime(roundTime: number, chain: number = 1) {
-    const speed = chain <= 10 ? chain : 10;
-    return Math.min(roundTime, 20000 - 1800 * speed);
+    if (chain >= 20 && chain < 30) {
+      return Math.min(roundTime, 1000);
+    } else if (chain >= 30) {
+      return Math.min(roundTime, 700);
+    } else {
+      const speed = chain <= 10 ? chain : 10;
+      return Math.min(roundTime, 20000 - 1800 * speed);
+    }
   }
 
   /**
