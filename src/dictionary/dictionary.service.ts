@@ -52,7 +52,7 @@ export class DictionaryService {
 
   async getMission(): Promise<string> {
     const list: string[] = await this.prisma
-      .$queryRaw`SELECT _id FROM "public"."wakttu_manner" ORDER BY random() LIMIT 1`;
+      .$queryRaw`SELECT _id FROM "public"."wakttu_mission" ORDER BY random() LIMIT 1`;
     return list[0]['_id'];
   }
 }

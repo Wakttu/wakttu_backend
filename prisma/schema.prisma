@@ -17,11 +17,11 @@ model User {
   roomId    String?
   character Json           @default("{\"skin\": \"S-1\"}")
   keyboard  String[]
+  achieve   Json?
+  stat      Json?
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
-  stat      Json?
-  achieve   Json?
 }
 
 model Room {
@@ -74,9 +74,9 @@ model Manner {
 model Emoji {
   id          String         @id @map("_id") @db.VarChar
   name        String
+  url         String
   author      String
   description String?
-  url         String
   users       UserGetEmoji[]
 }
 
@@ -114,8 +114,12 @@ model UserGetItem {
 }
 
 model Ban {
-  id        Int  @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    String?
   ip        String?
   createdAt DateTime @default(now()) @map("created_at")
+}
+
+model wakttu_mission {
+  id String @id @map("_id") @db.VarChar(1)
 }
