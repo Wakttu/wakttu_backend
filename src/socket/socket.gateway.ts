@@ -144,7 +144,8 @@ export class SocketGateway
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
-        this.game[roomId].host = this.roomInfo[roomId].users[0].name;
+        if (this.game[roomId].host === this.user[client.id].name)
+          this.game[roomId].host = this.roomInfo[roomId].users[0].name;
         this.server.to(roomId).emit('exit', {
           roomInfo: this.roomInfo[roomId],
           game: this.game[roomId],
@@ -341,7 +342,9 @@ export class SocketGateway
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
       const { id, name } = this.roomInfo[roomId].users[0];
-      this.game[roomId].host = name;
+      if (this.game[roomId].host === this.user[client.id].name)
+        this.game[roomId].host = name;
+
       this.handleHostReady({ roomId, id });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
@@ -517,9 +520,15 @@ export class SocketGateway
         this.game[roomId].option,
       );
       if (check.success) {
-        score = this.socketService.checkWakta(check['wakta'])
-          ? score * 1.2
+        score = this.socketService.checkWakta(check.word.wakta)
+          ? score * 1.58
           : score;
+        const mission = await this.lastService.handleCheckMission(
+          chat,
+          this.game[roomId],
+        );
+        score = mission ? score * 1.2 : score;
+        score = Math.round(score);
         this.lastService.handleNextTurn(this.game[roomId], chat, score);
       }
       this.server.to(roomId).emit('last.game', {
@@ -595,8 +604,9 @@ export class SocketGateway
       );
       if (check.success) {
         score = this.socketService.checkWakta(check['wakta'])
-          ? score * 1.2
+          ? score * 1.58
           : score;
+        score = Math.round(score);
         this.kungService.handleNextTurn(this.game[roomId], chat, score);
       }
       this.server.to(roomId).emit('kung.game', {
