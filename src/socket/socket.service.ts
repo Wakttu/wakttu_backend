@@ -281,7 +281,7 @@ export class SocketService {
       return Math.min(roundTime, 700);
     } else {
       const speed = chain <= 10 ? chain : 10;
-      return Math.min(roundTime, 20000 - 1800 * speed);
+      return Math.min(roundTime, 20000 - 1800 * (speed - 1));
     }
   }
 
