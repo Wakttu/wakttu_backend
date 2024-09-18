@@ -59,6 +59,7 @@ export class Game {
   turnTime: number;
   mission: string | undefined; // 끝말잇기에서 사용될 미션단어
   quiz: Quiz[] | undefined; // 퀴즈 정보
+  ban: string[] | undefined; //
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -632,12 +633,21 @@ export class SocketGateway
   @SubscribeMessage('kung.ban')
   handleKungBan(
     @MessageBody() { roomId, keyword }: { roomId: string; keyword: string },
-    @ConnectedSocket() client: any,
   ) {
-    let index = this.game[roomId].users.indexOf(client.id);
-    index += 1;
-    index %= this.game[roomId].total;
-    this.kungService.handleBan(roomId, index, keyword);
+    this.kungService.handleBan(this.game[roomId], keyword);
+  }
+  // banStart
+  @SubscribeMessage('kung.banStart')
+  handleBanStart(@MessageBody() roomId: string) {
+    let time = 180;
+    const timeId = setInterval(() => {
+      this.server.to(roomId).emit('ping.ban');
+      time--;
+      if (time === 0) {
+        clearInterval(timeId);
+        this.server.to(roomId).emit('kung.banEnd', this.game[roomId]);
+      }
+    }, 100);
   }
 
   @SubscribeMessage('wak-quiz.start')
