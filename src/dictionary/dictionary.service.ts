@@ -55,4 +55,14 @@ export class DictionaryService {
       .$queryRaw`SELECT _id FROM "public"."wakttu_mission" ORDER BY random() LIMIT 1`;
     return list[0]['_id'];
   }
+
+  async search(keyword: string, take: number = 20, skip: number = 0) {
+    return await this.prisma.dictionary.findMany({
+      where: {
+        id: { startsWith: keyword },
+      },
+      take: take,
+      skip: skip,
+    });
+  }
 }
