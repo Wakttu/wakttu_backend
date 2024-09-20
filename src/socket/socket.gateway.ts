@@ -496,7 +496,8 @@ export class SocketGateway
 
   @SubscribeMessage('last.turnEnd')
   async handleTurnEnd(@MessageBody() roomId: string) {
-    this.server.to(roomId).emit('last.turnEnd');
+    this.lastService.handleTurnEnd(this.game[roomId]);
+    this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
   }
 
   async handleLastAnswer(
