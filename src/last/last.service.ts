@@ -75,6 +75,12 @@ export class LastService {
     game.target = keyword[keyword.length - 1];
   }
 
+  handleTurnEnd(game: Game) {
+    const chain = game.chain;
+    const score = game.users[game.turn].score;
+    game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1));
+  }
+
   handleCheck(word: string, target: string) {
     if (word !== target) {
       return { success: false, message: '시작단어가 일치하지않음' };
