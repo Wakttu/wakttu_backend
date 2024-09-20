@@ -29,7 +29,7 @@ async function bootstrap() {
     resave: false, // 모든 request마다 기존에 있던 session에 아무런 변경 사항이 없을 시에도 그 session을 다시 저장하는 옵션.
     saveUninitialized: false,
     cookie: {
-      maxAge: 60000 * 60, // 1 hour
+      maxAge: 86400000 * 2,
       httpOnly: true,
     },
     store: store,
