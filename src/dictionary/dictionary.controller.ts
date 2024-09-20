@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { DictionaryService } from './dictionary.service';
 import { CreateDictionaryDto } from './dto/create-dictionary.dto';
@@ -26,6 +27,16 @@ export class DictionaryController {
   @Post()
   async create(@Body() createDictionaryDto: CreateDictionaryDto) {
     return await this.dictionaryService.create(createDictionaryDto);
+  }
+
+  @ApiOperation({ summary: '검색 기능' })
+  @Get('search')
+  async search(@Query() query) {
+    const { keyword } = query;
+    let { take, skip } = query;
+    take = take ? parseInt(take, 10) : take;
+    skip = skip ? parseInt(skip, 10) : skip;
+    return await this.dictionaryService.search(keyword, take, skip);
   }
 
   @ApiOperation({ summary: '단어 검색' })
