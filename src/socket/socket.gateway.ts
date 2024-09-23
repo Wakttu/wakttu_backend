@@ -39,6 +39,8 @@ export class Game {
     this.team = {
       woo: [],
       gomem: [],
+      academy: [],
+      isedol: [],
     };
   }
   host: string; // 호스트
@@ -66,6 +68,8 @@ export class Game {
   team: {
     woo: string[];
     gomem: string[];
+    academy: string[];
+    isedol: string[];
   };
 }
 
@@ -145,6 +149,7 @@ export class SocketGateway
       : undefined;
     if (roomId) {
       this.handleExitReady(roomId, client);
+      this.handleExitTeam(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
@@ -284,7 +289,7 @@ export class SocketGateway
     const roomInfo = await this.socketService.updateRoom(roomId, data);
     this.roomInfo[roomId] = roomInfo;
     this.game[roomId].users = [];
-    this.game[roomId].team = { woo: [], gomem: [] };
+    this.game[roomId].team = { woo: [], gomem: [], academy: [], isedol: [] };
     this.server.to(roomId).emit('updateRoom', {
       roomInfo: this.roomInfo[roomId],
       game: this.game[roomId],
@@ -343,6 +348,7 @@ export class SocketGateway
       return;
     }
     this.handleExitReady(roomId, client);
+    this.handleExitTeam(roomId, client);
     await this.socketService.exitRoom(this.user[client.id].id);
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
@@ -403,13 +409,56 @@ export class SocketGateway
       (user) => user === this.user[client.id].id,
     );
 
+    const InAcademy = this.game[roomId].team['academy'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    const InIsedol = this.game[roomId].team['isedol'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
     if (InWoo !== -1) this.game[roomId].team['woo'].splice(InWoo, 1);
 
     if (InGomem !== -1) this.game[roomId].team['gomem'].splice(InGomem, 1);
 
+    if (InAcademy !== -1)
+      this.game[roomId].team['academy'].splice(InAcademy, 1);
+
+    if (InIsedol !== -1) this.game[roomId].team['isedol'].splice(InIsedol, 1);
+
     this.game[roomId].team[team].push(this.user[client.id].id);
 
     this.server.to(roomId).emit('team', this.game[roomId]);
+  }
+
+  handleExitTeam(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const InWoo = this.game[roomId].team['woo'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    const InGomem = this.game[roomId].team['gomem'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    const InAcademy = this.game[roomId].team['academy'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    const InIsedol = this.game[roomId].team['isedol'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    if (InWoo !== -1) this.game[roomId].team['woo'].splice(InWoo, 1);
+
+    if (InGomem !== -1) this.game[roomId].team['gomem'].splice(InGomem, 1);
+
+    if (InAcademy !== -1)
+      this.game[roomId].team['academy'].splice(InAcademy, 1);
+
+    if (InIsedol !== -1) this.game[roomId].team['isedol'].splice(InIsedol, 1);
   }
 
   // 유저들의 ready 확인
@@ -444,6 +493,7 @@ export class SocketGateway
       );
       if (index === -1) return;
       this.game[roomId].users.splice(index, 1);
+
       this.game[roomId].total = this.game[roomId].users.length;
     }
   }
@@ -497,7 +547,11 @@ export class SocketGateway
     }
 
     this.handleReady(roomId, client);
-    this.socketService.shuffle(this.game[roomId]);
+
+    if (this.roomInfo[roomId].option.includes('팀전'))
+      this.socketService.teamShuffle(this.game[roomId], this.game[roomId].team);
+    else this.socketService.shuffle(this.game[roomId]);
+
     this.game[roomId].option = this.socketService.getOption(
       this.roomInfo[roomId].option,
     );
