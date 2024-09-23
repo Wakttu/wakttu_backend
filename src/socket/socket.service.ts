@@ -161,6 +161,67 @@ export class SocketService {
   }
 
   /**
+   * 팀별 순서 섞기
+   */
+  teamShuffle(
+    game: Game,
+    team: {
+      woo: string[];
+      gomem: string[];
+      academy: string[];
+      isedol: string[];
+    },
+  ) {
+    const { woo, gomem, academy, isedol } = team;
+
+    for (let i = woo.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [woo[i], woo[j]] = [woo[j], woo[i]];
+    }
+
+    for (let i = gomem.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gomem[i], gomem[j]] = [gomem[j], gomem[i]];
+    }
+
+    for (let i = academy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [academy[i], academy[j]] = [academy[j], academy[i]];
+    }
+
+    for (let i = isedol.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [isedol[i], isedol[j]] = [isedol[j], isedol[i]];
+    }
+
+    const keys = [woo, gomem, academy, isedol];
+    for (let i = 3; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [keys[i], keys[j]] = [keys[j], keys[i]];
+    }
+
+    const count = Math.max(
+      woo.length,
+      gomem.length,
+      academy.length,
+      isedol.length,
+    );
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      for (let j = 0; j < 4; j++) {
+        console.log(keys[j]);
+        if (keys[j].length > 0) {
+          const idx = game.users.findIndex(
+            (user) => user.userId === keys[j][i],
+          );
+          arr.push(game.users[idx]);
+        }
+      }
+    }
+    game.users = arr;
+  }
+
+  /**
    *
    * @returns 미션등록
    */
