@@ -16,7 +16,6 @@ import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
 import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
-import { WakQuizService } from 'src/wak-quiz/wak-quiz.service';
 import { Quiz } from 'src/quiz/entities/quiz.entity';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 
@@ -36,8 +35,11 @@ export class Game {
     this.users = []; // 유저들의 정보가 들어있는 칸 위의 turn과 index를 같이사용
     this.chain = 0; // 현재 몇 체인인지 보여주는 정보
     this.roundTime = 60000; // 라운드 남은 시간 처음시작 60초
-    this.turnTime = 20000;
-    // 턴 남은 시간 처음시작 20초
+    this.turnTime = 20000; // 턴 남은 시간 처음시작 20초
+    this.team = {
+      woo: [],
+      gomem: [],
+    };
   }
   host: string; // 호스트
   type: number; // 게임종류 0:끝말잇기 1:쿵쿵따 2:왁타버스 퀴즈
@@ -50,6 +52,7 @@ export class Game {
     userId: string;
     character: JSON;
     name: string;
+    team?: boolean;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
@@ -60,6 +63,10 @@ export class Game {
   mission: string | undefined; // 끝말잇기에서 사용될 미션단어
   quiz: Quiz[] | undefined; // 퀴즈 정보
   ban: string[] | undefined; //
+  team: {
+    woo: string[];
+    gomem: string[];
+  };
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -76,8 +83,6 @@ export class SocketGateway
     private readonly lastService: LastService,
     @Inject(forwardRef(() => KungService))
     private readonly kungService: KungService,
-    @Inject(forwardRef(() => WakQuizService))
-    private readonly wakQuizService: WakQuizService,
     private readonly socketService: SocketService,
   ) {}
 
@@ -116,7 +121,6 @@ export class SocketGateway
           .to(key)
           .emit('alarm', { message: '이미 접속중인 유저입니다!' });
         this.handleDisconnect({ id: key });
-        return;
       }
     }
     this.user[client.id] = user;
@@ -131,7 +135,6 @@ export class SocketGateway
     // 서버를 service와 연결
     this.lastService.server = this.server;
     this.kungService.server = this.server;
-    this.wakQuizService.server = this.server;
     console.log('socket is open!');
   }
 
@@ -243,9 +246,6 @@ export class SocketGateway
             success,
           });
           break;
-        case 2:
-          await this.handleWakQuizAnswer({ roomId, chat }, client);
-          break;
       }
     } else
       this.server
@@ -283,7 +283,12 @@ export class SocketGateway
     }
     const roomInfo = await this.socketService.updateRoom(roomId, data);
     this.roomInfo[roomId] = roomInfo;
-    this.server.to(roomId).emit('updateRoom', this.roomInfo[roomId]);
+    this.game[roomId].users = [];
+    this.game[roomId].team = { woo: [], gomem: [] };
+    this.server.to(roomId).emit('updateRoom', {
+      roomInfo: this.roomInfo[roomId],
+      game: this.game[roomId],
+    });
   }
 
   // 게임 방 입장
@@ -383,6 +388,30 @@ export class SocketGateway
     client.emit('alarm', { message: '퇴장 당하셨습니다.' });
   }
 
+  // 유저들의 팀선 택
+  @SubscribeMessage('team')
+  handleTeam(
+    @MessageBody()
+    { roomId, team }: { roomId: string; team: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const InWoo = this.game[roomId].team['woo'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    const InGomem = this.game[roomId].team['gomem'].findIndex(
+      (user) => user === this.user[client.id].id,
+    );
+
+    if (InWoo !== -1) this.game[roomId].team['woo'].splice(InWoo, 1);
+
+    if (InGomem !== -1) this.game[roomId].team['gomem'].splice(InGomem, 1);
+
+    this.game[roomId].team[team].push(this.user[client.id].id);
+
+    this.server.to(roomId).emit('team', this.game[roomId]);
+  }
+
   // 유저들의 ready 확인
   @SubscribeMessage('ready')
   handleReady(
@@ -397,6 +426,7 @@ export class SocketGateway
         userId: this.user[client.id].id,
         character: this.user[client.id].character,
         name: this.user[client.id].name,
+        team: this.user[client.id].team ? this.user[client.id].team : undefined,
       });
     } else {
       this.game[roomId].users.splice(index, 1);
@@ -628,7 +658,8 @@ export class SocketGateway
 
   @SubscribeMessage('kung.turnEnd')
   async handleKTurnEnd(@MessageBody() roomId: string) {
-    this.server.to(roomId).emit('kung.turnEnd');
+    this.kungService.handleTurnEnd(this.game[roomId]);
+    this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
   }
 
   @SubscribeMessage('kung.ban')
@@ -640,7 +671,7 @@ export class SocketGateway
   // banStart
   @SubscribeMessage('kung.banStart')
   handleBanStart(@MessageBody() roomId: string) {
-    let time = 180;
+    let time = 200;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('ping.ban');
       time--;
@@ -649,45 +680,5 @@ export class SocketGateway
         this.server.to(roomId).emit('kung.banEnd', this.game[roomId]);
       }
     }, 100);
-  }
-
-  @SubscribeMessage('wak-quiz.start')
-  async handleWakQuizStart(
-    @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (this.game[roomId].host !== this.user[client.id].name) {
-      client.emit('alarm', { message: '방장이 아닙니다.' });
-      return;
-    }
-    if (
-      this.game[roomId].users.length + 1 !==
-      this.roomInfo[roomId].users.length
-    ) {
-      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
-      return;
-    }
-    this.handleReady(roomId, client);
-    this.socketService.shuffle(this.game[roomId]);
-    await this.wakQuizService.handleStart(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
-  }
-  @SubscribeMessage('wak-quiz.round')
-  handleWakQuizRound(@MessageBody() roomId: string) {
-    this.wakQuizService.handleRound(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
-  }
-  async handleWakQuizAnswer(
-    @MessageBody() { roomId, chat }: { roomId: string; chat: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
-    this.wakQuizService.handleAnswer(roomId, index, chat, this.game[roomId]);
   }
 }
