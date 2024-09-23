@@ -201,16 +201,20 @@ export class SocketService {
    * @returns
    */
   getOption(option: string[]): boolean[] {
-    const flag: boolean[] = [false, false, false];
+    const flag: boolean[] = [false, false, false, false];
     if (option.includes('매너')) {
       flag[0] = true;
     }
-    if (option.includes('품어')) {
+    if (option.includes('외수')) {
       flag[1] = true;
     }
-    if (option.includes('외수')) {
+    if (option.includes('팀전')) {
       flag[2] = true;
     }
+    if (option.includes('품어')) {
+      flag[3] = true;
+    }
+
     return flag;
   }
 
@@ -231,14 +235,14 @@ export class SocketService {
       if (!flag0) return { success: false, message: '2' };
     }
 
-    if (!option[1]) {
+    if (!option[3]) {
       const flag1 = this.checkPoom(type);
-      if (flag1) return { success: false, message: '3' };
+      if (flag1) return { success: false, message: '4' };
     }
 
-    if (!option[2]) {
+    if (!option[1]) {
       const flag2 = this.checkInjeong(type);
-      if (flag2) return { success: false, message: '4' };
+      if (flag2) return { success: false, message: '3' };
     }
     return { success: true, message: '0' };
   }

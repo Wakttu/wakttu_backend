@@ -78,7 +78,7 @@ export class LastService {
   handleTurnEnd(game: Game) {
     const chain = game.chain;
     const score = game.users[game.turn].score;
-    game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1));
+    game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1) - 20);
   }
 
   handleCheck(word: string, target: string) {

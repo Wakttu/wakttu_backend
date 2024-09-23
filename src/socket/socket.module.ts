@@ -6,7 +6,6 @@ import { DictionaryModule } from 'src/dictionary/dictionary.module';
 import { UserModule } from 'src/user/user.module';
 import { KungModule } from 'src/kung/kung.module';
 import { LastModule } from 'src/last/last.module';
-import { WakQuizModule } from 'src/wak-quiz/wak-quiz.module';
 import { QuizModule } from 'src/quiz/quiz.module';
 
 @Module({
@@ -15,7 +14,6 @@ import { QuizModule } from 'src/quiz/quiz.module';
     RoomModule,
     DictionaryModule,
     QuizModule,
-    forwardRef(() => WakQuizModule),
     forwardRef(() => LastModule),
     forwardRef(() => KungModule),
   ],
