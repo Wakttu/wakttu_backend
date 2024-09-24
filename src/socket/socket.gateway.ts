@@ -149,7 +149,7 @@ export class SocketGateway
       : undefined;
     if (roomId) {
       this.handleExitReady(roomId, client);
-      this.handleExitTeam(roomId, client);
+      if (this.game[roomId]) this.handleExitTeam(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
@@ -353,7 +353,7 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      const { id, name } = this.roomInfo[roomId].users[0];
+      const { /*id,*/ name } = this.roomInfo[roomId].users[0];
       if (this.game[roomId].host === this.user[client.id].name)
         this.game[roomId].host = name;
 
