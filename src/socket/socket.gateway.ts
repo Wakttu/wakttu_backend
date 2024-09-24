@@ -357,7 +357,6 @@ export class SocketGateway
       if (this.game[roomId].host === this.user[client.id].name)
         this.game[roomId].host = name;
 
-      this.handleHostReady({ roomId, id });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
