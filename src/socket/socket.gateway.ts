@@ -54,7 +54,7 @@ export class Game {
     userId: string;
     character: JSON;
     name: string;
-    team?: boolean;
+    team?: string;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)

@@ -38,6 +38,7 @@ model Room {
   idx       Int      @default(autoincrement())
   time      Int      @default(60000)
   users     User[]
+  team      Boolean @default(false)
 }
 
 model Dictionary {
