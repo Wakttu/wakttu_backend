@@ -209,7 +209,6 @@ export class SocketService {
     const arr = [];
     for (let i = 0; i < count; i++) {
       for (let j = 0; j < 4; j++) {
-        console.log(keys[j]);
         if (keys[j].length > 0) {
           const idx = game.users.findIndex(
             (user) => user.userId === keys[j][i],
