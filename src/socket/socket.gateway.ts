@@ -150,8 +150,7 @@ export class SocketGateway
       : undefined;
     if (roomId) {
       this.handleExitReady(roomId, client);
-      if (this.game[roomId] && this.game[roomId].option[2])
-        this.handleExitTeam(roomId, client);
+      if (this.game[roomId]) this.handleExitTeam(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
       client.leave(roomId);
 
