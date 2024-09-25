@@ -73,4 +73,11 @@ export class UserController {
   async updateScore(@Param('id') id: string, @Body('score') score: number) {
     return await this.userService.updateScore(id, score);
   }
+
+  @UseGuards(IsLoginedGuard)
+  @Get('items/:id')
+  async getItems(@Param('id') id: string) {
+    const response = await this.userService.getItems(id);
+    return response;
+  }
 }
