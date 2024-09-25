@@ -139,4 +139,16 @@ export class UserService {
       await this.updateScore(user.userId, user.score);
     });
   }
+
+  async getItems(id: string) {
+    return this.prisma.item.findMany({
+      where: {
+        user: {
+          every: {
+            userId: id,
+          },
+        },
+      },
+    });
+  }
 }
