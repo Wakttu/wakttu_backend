@@ -70,8 +70,10 @@ export class LastService {
   handleNextTurn(game: Game, keyword: string, score: number) {
     const team = game.users[game.turn].team;
     if (team) {
-      game.users.map((user) => {
-        if (user.team === team) user.score += score;
+      game.users.forEach((user) => {
+        if (user.team === team) {
+          user.score += score;
+        }
       });
     } else game.users[game.turn].score += score;
     game.turn += 1;
@@ -86,7 +88,7 @@ export class LastService {
 
     const team = game.users[game.turn].team;
     if (team) {
-      game.users.map((user) => {
+      game.users.forEach((user) => {
         if (user.team === team)
           user.score = Math.max(0, score - 5 * (chain - 1) - 20);
       });

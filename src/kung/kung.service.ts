@@ -64,7 +64,12 @@ export class KungService {
   }
 
   handleNextTurn(game: Game, keyword: string, score: number) {
-    game.users[game.turn].score += score;
+    const team = game.users[game.turn].team;
+    if (team) {
+      game.users.forEach((user) => {
+        if (user.team === team) user.score += score;
+      });
+    } else game.users[game.turn].score += score;
     game.turn += 1;
     game.turn %= game.total;
     game.chain += 1;
@@ -74,7 +79,14 @@ export class KungService {
   handleTurnEnd(game: Game) {
     const chain = game.chain;
     const score = game.users[game.turn].score;
-    game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1) - 20);
+    const team = game.users[game.turn].team;
+    if (team) {
+      game.users.forEach((user) => {
+        if (user.team === team)
+          user.score = Math.max(0, score - 5 * (chain - 1) - 20);
+      });
+    } else
+      game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1) - 20);
   }
 
   handleCheck(word: string, target: string, length: number) {
