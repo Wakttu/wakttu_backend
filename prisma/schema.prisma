@@ -94,7 +94,7 @@ model UserGetEmoji {
 model Item {
   id          String        @id @map("_id")
   name        String
-  categroy    String
+  category    String
   description String?
   hint        String?
   author      String
