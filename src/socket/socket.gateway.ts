@@ -136,6 +136,7 @@ export class SocketGateway
   async afterInit() {
     // 다시열릴시 존재하는 방 모두 삭제
     await this.socketService.deleteAllRoom();
+    this.game = {};
     // 서버를 service와 연결
     this.lastService.server = this.server;
     this.kungService.server = this.server;
@@ -149,12 +150,20 @@ export class SocketGateway
       : undefined;
     if (roomId) {
       this.handleExitReady(roomId, client);
-      if (this.game[roomId]) this.handleExitTeam(roomId, client);
+      if (this.game[roomId] && this.game[roomId].option[2])
+        this.handleExitTeam(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
+      client.leave(roomId);
+
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
+        const { id, name } = this.roomInfo[roomId].users[0];
+
         if (this.game[roomId].host === this.user[client.id].name)
-          this.game[roomId].host = this.roomInfo[roomId].users[0].name;
+          this.game[roomId].host = name;
+
+        if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
+
         this.server.to(roomId).emit('exit', {
           roomInfo: this.roomInfo[roomId],
           game: this.game[roomId],
@@ -305,7 +314,20 @@ export class SocketGateway
     if (client.rooms.has(roomId)) {
       return;
     }
-    if (!this.roomInfo[roomId]) return;
+    if (!this.user[client.id].id) {
+      const user = client.request.session.user;
+      if (!user) {
+        client.emit('alarm', {
+          message: '계정에 오류가 있습니다. 새로고침 후 재접속하세요!',
+        });
+        return;
+      }
+      this.user[client.id] = user;
+    }
+    if (!this.roomInfo[roomId]) {
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
 
     if (this.roomInfo[roomId].total === this.roomInfo[roomId].users.length) {
       client.emit('alarm', { message: '인원이 가득찼습니다!' });
@@ -344,19 +366,21 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (!client.rooms.has(roomId)) {
+    if (!client.rooms.has(roomId) || !this.roomInfo[roomId]) {
       return;
     }
     this.handleExitReady(roomId, client);
-    this.handleExitTeam(roomId, client);
+    if (this.game[roomId] && this.game[roomId].option[2])
+      this.handleExitTeam(roomId, client);
     await this.socketService.exitRoom(this.user[client.id].id);
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      const { /*id,*/ name } = this.roomInfo[roomId].users[0];
+      const { id, name } = this.roomInfo[roomId].users[0];
       if (this.game[roomId].host === this.user[client.id].name)
         this.game[roomId].host = name;
 
+      if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
@@ -426,7 +450,7 @@ export class SocketGateway
     if (InIsedol !== -1) this.game[roomId].team['isedol'].splice(InIsedol, 1);
 
     this.game[roomId].team[team].push(this.user[client.id].id);
-
+    this.user[client.id].team = team;
     this.server.to(roomId).emit('team', this.game[roomId]);
   }
 
@@ -474,7 +498,11 @@ export class SocketGateway
         userId: this.user[client.id].id,
         character: this.user[client.id].character,
         name: this.user[client.id].name,
-        team: this.user[client.id].team ? this.user[client.id].team : undefined,
+        team:
+          this.user[client.id].team &&
+          this.roomInfo[roomId].option.includes('팀전')
+            ? this.user[client.id].team
+            : undefined,
       });
     } else {
       this.game[roomId].users.splice(index, 1);
@@ -494,6 +522,7 @@ export class SocketGateway
       this.game[roomId].users.splice(index, 1);
 
       this.game[roomId].total = this.game[roomId].users.length;
+      this.game[roomId].turn = this.game[roomId].turn % this.game[roomId].total;
     }
   }
 
