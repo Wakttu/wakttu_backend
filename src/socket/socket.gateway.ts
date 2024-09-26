@@ -16,8 +16,8 @@ import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
 import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
-import { Quiz } from 'src/quiz/entities/quiz.entity';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
+import { BellService } from 'src/bell/bell.service';
 
 interface Chat {
   roomId: string;
@@ -42,6 +42,7 @@ export class Game {
       academy: [],
       isedol: [],
     };
+    this.ban = [];
   }
   host: string; // 호스트
   type: number; // 게임종류 0:끝말잇기 1:쿵쿵따 2:왁타버스 퀴즈
@@ -57,20 +58,20 @@ export class Game {
     team?: string;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
-  target: string | Quiz; // 현재 게임 진행에서 사용될 단어 (세)
+  target: string; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
   chain: number; // 현재 체인정보
   roundTime: number; // 남은 라운드시간 정보
   turnTime: number;
   mission: string | undefined; // 끝말잇기에서 사용될 미션단어
-  quiz: Quiz[] | undefined; // 퀴즈 정보
-  ban: string[] | undefined; //
+  ban: string[]; //
   team: {
     woo: string[];
     gomem: string[];
     academy: string[];
     isedol: string[];
   };
+  quiz?: [];
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -87,6 +88,8 @@ export class SocketGateway
     private readonly lastService: LastService,
     @Inject(forwardRef(() => KungService))
     private readonly kungService: KungService,
+    @Inject(forwardRef(() => BellService))
+    private readonly bellService: BellService,
     private readonly socketService: SocketService,
   ) {}
 
@@ -140,6 +143,7 @@ export class SocketGateway
     // 서버를 service와 연결
     this.lastService.server = this.server;
     this.kungService.server = this.server;
+    this.bellService.server = this.server;
     console.log('socket is open!');
   }
 
@@ -152,7 +156,6 @@ export class SocketGateway
       this.handleExitReady(roomId, client);
       if (this.game[roomId]) this.handleExitTeam(roomId, client);
       await this.socketService.exitRoom(this.user[client.id].id);
-      client.leave(roomId);
 
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
@@ -332,6 +335,11 @@ export class SocketGateway
       client.emit('alarm', { message: '인원이 가득찼습니다!' });
       return;
     }
+
+    if (this.game[roomId].ban.includes(this.user[client.id].id)) {
+      client.emit('alarm', { message: '추방 당한 유저는 접속이 불가능 해요!' });
+      return;
+    }
     const check = await this.socketService.checkPassword(roomId, password);
     if (!check) {
       client.emit('alarm', { message: '유효하지 않은 패스워드 입니다.' });
@@ -402,6 +410,7 @@ export class SocketGateway
     const key = Object.keys(this.user).find(
       (key) => this.user[key].id === userId,
     );
+    this.game[roomId].ban.push(this.user[key].id);
 
     client.to(key).emit('kick helper', { socketId: key });
   }
@@ -740,25 +749,5 @@ export class SocketGateway
   async handleKTurnEnd(@MessageBody() roomId: string) {
     this.kungService.handleTurnEnd(this.game[roomId]);
     this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
-  }
-
-  @SubscribeMessage('kung.ban')
-  handleKungBan(
-    @MessageBody() { roomId, keyword }: { roomId: string; keyword: string },
-  ) {
-    this.kungService.handleBan(this.game[roomId], keyword);
-  }
-  // banStart
-  @SubscribeMessage('kung.banStart')
-  handleBanStart(@MessageBody() roomId: string) {
-    let time = 200;
-    const timeId = setInterval(() => {
-      this.server.to(roomId).emit('ping.ban');
-      time--;
-      if (time === 0) {
-        clearInterval(timeId);
-        this.server.to(roomId).emit('kung.banEnd', this.game[roomId]);
-      }
-    }, 100);
   }
 }
