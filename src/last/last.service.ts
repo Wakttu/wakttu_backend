@@ -89,11 +89,9 @@ export class LastService {
     const team = game.users[game.turn].team;
     if (team) {
       game.users.forEach((user) => {
-        if (user.team === team)
-          user.score = Math.max(0, score - 5 * (chain - 1) - 20);
+        if (user.team === team) user.score = Math.max(0, score - 5 * chain);
       });
-    } else
-      game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1) - 20);
+    } else game.users[game.turn].score = Math.max(0, score - 5 * chain);
   }
 
   handleCheck(word: string, target: string) {

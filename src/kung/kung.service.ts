@@ -56,6 +56,9 @@ export class KungService {
     game.chain = 1;
     game.roundTime = roomInfo.time;
     game.turnTime = this.socketService.getTurnTime(roomInfo.time);
+    roomInfo.option.includes('팀전')
+      ? this.socketService.teamShuffle(game, game.team)
+      : this.socketService.shuffle(game);
     this.server.to(roomId).emit('kung.round', game);
   }
 
@@ -82,11 +85,9 @@ export class KungService {
     const team = game.users[game.turn].team;
     if (team) {
       game.users.forEach((user) => {
-        if (user.team === team)
-          user.score = Math.max(0, score - 5 * (chain - 1) - 20);
+        if (user.team === team) user.score = Math.max(0, score - 5 * chain);
       });
-    } else
-      game.users[game.turn].score = Math.max(0, score - 5 * (chain - 1) - 20);
+    } else game.users[game.turn].score = Math.max(0, score - 5 * chain);
   }
 
   handleCheck(word: string, target: string, length: number) {
