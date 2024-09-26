@@ -262,6 +262,13 @@ export class SocketGateway
             success,
           });
           break;
+        case 2:
+          await this.handleBellAnswer({
+            roomId,
+            chat,
+            roundTime,
+            score,
+          });
       }
     } else
       this.server
@@ -749,5 +756,60 @@ export class SocketGateway
   async handleKTurnEnd(@MessageBody() roomId: string) {
     this.kungService.handleTurnEnd(this.game[roomId]);
     this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
+  }
+
+  /**
+   * Bell 자음 퀴즈
+   */
+
+  @SubscribeMessage('bell.start')
+  async handleBellStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].name) {
+      client.emit('alarm', { message: '방장이 아닙니다.' });
+      return;
+    }
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      return;
+    }
+    this.handleReady(roomId, client);
+
+    await this.bellService.handleStart(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  @SubscribeMessage('bell.round')
+  handleBellRound(@MessageBody() roomId: string) {
+    this.bellService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  handleBellAnswer(
+    @MessageBody()
+    {
+      roomId,
+      chat,
+      roundTime,
+      score,
+    }: {
+      roomId: string;
+      chat: string;
+      roundTime: number;
+      score: number;
+    },
+  ) {
+    console.log(roomId, chat, roundTime, score);
   }
 }
