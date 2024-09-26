@@ -6,8 +6,6 @@ import { CreateRoom, Room } from 'src/room/entities/room.entity';
 import { UserService } from 'src/user/user.service';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Game } from './socket.gateway';
-import { QuizService } from 'src/quiz/quiz.service';
-import { Quiz } from 'src/quiz/entities/quiz.entity';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 
 @Injectable()
@@ -16,7 +14,6 @@ export class SocketService {
     private readonly dicService: DictionaryService,
     private readonly roomService: RoomService,
     private readonly userService: UserService,
-    private readonly quizService: QuizService,
   ) {}
 
   /**
@@ -35,6 +32,14 @@ export class SocketService {
    */
   async setWord(length: number): Promise<string> {
     return await this.dicService.getWord(length);
+  }
+
+  /**
+   * @param round 필요한 단어수에 대한 총 라운드
+   * @returns 단어와 관련된 정보 array
+   */
+  async getQuiz(round: number): Promise<[]> {
+    return await this.dicService.getQuiz(round);
   }
 
   /**
@@ -322,10 +327,6 @@ export class SocketService {
       word.type,
     );
     return { success, message, word };
-  }
-
-  async getQuizList(take: number): Promise<Quiz[]> {
-    return await this.quizService.getList(take);
   }
 
   /**
