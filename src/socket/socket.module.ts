@@ -6,16 +6,16 @@ import { DictionaryModule } from 'src/dictionary/dictionary.module';
 import { UserModule } from 'src/user/user.module';
 import { KungModule } from 'src/kung/kung.module';
 import { LastModule } from 'src/last/last.module';
-import { QuizModule } from 'src/quiz/quiz.module';
+import { BellModule } from 'src/bell/bell.module';
 
 @Module({
   imports: [
     UserModule,
     RoomModule,
     DictionaryModule,
-    QuizModule,
     forwardRef(() => LastModule),
     forwardRef(() => KungModule),
+    forwardRef(() => BellModule),
   ],
   providers: [SocketGateway, SocketService],
   exports: [SocketGateway, SocketService],

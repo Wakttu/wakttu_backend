@@ -11,9 +11,9 @@ import { DictionaryModule } from './dictionary/dictionary.module';
 import { RoomModule } from './room/room.module';
 import { KungModule } from './kung/kung.module';
 import { LastModule } from './last/last.module';
-import { QuizModule } from './quiz/quiz.module';
 import { ConfigModule } from '@nestjs/config';
 import { WakgamesModule } from './wakgames/wakgames.module';
+import { BellModule } from './bell/bell.module';
 
 @Module({
   imports: [
@@ -32,8 +32,8 @@ import { WakgamesModule } from './wakgames/wakgames.module';
     RoomModule,
     KungModule,
     LastModule,
-    QuizModule,
     WakgamesModule,
+    BellModule,
   ],
   controllers: [AppController],
   providers: [AppService],

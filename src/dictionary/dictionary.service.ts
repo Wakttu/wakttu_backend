@@ -65,4 +65,10 @@ export class DictionaryService {
       skip: skip,
     });
   }
+
+  async getQuiz(round: number) {
+    const list: [] = await this.prisma
+      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE wakta = true ORDER BY random() LIMIT ${round}`;
+    return list;
+  }
 }
