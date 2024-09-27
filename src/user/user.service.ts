@@ -144,7 +144,7 @@ export class UserService {
     return this.prisma.item.findMany({
       where: {
         user: {
-          every: {
+          some: {
             userId: id,
           },
         },
