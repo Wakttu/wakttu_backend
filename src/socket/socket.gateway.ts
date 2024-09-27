@@ -499,12 +499,15 @@ export class SocketGateway
   ) {
     const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
     if (index === -1) {
+      const user = this.roomInfo[roomId].users.find(
+        (user) => user.id === this.user[client.id].id,
+      );
       this.game[roomId].users.push({
         id: client.id,
         score: 0,
         userId: this.user[client.id].id,
-        character: this.user[client.id].character,
-        name: this.user[client.id].name,
+        character: user.character,
+        name: user.name,
         team:
           this.user[client.id].team &&
           this.roomInfo[roomId].option.includes('팀전')
