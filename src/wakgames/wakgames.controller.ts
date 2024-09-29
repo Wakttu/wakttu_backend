@@ -7,9 +7,12 @@ import {
   Query,
   Session,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { WakgamesService } from './wakgames.service';
+import { WakgamesGuard } from './wakgames.guard';
 
+@UseGuards(WakgamesGuard)
 @Controller('wakta')
 export class WakgamesController {
   constructor(private readonly wakgamesService: WakgamesService) {}
@@ -77,12 +80,9 @@ export class WakgamesController {
   }
 
   @Get('stat')
-  async getStat(
-    @Query('id') id: string,
-    @Session() session: Record<string, any>,
-  ) {
+  async getStat(@Query() query, @Session() session: Record<string, any>) {
     const { data, response } = await this.wakgamesService.getStat(
-      id,
+      query,
       session.accessToken,
     );
     if (response.status === 401) {
@@ -92,7 +92,7 @@ export class WakgamesController {
       if (response.status !== 200) throw new UnauthorizedException();
       session.accessToken = data.accessToken;
       session.refreshToken = data.refreshToken;
-      return await this.getStat(id, session);
+      return await this.getStat(query, session);
     }
     return data;
   }
@@ -113,5 +113,10 @@ export class WakgamesController {
       return await this.putStat(body, session);
     }
     return data;
+  }
+
+  @Put('result')
+  async putResult(@Body() body, @Session() session: Record<string, any>) {
+    return await this.wakgamesService.putResult(body, session);
   }
 }

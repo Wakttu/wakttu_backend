@@ -103,6 +103,11 @@ export class AuthService {
         refreshToken: refreshToken as string,
         user: newUser,
       };
+    } else {
+      if (user.name !== data.name) {
+        await this.userService.update(user.id, { name: data.name });
+        user.name = data.name;
+      }
     }
 
     return {
