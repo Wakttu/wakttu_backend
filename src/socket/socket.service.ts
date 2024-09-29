@@ -368,6 +368,6 @@ export class SocketService {
       name: string;
     }[],
   ) {
-    await this.userService.updateResult(users);
+    return await this.userService.updateResult(users);
   }
 }
