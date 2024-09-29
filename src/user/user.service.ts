@@ -135,9 +135,11 @@ export class UserService {
       name: string;
     }[],
   ) {
+    const result = [];
     data.forEach(async (user) => {
-      await this.updateScore(user.userId, user.score);
+      result.push(await this.updateScore(user.userId, user.score));
     });
+    return result;
   }
 
   async getItems(id: string) {

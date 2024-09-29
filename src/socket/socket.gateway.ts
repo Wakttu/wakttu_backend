@@ -556,7 +556,7 @@ export class SocketGateway
 
   // Get 변수
   @SubscribeMessage('info')
-  handleInfo(@ConnectedSocket() client: Socket) {
+  async handleInfo(@ConnectedSocket() client: Socket) {
     client.emit('info', {
       game: this.game,
       user: this.user,
