@@ -14,6 +14,7 @@ import { LastModule } from './last/last.module';
 import { ConfigModule } from '@nestjs/config';
 import { WakgamesModule } from './wakgames/wakgames.module';
 import { BellModule } from './bell/bell.module';
+import { ItemModule } from './item/item.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { BellModule } from './bell/bell.module';
     LastModule,
     WakgamesModule,
     BellModule,
+    ItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
