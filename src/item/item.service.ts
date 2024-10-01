@@ -6,6 +6,8 @@ export class ItemService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    return await this.prisma.item.findMany();
+    return await this.prisma.item.findMany({
+      orderBy: { id: 'asc' },
+    });
   }
 }
