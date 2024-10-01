@@ -497,6 +497,7 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
+    if (!this.game[roomId]) return;
     const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
     if (index === -1) {
       const user = this.roomInfo[roomId].users.find(

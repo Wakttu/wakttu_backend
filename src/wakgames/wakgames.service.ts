@@ -153,7 +153,7 @@ export class WakgamesService extends WakGames {
   }
 
   getJING(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.meta.tag.include('어록')) id.push('JING-2');
+    if (word.meta.tag.includes('어록')) id.push('JING-2');
   }
 
   getLIL(id: string[], word: { id: string; [x: string]: any }) {
