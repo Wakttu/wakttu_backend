@@ -66,6 +66,12 @@ export class DictionaryService {
     });
   }
 
+  async todayWord(): Promise<string> {
+    const list: string[] = await this.prisma
+      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE wakta = true ORDER BY random() LIMIT 1`;
+    return list[0];
+  }
+
   async getQuiz(round: number) {
     const list: [] = await this.prisma
       .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE wakta = true ORDER BY random() LIMIT ${round}`;
