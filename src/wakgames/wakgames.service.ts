@@ -89,6 +89,7 @@ export class WakgamesService extends WakGames {
       const val = data.size > 0 ? data.stats[0].val : 0;
       stats.push({ id: key, val: val + map.get(key) });
     }
+    /*
     const { data, response } = await this.putStat(
       { stats },
       session.accessToken,
@@ -101,7 +102,9 @@ export class WakgamesService extends WakGames {
       session.refreshToken = data.refreshToken;
       return await this.putStat({ stats }, session.accessToken);
     }
-    return { data, response };
+    return { data, response };*/
+    console.log(stats);
+    return { stats };
   }
 
   getId(word: { type: string; id: string; [x: string]: any }) {
@@ -162,7 +165,7 @@ export class WakgamesService extends WakGames {
   }
 
   getGO(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.meta.tag.include('콘텐츠')) id.push('GO-2');
+    if (word.meta.tag.includes('콘텐츠')) id.push('GO-2');
   }
 
   getVIi(id: string[], word: { id: string; [x: string]: any }) {

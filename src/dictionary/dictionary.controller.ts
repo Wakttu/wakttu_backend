@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { DictionaryService } from './dictionary.service';
 import { CreateDictionaryDto } from './dto/create-dictionary.dto';
@@ -32,11 +33,19 @@ export class DictionaryController {
   @ApiOperation({ summary: '검색 기능' })
   @Get('search')
   async search(@Query() query) {
-    const { keyword } = query;
-    let { take, skip } = query;
-    take = take ? parseInt(take, 10) : take;
-    skip = skip ? parseInt(skip, 10) : skip;
+    const { keyword, take, skip } = {
+      keyword: query.keyword,
+      take: parseInt(query.take, 10) ? parseInt(query.take, 10) : 10,
+      skip: parseInt(query.skip, 10) ? parseInt(query.skip, 10) : 0,
+    };
+    if (!keyword) return new BadRequestException();
     return await this.dictionaryService.search(keyword, take, skip);
+  }
+
+  @ApiOperation({ summary: '오늘의 단어' })
+  @Get('today')
+  async todayWord() {
+    return await this.dictionaryService.todayWord();
   }
 
   @ApiOperation({ summary: '단어 검색' })
