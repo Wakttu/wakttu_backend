@@ -62,11 +62,14 @@ export class WakgamesService extends WakGames {
 
     body.forEach((item: { type: string; [x: string]: any }) => {
       if (item.type !== 'WORD') return;
-      const { type } = item.word;
-      const statId = this.getId(type);
-      if (statId === '') return;
-      const count = map.get(statId);
-      map.set(statId, count ? count + 1 : 1);
+
+      const statId = this.getId(item.word);
+      if (statId.length === 0) return;
+
+      statId.forEach((id) => {
+        const count = map.get(id);
+        map.set(id, count ? count + 1 : 1);
+      });
     });
 
     const stats = [];
@@ -101,38 +104,68 @@ export class WakgamesService extends WakGames {
     return { data, response };
   }
 
-  getId(type: string) {
-    let id = '';
-    switch (type) {
+  getId(word: { type: string; id: string; [x: string]: any }) {
+    const id = [];
+    switch (word.type) {
       case 'WOO': {
-        id = 'WOO-1';
+        id.push('WOO-1');
         break;
       }
       case 'INE': {
-        id = 'INE-1';
+        id.push('INE-1');
+        this.getINE(id, word);
         break;
       }
       case 'JINGBURGER': {
-        id = 'JING-1';
+        id.push('JING-1');
+        this.getJING(id, word);
         break;
       }
       case 'LILPA': {
-        id = 'LIL-1';
+        id.push('LIL-1');
+        this.getLIL(id, word);
         break;
       }
       case 'JURURU': {
-        id = 'JU-1';
+        id.push('JU-1');
+        this.getJU(id, word);
         break;
       }
       case 'GOSEGU': {
-        id = 'GO-1';
+        id.push('GO-1');
+        this.getGO(id, word);
         break;
       }
       case 'VIICHAN': {
-        id = 'VIi-1';
+        id.push('VIi-1');
+        this.getVIi(id, word);
         break;
       }
     }
     return id;
+  }
+
+  getINE(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.id === '오야') id.push('INE-2');
+  }
+
+  getJING(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.meta.tag.include('어록')) id.push('JING-2');
+  }
+
+  getLIL(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.id === '띨파') id.push('LIL-2');
+  }
+
+  getJU(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.id === '띨르르') id.push('JU-2');
+  }
+
+  getGO(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.meta.tag.include('콘텐츠')) id.push('GO-2');
+  }
+
+  getVIi(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.id.includes('복숭아')) id.push('VIi-2');
   }
 }

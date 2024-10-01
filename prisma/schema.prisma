@@ -17,8 +17,7 @@ model User {
   roomId    String?
   character Json           @default("{\"skin\": \"S-1\"}")
   keyboard  String[]
-  achieve   Json?
-  stat      Json?
+  achieves  Json?
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
@@ -100,6 +99,7 @@ model Item {
   author      String
   url         String
   user        UserGetItem[]
+  achieveId   String[]
 }
 
 model UserGetItem {
