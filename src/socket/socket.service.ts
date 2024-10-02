@@ -341,12 +341,14 @@ export class SocketService {
 
   getTurnTime(roundTime: number, chain: number = 1) {
     if (chain >= 20 && chain < 30) {
+      return Math.min(roundTime, 3000);
+    } else if (chain >= 30 && chain < 40) {
       return Math.min(roundTime, 1000);
-    } else if (chain >= 30) {
+    } else if (chain >= 40) {
       return Math.min(roundTime, 700);
     } else {
       const speed = chain <= 10 ? chain : 10;
-      return Math.min(roundTime, 20000 - 1800 * (speed - 1));
+      return Math.min(roundTime, 20000 - 1500 * (speed - 1));
     }
   }
 
