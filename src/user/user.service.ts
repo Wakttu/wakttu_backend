@@ -13,7 +13,14 @@ export class UserService {
   ) {}
 
   async create(data: CreateUserDto): Promise<User> {
-    return await this.prisma.user.create({ data });
+    const response = await this.prisma.user.create({ data });
+    await this.prisma.userGetItem.create({
+      data: {
+        userId: response.id,
+        itemId: 'S-1',
+      },
+    });
+    return response;
   }
 
   async update(id: string, data: UpdateUserDto): Promise<User> {
@@ -150,6 +157,15 @@ export class UserService {
             userId: id,
           },
         },
+      },
+    });
+  }
+
+  async acheieveItem(userId: string, itemId: string) {
+    return this.prisma.userGetItem.create({
+      data: {
+        userId,
+        itemId,
       },
     });
   }
