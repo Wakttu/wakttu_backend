@@ -29,6 +29,7 @@ export class LastService {
     if (!game) return;
     const curRound = game.round++;
     const lastRound = roomInfo.round;
+    game.users.sort((a, b) => b.score - a.score);
     if (curRound === lastRound) {
       this.server
         .to(roomId)
