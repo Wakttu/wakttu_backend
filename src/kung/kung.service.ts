@@ -41,6 +41,7 @@ export class KungService {
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
+      game.users.sort((a, b) => b.score - a.score);
       this.server
         .to(roomId)
         .emit('kung.result', { game: game, roomInfo: roomInfo });
