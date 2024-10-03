@@ -316,7 +316,7 @@ export class SocketGateway
     if (client.rooms.has(roomId)) {
       return;
     }
-    if (!this.user[client.id].id) {
+    if (!this.user[client.id]) {
       const user = client.request.session.user;
       if (!user) {
         client.emit('alarm', {
