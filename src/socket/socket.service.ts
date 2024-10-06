@@ -16,6 +16,11 @@ export class SocketService {
     private readonly userService: UserService,
   ) {}
 
+  async reloadUser(id: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...res } = await this.userService.findById(id);
+    return res;
+  }
   /**
    *
    * @param word : 단어 찾는 string

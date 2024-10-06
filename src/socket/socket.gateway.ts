@@ -56,6 +56,7 @@ export class Game {
     character: JSON;
     name: string;
     team?: string;
+    success?: boolean;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string; // 현재 게임 진행에서 사용될 단어 (세)
@@ -71,7 +72,13 @@ export class Game {
     academy: string[];
     isedol: string[];
   };
-  quiz?: [];
+  quiz?: {
+    _id: string;
+    type: string;
+    [x: string]: any;
+    choseong: string;
+    hint: string[];
+  }[];
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -116,7 +123,7 @@ export class SocketGateway
   } = {};
 
   // 접속시 수행되는 코드
-  handleConnection(@ConnectedSocket() client: any) {
+  async handleConnection(@ConnectedSocket() client: any) {
     const user = client.request.session.user;
     if (!user) {
       client.disconnect();
@@ -130,7 +137,7 @@ export class SocketGateway
         this.handleDisconnect({ id: key });
       }
     }
-    this.user[client.id] = user;
+    this.user[client.id] = await this.socketService.reloadUser(user.id);
     this.user[client.id].color = this.socketService.getColor();
     this.server.emit('list', this.user);
   }
@@ -139,6 +146,7 @@ export class SocketGateway
   async afterInit() {
     // 다시열릴시 존재하는 방 모두 삭제
     await this.socketService.deleteAllRoom();
+    this.user = {};
     this.game = {};
     // 서버를 service와 연결
     this.lastService.server = this.server;
@@ -159,10 +167,10 @@ export class SocketGateway
 
       this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
       if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
-        const { id, name } = this.roomInfo[roomId].users[0];
+        const { id } = this.roomInfo[roomId].users[0];
 
-        if (this.game[roomId].host === this.user[client.id].name)
-          this.game[roomId].host = name;
+        if (this.game[roomId].host === this.user[client.id].id)
+          this.game[roomId].host = id;
 
         if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
 
@@ -237,8 +245,8 @@ export class SocketGateway
   ) {
     if (
       this.roomInfo[roomId].start &&
-      (this.game[roomId].users[this.game[roomId].turn].id === client.id ||
-        this.game[roomId].turn == -1) &&
+      (this.game[roomId].turn === -1 ||
+        this.game[roomId].users[this.game[roomId].turn].id === client.id) &&
       roundTime !== null
     ) {
       if (!this.ping[roomId]) return;
@@ -262,6 +270,10 @@ export class SocketGateway
             success,
           });
           break;
+        case 2: {
+          this.handleBellAnswer({ roomId, score }, client);
+          break;
+        }
       }
     } else
       this.server
@@ -283,7 +295,7 @@ export class SocketGateway
     const { password, ...room } = info;
     this.roomInfo[room.id] = room;
     this.game[room.id] = new Game();
-    this.game[room.id].host = this.user[client.id].name;
+    this.game[room.id].host = this.user[client.id].id;
     client.emit('createRoom', { roomId: room.id, password });
   }
 
@@ -293,7 +305,7 @@ export class SocketGateway
     @MessageBody() { roomId, data }: { roomId: string; data: UpdateRoomDto },
     @ConnectedSocket() client: any,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].name) {
+    if (this.game[roomId].host !== this.user[client.id].id) {
       client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
@@ -382,9 +394,9 @@ export class SocketGateway
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
-      const { id, name } = this.roomInfo[roomId].users[0];
-      if (this.game[roomId].host === this.user[client.id].name)
-        this.game[roomId].host = name;
+      const { id } = this.roomInfo[roomId].users[0];
+      if (this.game[roomId].host === this.user[client.id].id)
+        this.game[roomId].host = id;
 
       if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
       this.server.to(roomId).emit('exit', {
@@ -404,7 +416,7 @@ export class SocketGateway
     @MessageBody() { roomId, userId }: { roomId: string; userId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.user[client.id].name !== this.game[roomId].host) {
+    if (this.user[client.id].id !== this.game[roomId].host) {
       return;
     }
     const key = Object.keys(this.user).find(
@@ -573,7 +585,7 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].name) {
+    if (this.game[roomId].host !== this.user[client.id].id) {
       client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
@@ -675,7 +687,7 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].name) {
+    if (this.game[roomId].host !== this.user[client.id].id) {
       client.emit('alarm', { message: '방장이 아닙니다.' });
       return;
     }
@@ -753,5 +765,104 @@ export class SocketGateway
   async handleKTurnEnd(@MessageBody() roomId: string) {
     this.kungService.handleTurnEnd(this.game[roomId]);
     this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
+  }
+
+  /*
+   * 골든벨 (자음퀴즈)
+   */
+
+  @SubscribeMessage('bell.start')
+  async handleBellStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].id) {
+      client.emit('alarm', { message: '방장이 아닙니다.' });
+      return;
+    }
+    if (
+      this.game[roomId].users.length + 1 !==
+      this.roomInfo[roomId].users.length
+    ) {
+      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+      return;
+    }
+    this.handleReady(roomId, client);
+
+    await this.bellService.handleStart(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  @SubscribeMessage('bell.round')
+  async handleBellRound(@MessageBody() roomId: string) {
+    await this.bellService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  // ping
+  @SubscribeMessage('bell.ping')
+  handleBellPing(@MessageBody() roomId: string) {
+    if (this.ping[roomId]) this.handleBellPong(roomId);
+    let time = 300;
+    const timeId = setInterval(() => {
+      this.server.to(roomId).emit('bell.ping');
+      time--;
+      if (time === 0) {
+        this.handleBellPong(roomId);
+      }
+    }, 100);
+    this.ping[roomId] = timeId;
+  }
+
+  // pong
+  @SubscribeMessage('bell.pong')
+  handleBellPong(@MessageBody() roomId) {
+    clearInterval(this.ping[roomId]);
+  }
+
+  @SubscribeMessage('bell.roundStart')
+  handleBellRoundStart(@MessageBody() roomId: string) {
+    this.server.to(roomId).emit('bell.roundStart');
+  }
+
+  @SubscribeMessage('bell.roundEnd')
+  handleBellRoundEnd(@MessageBody() roomId: string) {
+    this.handleBellPong(roomId);
+    this.game[roomId].users.forEach((user) => {
+      if (!user.success) user.success = false;
+    });
+    this.server.to(roomId).emit('bell.roundEnd');
+  }
+
+  @SubscribeMessage('bell.answer')
+  handleBellAnswer(
+    @MessageBody()
+    {
+      roomId,
+      score,
+    }: {
+      roomId: string;
+      score: number;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const idx = this.game[roomId].users.findIndex(
+      (user) => user.userId === this.user[client.id].id,
+    );
+    if (idx === -1) return;
+
+    this.bellService.handleAnswer(
+      idx,
+      this.game[roomId],
+      this.user[client.id].id,
+      score,
+    );
+    this.server.to(roomId).emit('bell.game', this.game[roomId]);
   }
 }
