@@ -837,7 +837,7 @@ export class SocketGateway
     this.game[roomId].users.forEach((user) => {
       if (!user.success) user.success = false;
     });
-    this.server.to(roomId).emit('bell.roundEnd');
+    this.server.to(roomId).emit('bell.roundEnd', this.game[roomId]);
   }
 
   @SubscribeMessage('bell.answer')
