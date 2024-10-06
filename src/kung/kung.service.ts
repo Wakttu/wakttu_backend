@@ -28,7 +28,6 @@ export class KungService {
     game.target = '';
     game.total = game.users.length;
     game.roundTime = roomInfo.time;
-    game.ban = [];
     roomInfo.start = (
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
@@ -38,6 +37,7 @@ export class KungService {
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
+    if (!game) return;
     const curRound = game.round++;
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
@@ -61,10 +61,6 @@ export class KungService {
       ? this.socketService.teamShuffle(game, game.team)
       : this.socketService.shuffle(game);
     this.server.to(roomId).emit('kung.round', game);
-  }
-
-  handleBan(game: Game, keyword: string) {
-    game.ban = [...game.ban, keyword];
   }
 
   handleNextTurn(game: Game, keyword: string, score: number) {
