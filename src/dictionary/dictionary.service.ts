@@ -74,7 +74,7 @@ export class DictionaryService {
 
   async getQuiz(round: number) {
     const list: [] = await this.prisma
-      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE wakta = true ORDER BY random() LIMIT ${round}`;
+      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE wakta = true AND LENGTH(_id) BETWEEN 3 AND 10 ORDER BY random() LIMIT ${round}`;
     return list;
   }
 }
