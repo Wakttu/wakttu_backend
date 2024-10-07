@@ -39,8 +39,8 @@ export class BellService {
       roomInfo.start = result.start;
       roomInfo.users = result.users;
       roomInfo = { ...result };
-      game.users.forEach((user, idx) => {
-        this.socketGateway.user[user.id].score = scores[idx].score;
+      game.users.forEach((user) => {
+        this.socketGateway.user[user.id].score = scores[user.id];
       });
       game.users.splice(0, game.total);
       game.turn = -1;
@@ -97,12 +97,8 @@ export class BellService {
         }
       });
     } else {
-      game.users.forEach((user) => {
-        if (user.userId === userId) {
-          user.score += score;
-          user.success = true;
-        }
-      });
+      game.users[idx].score += score;
+      game.users[idx].success = true;
     }
   }
 }

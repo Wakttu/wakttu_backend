@@ -142,9 +142,9 @@ export class UserService {
       name: string;
     }[],
   ) {
-    const result = [];
+    const result = {};
     data.forEach(async (user) => {
-      result.push(await this.updateScore(user.userId, user.score));
+      result[user.id] = (await this.updateScore(user.userId, user.score)).score;
     });
     return result;
   }
