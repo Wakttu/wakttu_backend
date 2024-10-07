@@ -835,7 +835,7 @@ export class SocketGateway
   handleBellRoundEnd(@MessageBody() roomId: string) {
     this.handleBellPong(roomId);
     this.game[roomId].users.forEach((user) => {
-      if (!user.success) user.success = false;
+      if (user.success) user.success = false;
     });
     this.server.to(roomId).emit('bell.roundEnd', this.game[roomId]);
   }
