@@ -143,9 +143,13 @@ export class UserService {
     }[],
   ) {
     const result = {};
-    data.forEach(async (user) => {
-      result[user.id] = (await this.updateScore(user.userId, user.score)).score;
-    });
+    await Promise.all(
+      data.map(async (user) => {
+        result[user.id] = (
+          await this.updateScore(user.userId, user.score)
+        ).score;
+      }),
+    );
     return result;
   }
 

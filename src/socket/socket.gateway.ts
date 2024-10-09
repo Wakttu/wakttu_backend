@@ -57,6 +57,8 @@ export class Game {
     name: string;
     team?: string;
     success?: boolean;
+    exp: number;
+    provider?: string;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
   target: string; // 현재 게임 진행에서 사용될 단어 (세)
@@ -526,6 +528,8 @@ export class SocketGateway
           this.roomInfo[roomId].option.includes('팀전')
             ? this.user[client.id].team
             : undefined,
+        exp: this.user[client.id].score,
+        provider: this.user[client.id].provider,
       });
     } else {
       this.game[roomId].users.splice(index, 1);
