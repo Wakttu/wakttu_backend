@@ -75,7 +75,7 @@ export class BellService {
 
     for (let i = 0; i < 2; i++) {
       const results = [];
-      let count = Math.floor(len / 2);
+      let count = Math.floor(len / 3);
       while (count) {
         const idx = Math.floor(Math.random() * len);
         if (results.includes(idx)) continue;
