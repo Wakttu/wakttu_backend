@@ -89,7 +89,7 @@ export class WakgamesService extends WakGames {
       const val = data.size > 0 ? data.stats[0].val : 0;
       stats.push({ id: key, val: val + map.get(key) });
     }
-    /*
+
     const { data, response } = await this.putStat(
       { stats },
       session.accessToken,
@@ -102,9 +102,7 @@ export class WakgamesService extends WakGames {
       session.refreshToken = data.refreshToken;
       return await this.putStat({ stats }, session.accessToken);
     }
-    return { data, response };*/
-    console.log(stats);
-    return { stats };
+    return { data, response };
   }
 
   getId(word: { type: string; id: string; [x: string]: any }) {
@@ -144,6 +142,10 @@ export class WakgamesService extends WakGames {
         this.getVIi(id, word);
         break;
       }
+      case 'GOMEM': {
+        this.getGomem(id, word);
+        break;
+      }
     }
     return id;
   }
@@ -170,5 +172,10 @@ export class WakgamesService extends WakGames {
 
   getVIi(id: string[], word: { id: string; [x: string]: any }) {
     if (word.id.includes('복숭아')) id.push('VIi-2');
+  }
+
+  getGomem(id: string[], word: { id: string; [x: string]: any }) {
+    if (word.meta.tag.includes('고멤')) id.push('GOM-1');
+    if (word.meta.tag.includes('아카데미')) id.push('GOM-2');
   }
 }
