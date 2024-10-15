@@ -1,9 +1,10 @@
 import { Controller, Get, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor() {}
+  constructor(private readonly appService: AppService) {}
 
   // 세션로그인 되는지 확인용 코드
   @Get()
@@ -14,5 +15,10 @@ export class AppController {
   @Get('/test')
   getSession(@Req() req: Request): any {
     return req.session;
+  }
+
+  @Get('/achieve')
+  async getAchieve() {
+    return await this.appService.getAchieve();
   }
 }

@@ -17,7 +17,6 @@ model User {
   roomId    String?
   character Json           @default("{\"skin\": \"S-1\"}")
   keyboard  String[]
-  achieves  Json?
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
@@ -122,4 +121,13 @@ model Ban {
 
 model wakttu_mission {
   id String @id @map("_id") @db.VarChar(1)
+}
+
+model Achieve {
+  id     String @id
+  author String
+  name   String
+  desc   String
+  hint   String @default("")
+  type   String @default("woowakgood")
 }
