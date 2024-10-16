@@ -165,12 +165,24 @@ export class UserService {
     });
   }
 
-  async acheieveItem(userId: string, itemId: string) {
-    return this.prisma.userGetItem.create({
+  async achieveItem(userId: string, itemId: string) {
+    const data = await this.prisma.userGetItem.count({
+      where: {
+        userId,
+        itemId,
+      },
+    });
+    if (data > 0)
+      return { success: false, message: '이미 보유한 아이템 입니다!' };
+
+    const res = await this.prisma.userGetItem.create({
       data: {
         userId,
         itemId,
       },
     });
+    if (!res) return { success: false, message: '알 수 없는 이유로 실패' };
+
+    return { success: true, message: '획득 성공!' };
   }
 }
