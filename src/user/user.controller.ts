@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   UseGuards,
+  Session,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -79,5 +80,15 @@ export class UserController {
   async getItems(@Param('id') id: string) {
     const response = await this.userService.getItems(id);
     return response;
+  }
+
+  @UseGuards(IsLoginedGuard)
+  @Post('achieve/item')
+  async achieveItem(
+    @Session() session: Record<string, any>,
+    @Body('itemId') itemId: string,
+  ) {
+    const user = session.user;
+    return await this.userService.achieveItem(user.id, itemId);
   }
 }
