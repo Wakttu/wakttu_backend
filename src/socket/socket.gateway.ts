@@ -643,8 +643,11 @@ export class SocketGateway
       setTimeout(async () => await this.handleTurnEnd(roomId), 100);
       return;
     }
-    this.lastService.handleTurnEnd(this.game[roomId]);
-    this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
+    console.log(this.ping[roomId]);
+    if (!this.ping[roomId]) {
+      this.lastService.handleTurnEnd(this.game[roomId]);
+      this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
+    }
   }
 
   async handleLastAnswer(
