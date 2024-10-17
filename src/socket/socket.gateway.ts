@@ -661,6 +661,7 @@ export class SocketGateway
         this.game[roomId].option,
       );
       if (check.success) {
+        this.handlePong(roomId);
         score = this.socketService.checkWakta(check.word.wakta)
           ? score * 1.58
           : score;
@@ -744,6 +745,7 @@ export class SocketGateway
         this.game[roomId].option,
       );
       if (check.success) {
+        this.handlePong(roomId);
         score = this.socketService.checkWakta(check['wakta'])
           ? score * 1.58
           : score;
