@@ -43,6 +43,7 @@ export class Game {
       isedol: [],
     };
     this.ban = [];
+    this.loading = false;
   }
   host: string; // 호스트
   type: number; // 게임종류 0:끝말잇기 1:쿵쿵따 2:왁타버스 퀴즈
@@ -81,6 +82,7 @@ export class Game {
     choseong: string;
     hint: string[];
   }[];
+  loading?: boolean;
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -200,6 +202,7 @@ export class SocketGateway
       time--;
       if (time === 0) {
         this.handlePong(roomId);
+        this.server.to(roomId).emit('pong');
       }
     }, 100);
     this.ping[roomId] = timeId;
@@ -252,6 +255,7 @@ export class SocketGateway
       roundTime !== null
     ) {
       if (!this.ping[roomId]) return;
+      this.game[roomId].loading = true;
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
         case 0:
@@ -635,6 +639,10 @@ export class SocketGateway
 
   @SubscribeMessage('last.turnEnd')
   async handleTurnEnd(@MessageBody() roomId: string) {
+    if (this.game[roomId].loading) {
+      setTimeout(async () => await this.handleTurnEnd(roomId), 100);
+      return;
+    }
     this.lastService.handleTurnEnd(this.game[roomId]);
     this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
   }
