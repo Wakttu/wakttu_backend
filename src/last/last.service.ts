@@ -54,6 +54,7 @@ export class LastService {
     game.total = game.users.length;
     game.roundTime = roomInfo.time;
     game.turnTime = this.socketService.getTurnTime(roomInfo.time);
+    game.loading = false;
     this.server.to(roomId).emit('last.round', game);
   }
 
@@ -82,6 +83,7 @@ export class LastService {
     game.turn %= game.total;
     game.chain += 1;
     game.target = keyword[keyword.length - 1];
+    game.loading = false;
   }
 
   handleTurnEnd(game: Game) {
