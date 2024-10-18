@@ -91,15 +91,15 @@ export class LastService {
     const score = game.users[game.turn].score;
 
     const after =
-      -1 * Math.round(Math.min(10 + chain * 2.1 + score * 0.15, score));
+      -1 * Math.round(Math.min(10 + chain * 1.5 + score * 0.15, score));
 
     const team = game.users[game.turn].team;
 
     if (team) {
       game.users.forEach((user) => {
-        if (user.team === team) user.score = after;
+        if (user.team === team) user.score = score + after;
       });
-    } else game.users[game.turn].score = after;
+    } else game.users[game.turn].score = score + after;
   }
 
   handleCheck(word: string, target: string) {
