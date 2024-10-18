@@ -195,7 +195,6 @@ export class SocketGateway
   // ping
   @SubscribeMessage('ping')
   handlePing(@MessageBody() roomId: string) {
-    if (this.ping[roomId]) this.handlePong(roomId);
     let time = this.game[roomId].turnTime / 100;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('ping');
@@ -212,6 +211,7 @@ export class SocketGateway
   @SubscribeMessage('pong')
   handlePong(@MessageBody() roomId) {
     clearInterval(this.ping[roomId]);
+    delete this.ping[roomId];
   }
 
   // user List
@@ -254,7 +254,13 @@ export class SocketGateway
         this.game[roomId].users[this.game[roomId].turn].id === client.id) &&
       roundTime !== null
     ) {
-      if (!this.ping[roomId]) return;
+      if (!this.ping[roomId]) {
+        this.server
+          .to(roomId)
+          .emit('chat', { user: this.user[client.id], chat: chat });
+        return;
+      }
+
       this.game[roomId].loading = true;
       switch (this.roomInfo[roomId].type) {
         // 0 is Last, 1 is Kung, 2 is quiz
@@ -422,6 +428,8 @@ export class SocketGateway
     @MessageBody() { roomId, userId }: { roomId: string; userId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    if (!this.roomInfo[roomId] || !this.game[roomId]) return;
+
     if (this.user[client.id].id !== this.game[roomId].host) {
       return;
     }
@@ -440,6 +448,33 @@ export class SocketGateway
   ) {
     await this.handleExit(roomId, client);
     client.emit('alarm', { message: '퇴장 당하셨습니다.' });
+  }
+
+  // host 넘기기
+  @SubscribeMessage('host')
+  handleChangeHost(
+    @MessageBody() { roomId, userId }: { roomId: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.roomInfo[roomId] || !this.game[roomId]) return;
+
+    if (this.user[client.id].id !== this.game[roomId].host) {
+      return;
+    }
+    const key = Object.keys(this.user).find(
+      (key) => this.user[key].id === userId,
+    );
+
+    this.game[roomId].host = this.user[key].id;
+    this.game[roomId].users = [];
+    this.game[roomId].team = {
+      woo: [],
+      gomem: [],
+      academy: [],
+      isedol: [],
+    };
+    client.to(key).emit('alarm', { message: '방장이 되었습니다!' });
+    this.server.to(roomId).emit('host', this.game[roomId]);
   }
 
   // 유저들의 팀선 택
@@ -638,12 +673,11 @@ export class SocketGateway
   }
 
   @SubscribeMessage('last.turnEnd')
-  async handleTurnEnd(@MessageBody() roomId: string) {
+  handleTurnEnd(@MessageBody() roomId: string) {
     if (this.game[roomId].loading) {
-      setTimeout(async () => await this.handleTurnEnd(roomId), 100);
+      setTimeout(() => this.handleTurnEnd(roomId), 100);
       return;
     }
-    console.log(this.ping[roomId]);
     if (!this.ping[roomId]) {
       this.lastService.handleTurnEnd(this.game[roomId]);
       this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
@@ -672,7 +706,6 @@ export class SocketGateway
         this.game[roomId].option,
       );
       if (check.success) {
-        this.handlePong(roomId);
         score = this.socketService.checkWakta(check.word.wakta)
           ? score * 1.58
           : score;
@@ -683,6 +716,7 @@ export class SocketGateway
         score = mission ? score * 1.2 : score;
         score = Math.round(score);
         this.lastService.handleNextTurn(this.game[roomId], chat, score);
+        this.handlePong(roomId);
       }
       this.server.to(roomId).emit('last.game', {
         success: check.success,
@@ -692,6 +726,7 @@ export class SocketGateway
         word: check.word,
       });
     }
+    this.game[roomId].loading = false;
   }
 
   /*
@@ -756,12 +791,12 @@ export class SocketGateway
         this.game[roomId].option,
       );
       if (check.success) {
-        this.handlePong(roomId);
         score = this.socketService.checkWakta(check['wakta'])
           ? score * 1.58
           : score;
         score = Math.round(score);
         this.kungService.handleNextTurn(this.game[roomId], chat, score);
+        this.handlePong(roomId);
       }
       this.server.to(roomId).emit('kung.game', {
         success: check.success,
@@ -771,6 +806,7 @@ export class SocketGateway
         word: check.word,
       });
     }
+    this.game[roomId].loading = false;
   }
 
   @SubscribeMessage('kung.turnStart')
@@ -779,7 +815,11 @@ export class SocketGateway
   }
 
   @SubscribeMessage('kung.turnEnd')
-  async handleKTurnEnd(@MessageBody() roomId: string) {
+  handleKTurnEnd(@MessageBody() roomId: string) {
+    if (this.game[roomId].loading) {
+      setTimeout(() => this.handleKTurnEnd(roomId), 100);
+      return;
+    }
     this.kungService.handleTurnEnd(this.game[roomId]);
     this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
   }
@@ -874,12 +914,7 @@ export class SocketGateway
     );
     if (idx === -1) return;
 
-    this.bellService.handleAnswer(
-      idx,
-      this.game[roomId],
-      this.user[client.id].id,
-      score,
-    );
+    this.bellService.handleAnswer(idx, this.game[roomId], score);
     this.server.to(roomId).emit('bell.game', this.game[roomId]);
   }
 }
