@@ -87,7 +87,7 @@ export class BellService {
     return hint; // 결과 담긴 results return
   }
 
-  handleAnswer(idx: number, game: Game, userId: string, score: number) {
+  handleAnswer(idx: number, game: Game, score: number) {
     const team = game.users[idx].team;
     if (team) {
       game.users.forEach((user) => {
