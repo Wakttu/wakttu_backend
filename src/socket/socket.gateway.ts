@@ -865,7 +865,6 @@ export class SocketGateway
   // ping
   @SubscribeMessage('bell.ping')
   handleBellPing(@MessageBody() roomId: string) {
-    if (this.ping[roomId]) this.handleBellPong(roomId);
     let time = 300;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('bell.ping');
@@ -881,6 +880,8 @@ export class SocketGateway
   @SubscribeMessage('bell.pong')
   handleBellPong(@MessageBody() roomId) {
     clearInterval(this.ping[roomId]);
+    delete this.ping[roomId];
+    this.server.to(roomId).emit('bell.pong');
   }
 
   @SubscribeMessage('bell.roundStart')
@@ -890,7 +891,6 @@ export class SocketGateway
 
   @SubscribeMessage('bell.roundEnd')
   handleBellRoundEnd(@MessageBody() roomId: string) {
-    this.handleBellPong(roomId);
     this.game[roomId].users.forEach((user) => {
       if (!user.success) user.success = false;
     });
@@ -915,6 +915,11 @@ export class SocketGateway
     if (idx === -1) return;
 
     this.bellService.handleAnswer(idx, this.game[roomId], score);
-    this.server.to(roomId).emit('bell.game', this.game[roomId]);
+    const count = this.game[roomId].users.filter(
+      (user) => user.success === true,
+    );
+    if (count.length === this.game[roomId].users.length) {
+      this.handleBellPong(roomId);
+    } else this.server.to(roomId).emit('bell.game', this.game[roomId]);
   }
 }
