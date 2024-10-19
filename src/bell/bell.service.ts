@@ -17,6 +17,7 @@ export class BellService {
   } = {};
 
   async handleStart(roomId: string, roomInfo: Room, game: Game) {
+    game.turn = -1;
     game.round = 0;
     game.target = '';
     game.total = game.users.length;
