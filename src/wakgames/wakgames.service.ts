@@ -102,7 +102,7 @@ export class WakgamesService extends WakGames {
       session.refreshToken = data.refreshToken;
       return await this.putStat({ stats }, session.accessToken);
     }
-    return { data, response };
+    return data;
   }
 
   getId(word: { type: string; id: string; [x: string]: any }) {
