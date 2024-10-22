@@ -130,4 +130,5 @@ model Achieve {
   desc   String
   hint   String @default("")
   type   String @default("woowakgood")
+  hidden Boolean @default(false)
 }
