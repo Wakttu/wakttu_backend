@@ -38,9 +38,4 @@ export class StatsController {
   async putResult(@Body() body, @Session() session: Record<string, any>) {
     return await this.stats.putResult(body, session.user);
   }
-
-  @Get('rank')
-  async getRanks() {
-    return await this.stats.getRanks();
-  }
 }
