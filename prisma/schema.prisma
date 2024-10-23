@@ -20,6 +20,8 @@ model User {
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
+  stats     Stats[] // 유저가 가진 통계들
+  achieves  Achievements[] // 유저가 가진 업적들     
 }
 
 model Room {
@@ -124,11 +126,32 @@ model wakttu_mission {
 }
 
 model Achieve {
-  id     String @id
+  id     String  @id
   author String
   name   String
   desc   String
-  hint   String @default("")
-  type   String @default("woowakgood")
+  hint   String  @default("")
+  type   String  @default("woowakgood")
   hidden Boolean @default(false)
+  statId String?
+}
+
+model Achievements {
+  id        String   
+  userId    String // 유저와의 외래키
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+ @@id([id, userId])
+ }
+
+model Stats {
+  id        String  
+  userId    String // 유저와의 외래키
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value     Int // 통계 값
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([id, userId])
 }
