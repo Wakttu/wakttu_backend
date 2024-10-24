@@ -242,7 +242,6 @@ export class StatsService {
     const conditions = achievementConditions[statId] || [];
 
     const achieve = [];
-    console.log(conditions);
     for (const condition of conditions) {
       if (newValue >= condition.threshold) {
         const achievementExists = await tx.achievements.findFirst({
