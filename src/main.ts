@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SessionAdapter } from './session.adapter';
 import * as session from 'express-session';
 import * as MongoDBStore from 'connect-mongodb-session';
+import { PrismaClientExceptionFilter } from './prisma.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -54,6 +55,7 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+  app.useGlobalFilters(new PrismaClientExceptionFilter());
 
   await app.listen(process.env.PORT || 3000);
 }
