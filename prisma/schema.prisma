@@ -52,15 +52,11 @@ model Dictionary {
 }
 
 model Quiz {
-  id          Int      @id @default(autoincrement())
-  type        String
-  question    String
-  hint        String[]
-  tag         String[]
-  description String
-  answer      String[]
-  select      String[]
-  meta        Json?    @db.Json
+  id    String  @id @map("_id") @db.VarChar
+  type  String?
+  mean  String?
+  meta  Json?   @db.Json
+  wakta Boolean @default(false)
 
   @@map("wakttu_quiz")
 }
