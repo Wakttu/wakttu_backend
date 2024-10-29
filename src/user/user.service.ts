@@ -13,14 +13,18 @@ export class UserService {
   ) {}
 
   async create(data: CreateUserDto): Promise<User> {
-    const response = await this.prisma.user.create({ data });
-    await this.prisma.userGetItem.create({
-      data: {
-        userId: response.id,
-        itemId: 'S-1',
-      },
-    });
-    return response;
+    try {
+      const response = await this.prisma.user.create({ data });
+      await this.prisma.userGetItem.create({
+        data: {
+          userId: response.id,
+          itemId: 'S-1',
+        },
+      });
+      return response;
+    } catch (error) {
+      throw new Error(`사용자 생성 실패: ${error.message}`);
+    }
   }
 
   async update(id: string, data: UpdateUserDto): Promise<User> {
@@ -49,56 +53,60 @@ export class UserService {
     });
     return response;
   }
+
+  private readonly userSelectFields = {
+    id: true,
+    name: true,
+    character: true,
+    score: true,
+    keyboard: true,
+    provider: true,
+  };
+
   async roomCreate(id: string, roomId: string) {
-    const response = await this.prisma.user.update({
-      where: { id },
-      data: {
-        room: { connect: { id: roomId } },
-      },
-      include: {
-        room: {
-          include: {
-            users: {
-              select: {
-                id: true,
-                name: true,
-                character: true,
-                score: true,
-                keyboard: true,
-                provider: true,
+    try {
+      const response = await this.prisma.user.update({
+        where: { id },
+        data: {
+          room: { connect: { id: roomId } },
+        },
+        include: {
+          room: {
+            include: {
+              users: {
+                select: this.userSelectFields,
               },
             },
           },
         },
-      },
-    });
-    return response.room;
+      });
+      return response.room;
+    } catch (error) {
+      throw new Error(`방 생성 실패: ${error.message}`);
+    }
   }
 
   async enter(id: string, roomId: string) {
-    const response = await this.prisma.user.update({
-      where: { id },
-      data: {
-        room: { connect: { id: roomId } },
-      },
-      include: {
-        room: {
-          include: {
-            users: {
-              select: {
-                id: true,
-                name: true,
-                character: true,
-                score: true,
-                keyboard: true,
-                provider: true,
+    try {
+      const response = await this.prisma.user.update({
+        where: { id },
+        data: {
+          room: { connect: { id: roomId } },
+        },
+        include: {
+          room: {
+            include: {
+              users: {
+                select: this.userSelectFields,
               },
             },
           },
         },
-      },
-    });
-    return response.room;
+      });
+      return response.room;
+    } catch (error) {
+      throw new Error(`방 입장 실패: ${error.message}`);
+    }
   }
 
   async exit(id: string) {
@@ -142,15 +150,18 @@ export class UserService {
       name: string;
     }[],
   ) {
-    const result = {};
-    await Promise.all(
-      data.map(async (user) => {
-        result[user.id] = (
-          await this.updateScore(user.userId, user.score)
-        ).score;
-      }),
-    );
-    return result;
+    try {
+      const result = {};
+      await Promise.all(
+        data.map(async (user) => {
+          const updatedScore = await this.updateScore(user.userId, user.score);
+          result[user.id] = updatedScore.score;
+        }),
+      );
+      return result;
+    } catch (error) {
+      throw new Error(`결과 업데이트 실패: ${error.message}`);
+    }
   }
 
   async getItems(id: string) {
@@ -166,23 +177,24 @@ export class UserService {
   }
 
   async achieveItem(userId: string, itemId: string) {
-    const data = await this.prisma.userGetItem.count({
-      where: {
-        userId,
-        itemId,
-      },
-    });
-    if (data > 0)
-      return { success: false, message: '이미 보유한 아이템 입니다!' };
+    try {
+      const existingItem = await this.prisma.userGetItem.count({
+        where: { userId, itemId },
+      });
 
-    const res = await this.prisma.userGetItem.create({
-      data: {
-        userId,
-        itemId,
-      },
-    });
-    if (!res) return { success: false, message: '알 수 없는 이유로 실패' };
+      if (existingItem > 0) {
+        return { success: false, message: '이미 보유한 아이템 입니다!' };
+      }
 
-    return { success: true, message: '획득 성공!' };
+      const newItem = await this.prisma.userGetItem.create({
+        data: { userId, itemId },
+      });
+
+      return newItem
+        ? { success: true, message: '획득 성공!' }
+        : { success: false, message: '알 수 없는 이유로 실패' };
+    } catch (error) {
+      throw new Error(`아이템 획득 실패: ${error.message}`);
+    }
   }
 }
