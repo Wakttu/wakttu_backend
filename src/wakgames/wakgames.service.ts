@@ -9,6 +9,15 @@ export type stats = {
   val: number;
 }[];
 
+interface WordData {
+  type: string;
+  id: string;
+  meta?: {
+    tag: string[];
+  };
+  [key: string]: any;
+}
+
 @Injectable()
 export class WakgamesService extends WakGames {
   constructor(private readonly configService: ConfigService) {
@@ -57,125 +66,105 @@ export class WakgamesService extends WakGames {
     return await this.gameLink.putStat(body, accessToken);
   }
 
+  private async refreshTokenIfNeeded(session: Record<string, any>) {
+    const { data, response } = await this.updateToken(session.refreshToken);
+    if (response.status !== 200) throw new UnauthorizedException();
+    session.accessToken = data.accessToken;
+    session.refreshToken = data.refreshToken;
+    return session.accessToken;
+  }
+
   async putResult(body: [], session: Record<string, any>) {
     const map = new Map<string, number>();
-
-    body.forEach((item: { type: string; [x: string]: any }) => {
+    body.forEach((item: { type: string; word: any }) => {
       if (item.type !== 'WORD') return;
-
       const statId = this.getId(item.word);
-      if (statId.length === 0) return;
-
       statId.forEach((id) => {
-        const count = map.get(id);
-        map.set(id, count ? count + 1 : 1);
+        map.set(id, (map.get(id) || 0) + 1);
       });
     });
 
-    const stats = [];
-
-    for (const key of map.keys()) {
-      const { data, response } = await this.getStat(
-        { id: key },
-        session.accessToken,
+    try {
+      const statsPromises = Array.from(map.entries()).map(
+        async ([key, increment]) => {
+          try {
+            const { data, response } = await this.getStat(
+              { id: key },
+              session.accessToken,
+            );
+            if (response.status === 401) {
+              const newToken = await this.refreshTokenIfNeeded(session);
+              const { data } = await this.getStat({ id: key }, newToken);
+              const val = data.size > 0 ? data.stats[0].val : 0;
+              return { id: key, val: val + increment };
+            }
+            const val = data.size > 0 ? data.stats[0].val : 0;
+            return { id: key, val: val + increment };
+          } catch (error) {
+            console.error(`Error fetching stat for key ${key}:`, error);
+            throw error;
+          }
+        },
       );
 
-      if (response.status === 401) {
-        const { data, response } = await this.updateToken(session.refreshToken);
-        if (response.status !== 200) throw new UnauthorizedException();
-        session.accessToken = data.accessToken;
-        session.refreshToken = data.refreshToken;
+      const stats = await Promise.all(statsPromises);
+
+      try {
+        const { data, response } = await this.putStat(
+          { stats },
+          session.accessToken,
+        );
+        if (response.status === 401) {
+          const newToken = await this.refreshTokenIfNeeded(session);
+          return await this.putStat({ stats }, newToken);
+        }
+        return data;
+      } catch (error) {
+        console.error('Error updating stats:', error);
+        throw error;
       }
-      const val = data.size > 0 ? data.stats[0].val : 0;
-      stats.push({ id: key, val: val + map.get(key) });
+    } catch (error) {
+      console.error('Error in putResult:', error);
+      throw error;
     }
-
-    const { data, response } = await this.putStat(
-      { stats },
-      session.accessToken,
-    );
-
-    if (response.status === 401) {
-      const { data, response } = await this.updateToken(session.refreshToken);
-      if (response.status !== 200) throw new UnauthorizedException();
-      session.accessToken = data.accessToken;
-      session.refreshToken = data.refreshToken;
-      return await this.putStat({ stats }, session.accessToken);
-    }
-    return data;
   }
 
-  getId(word: { type: string; id: string; [x: string]: any }) {
-    const id = [];
-    switch (word.type) {
-      case 'WOO': {
-        id.push('WOO-1');
-        break;
-      }
-      case 'INE': {
-        id.push('INE-1');
-        this.getINE(id, word);
-        break;
-      }
-      case 'JINGBURGER': {
-        id.push('JING-1');
-        this.getJING(id, word);
-        break;
-      }
-      case 'LILPA': {
-        id.push('LIL-1');
-        this.getLIL(id, word);
-        break;
-      }
-      case 'JURURU': {
-        id.push('JU-1');
-        this.getJU(id, word);
-        break;
-      }
-      case 'GOSEGU': {
-        id.push('GO-1');
-        this.getGO(id, word);
-        break;
-      }
-      case 'VIICHAN': {
-        id.push('VIi-1');
-        this.getVIi(id, word);
-        break;
-      }
-      case 'GOMEM': {
-        this.getGomem(id, word);
-        break;
-      }
-    }
-    return id;
-  }
+  private readonly typeHandlers = new Map<string, (word: WordData) => string[]>(
+    [
+      ['WOO', () => ['WOO-1']],
+      ['INE', (word) => ['INE-1', ...(word.id === '오야' ? ['INE-2'] : [])]],
+      [
+        'JINGBURGER',
+        (word) => [
+          'JING-1',
+          ...(word.meta?.tag.includes('어록') ? ['JING-2'] : []),
+        ],
+      ],
+      ['LILPA', (word) => ['LIL-1', ...(word.id === '띨파' ? ['LIL-2'] : [])]],
+      ['JURURU', (word) => ['JU-1', ...(word.id === '띨르르' ? ['JU-2'] : [])]],
+      [
+        'GOSEGU',
+        (word) => [
+          'GO-1',
+          ...(word.meta?.tag.includes('콘텐츠') ? ['GO-2'] : []),
+        ],
+      ],
+      [
+        'VIICHAN',
+        (word) => ['VIi-1', ...(word.id.includes('복숭아') ? ['VIi-2'] : [])],
+      ],
+      [
+        'GOMEM',
+        (word) => [
+          ...(word.meta?.tag.includes('고멤') ? ['GOM-1'] : []),
+          ...(word.meta?.tag.includes('아카데미') ? ['GOM-2'] : []),
+        ],
+      ],
+    ],
+  );
 
-  getINE(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.id === '오야') id.push('INE-2');
-  }
-
-  getJING(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.meta.tag.includes('어록')) id.push('JING-2');
-  }
-
-  getLIL(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.id === '띨파') id.push('LIL-2');
-  }
-
-  getJU(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.id === '띨르르') id.push('JU-2');
-  }
-
-  getGO(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.meta.tag.includes('콘텐츠')) id.push('GO-2');
-  }
-
-  getVIi(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.id.includes('복숭아')) id.push('VIi-2');
-  }
-
-  getGomem(id: string[], word: { id: string; [x: string]: any }) {
-    if (word.meta.tag.includes('고멤')) id.push('GOM-1');
-    if (word.meta.tag.includes('아카데미')) id.push('GOM-2');
+  getId(word: WordData): string[] {
+    const handler = this.typeHandlers.get(word.type);
+    return handler ? handler(word) : [];
   }
 }
