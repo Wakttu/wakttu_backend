@@ -27,7 +27,11 @@ export class SocketService {
    * @returns id,mean,type,meta,wakta
    */
   async findWord(word: string): Promise<Dictionary | null> {
-    return await this.dicService.findById(word);
+    try {
+      return await this.dicService.findById(word);
+    } catch (error) {
+      throw new Error('단어 검색 중 오류가 발생했습니다: ' + error.message);
+    }
   }
 
   /**
@@ -54,8 +58,12 @@ export class SocketService {
    * @returns room
    */
   async createRoom(userId: string, data: CreateRoomDto): Promise<CreateRoom> {
-    const room = await this.roomService.create(data);
-    return await this.userService.roomCreate(userId, room.id);
+    try {
+      const room = await this.roomService.create(data);
+      return await this.userService.roomCreate(userId, room.id);
+    } catch (error) {
+      throw new Error('방 생성 중 오류가 발생했습니다: ' + error.message);
+    }
   }
 
   /**
@@ -90,7 +98,11 @@ export class SocketService {
    * @returns roomInfo
    */
   async enterRoom(userId: string, roomId: string): Promise<Room> {
-    return await this.userService.enter(userId, roomId);
+    try {
+      return await this.userService.enter(userId, roomId);
+    } catch (error) {
+      throw new Error('방 입장 중 오류가 발생했습니다: ' + error.message);
+    }
   }
 
   /**

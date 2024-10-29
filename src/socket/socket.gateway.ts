@@ -248,22 +248,41 @@ export class SocketGateway
     @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
     @ConnectedSocket() client: Socket,
   ) {
-    if (
+    const isGameTurn =
       this.roomInfo[roomId].start &&
       (this.game[roomId].turn === -1 ||
-        this.game[roomId].users[this.game[roomId].turn].id === client.id) &&
-      roundTime !== null
-    ) {
-      if (!this.ping[roomId]) {
-        this.server
-          .to(roomId)
-          .emit('chat', { user: this.user[client.id], chat: chat });
-        return;
-      }
+        this.game[roomId].users[this.game[roomId].turn].id === client.id);
 
-      this.game[roomId].loading = true;
-      switch (this.roomInfo[roomId].type) {
-        // 0 is Last, 1 is Kung, 2 is quiz
+    if (!isGameTurn || roundTime === null) {
+      return this.server
+        .to(roomId)
+        .emit('chat', { user: this.user[client.id], chat });
+    }
+
+    if (!this.ping[roomId]) {
+      return this.server
+        .to(roomId)
+        .emit('chat', { user: this.user[client.id], chat });
+    }
+
+    this.game[roomId].loading = true;
+    await this.handleGameMessage(
+      roomId,
+      { chat, roundTime, score, success },
+      client,
+    );
+  }
+
+  private async handleGameMessage(
+    roomId: string,
+    messageData: Omit<Chat, 'roomId'>,
+    client: Socket,
+  ) {
+    const { chat, roundTime, score, success } = messageData;
+    const gameType = this.roomInfo[roomId].type;
+
+    try {
+      switch (gameType) {
         case 0:
           await this.handleLastAnswer({
             roomId,
@@ -282,15 +301,16 @@ export class SocketGateway
             success,
           });
           break;
-        case 2: {
+        case 2:
           this.handleBellAnswer({ roomId, score }, client);
           break;
-        }
       }
-    } else
-      this.server
-        .to(roomId)
-        .emit('chat', { user: this.user[client.id], chat: chat });
+    } catch (error) {
+      console.error(`Game message handling error: ${error.message}`);
+      // 에러 처리 로직 추가
+    } finally {
+      this.game[roomId].loading = false;
+    }
   }
 
   // 게임 방 생성
@@ -692,6 +712,7 @@ export class SocketGateway
       roundTime,
       this.game[roomId].chain,
     );
+    const who = this.game[roomId].users[this.game[roomId].turn].userId;
     if (success) {
       this.server.to(roomId).emit('last.game', {
         success: false,
@@ -699,6 +720,7 @@ export class SocketGateway
         game: this.game[roomId],
         message: '5',
         word: undefined,
+        who,
       });
     } else {
       const check = await this.socketService.check(
@@ -724,6 +746,7 @@ export class SocketGateway
         game: this.game[roomId],
         message: check.message,
         word: check.word,
+        who,
       });
     }
     this.game[roomId].loading = false;
@@ -777,6 +800,7 @@ export class SocketGateway
       roundTime,
       this.game[roomId].chain,
     );
+    const who = this.game[roomId].users[this.game[roomId].turn].userId;
     if (success) {
       this.server.to(roomId).emit('kung.game', {
         success: false,
@@ -784,6 +808,7 @@ export class SocketGateway
         game: this.game[roomId],
         message: '5',
         word: undefined,
+        who,
       });
     } else {
       const check = await this.socketService.check(
@@ -804,6 +829,7 @@ export class SocketGateway
         game: this.game[roomId],
         message: check.message,
         word: check.word,
+        who,
       });
     }
     this.game[roomId].loading = false;

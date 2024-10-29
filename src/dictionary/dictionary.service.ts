@@ -6,14 +6,23 @@ import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class DictionaryService {
   constructor(private readonly prisma: PrismaService) {}
+
   async create(data: CreateDictionaryDto) {
-    return await this.prisma.dictionary.create({ data });
+    try {
+      return await this.prisma.dictionary.create({ data });
+    } catch (error) {
+      throw new Error(`단어 생성 중 오류 발생: ${error.message}`);
+    }
   }
 
   async findById(id: string) {
-    return await this.prisma.dictionary.findUnique({
-      where: { id },
-    });
+    try {
+      return await this.prisma.dictionary.findUnique({
+        where: { id },
+      });
+    } catch (error) {
+      throw new Error(`단어 검색 중 오류 발생: ${error.message}`);
+    }
   }
 
   async findAll(id: string) {
@@ -37,17 +46,24 @@ export class DictionaryService {
   }
 
   async getWord(length: number): Promise<string> {
-    const list: string[] = await this.prisma
-      .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} AND wakta = true ORDER BY random() LIMIT 1`;
-    return list[0];
+    try {
+      const list: string[] = await this.prisma
+        .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} AND wakta = true ORDER BY random() LIMIT 1`;
+      return list[0];
+    } catch (error) {
+      throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
+    }
   }
 
   async checkManner(keyword: string): Promise<boolean> {
-    const res = await this.prisma.manner.findUnique({
-      where: { id: keyword },
-    });
-    if (res) return true;
-    return false;
+    try {
+      const res = await this.prisma.manner.findUnique({
+        where: { id: keyword },
+      });
+      return !!res;
+    } catch (error) {
+      throw new Error(`매너 검사 중 오류 발생: ${error.message}`);
+    }
   }
 
   async getMission(): Promise<string> {
