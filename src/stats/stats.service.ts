@@ -56,7 +56,6 @@ export class StatsService {
         _stats.push(stats);
         _achieves = [..._achieves, ...achieves];
       }
-      console.log(_stats, _achieves);
       return { stats: _stats, achieves: _achieves };
     } catch (error) {
       throw new Error(`결과 처리 중 오류 발생: ${error.message}`);
@@ -329,7 +328,6 @@ export class StatsService {
     meta?: { tag: string[] };
     [x: string]: any;
   }): string[] {
-    console.log(word);
     const handler = this.typeHandlers.get(word.type);
     return handler ? handler(word) : [];
   }
