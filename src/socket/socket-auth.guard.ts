@@ -9,9 +9,34 @@ export class SocketAuthenticatedGuard implements CanActivate {
   }
 
   async checkUser(client) {
-    const session = client.request.session;
-    if (!Object.keys(session).includes('user')) return false;
-    return await this.checkBan(session.user.id, client.handshake.address);
+    try {
+      const session = client.request.session;
+
+      if (!session) {
+        console.log('Socket connection rejected: No session found');
+        return false;
+      }
+
+      if (!session.user?.id) {
+        console.log('Socket connection rejected: Invalid user data');
+        return false;
+      }
+
+      const isBanned = await this.checkBan(
+        session.user.id,
+        client.handshake.address,
+      );
+      if (!isBanned) {
+        console.log(
+          `Socket connection rejected: User ${session.user.id} is banned`,
+        );
+      }
+
+      return isBanned;
+    } catch (error) {
+      console.error('Socket authentication error:', error);
+      return false;
+    }
   }
 
   async checkBan(userId: string, ip: string) {

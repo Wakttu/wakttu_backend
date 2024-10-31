@@ -90,6 +90,10 @@ export class Game {
   namespace: 'wakttu',
   cors: { origin: true, credentials: true },
   transports: ['websocket'],
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e6,
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
