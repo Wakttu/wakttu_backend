@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { Inject, UseGuards, forwardRef } from '@nestjs/common';
+import { Inject, UseGuards, forwardRef, Logger } from '@nestjs/common';
 import { SocketAuthenticatedGuard } from 'src/socket/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
@@ -98,6 +98,8 @@ export class Game {
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  private readonly logger = new Logger(SocketGateway.name);
+
   constructor(
     @Inject(forwardRef(() => LastService))
     private readonly lastService: LastService,
@@ -132,22 +134,29 @@ export class SocketGateway
 
   // 접속시 수행되는 코드
   async handleConnection(@ConnectedSocket() client: any) {
-    const user = client.request.session.user;
-    if (!user) {
-      client.disconnect();
-      return;
-    }
-    for (const key in this.user) {
-      if (this.user[key].id === user.id) {
-        this.server
-          .to(key)
-          .emit('alarm', { message: '이미 접속중인 유저입니다!' });
-        this.handleDisconnect({ id: key });
+    try {
+      const user = client.request.session.user;
+      this.logger.log(`Client connected: ${client.id}`);
+
+      if (!user) {
+        this.logger.warn(`Connection rejected - No user session: ${client.id}`);
+        client.disconnect();
+        return;
       }
+      for (const key in this.user) {
+        if (this.user[key].id === user.id) {
+          this.server
+            .to(key)
+            .emit('alarm', { message: '이미 접속중인 유저입니다!' });
+          this.handleDisconnect({ id: key });
+        }
+      }
+      this.user[client.id] = await this.socketService.reloadUser(user.id);
+      this.user[client.id].color = this.socketService.getColor();
+      this.server.emit('list', this.user);
+    } catch (error) {
+      this.logger.error(`Connection error: ${error.message}`, error.stack);
     }
-    this.user[client.id] = await this.socketService.reloadUser(user.id);
-    this.user[client.id].color = this.socketService.getColor();
-    this.server.emit('list', this.user);
   }
 
   // 소켓서버가 열릴시 수행되는 코드
@@ -286,6 +295,10 @@ export class SocketGateway
     const gameType = this.roomInfo[roomId].type;
 
     try {
+      this.logger.debug(
+        `Processing game message - Room: ${roomId}, Type: ${gameType}`,
+      );
+
       switch (gameType) {
         case 0:
           await this.handleLastAnswer({
@@ -310,7 +323,10 @@ export class SocketGateway
           break;
       }
     } catch (error) {
-      console.error(`Game message handling error: ${error.message}`);
+      this.logger.error(
+        `Game message error - Room: ${roomId}, Type: ${gameType}`,
+        error.stack,
+      );
       // 에러 처리 로직 추가
     } finally {
       this.game[roomId].loading = false;
@@ -323,16 +339,22 @@ export class SocketGateway
     @MessageBody() data: CreateRoomDto,
     @ConnectedSocket() client: any,
   ) {
-    this.user[client.id] = client.request.session.user;
-    const info = await this.socketService.createRoom(
-      this.user[client.id].id,
-      data,
-    );
-    const { password, ...room } = info;
-    this.roomInfo[room.id] = room;
-    this.game[room.id] = new Game();
-    this.game[room.id].host = this.user[client.id].id;
-    client.emit('createRoom', { roomId: room.id, password });
+    try {
+      this.logger.log(`Creating room - User: ${client.id}`);
+      this.user[client.id] = client.request.session.user;
+      const info = await this.socketService.createRoom(
+        this.user[client.id].id,
+        data,
+      );
+      const { password, ...room } = info;
+      this.roomInfo[room.id] = room;
+      this.game[room.id] = new Game();
+      this.game[room.id].host = this.user[client.id].id;
+      client.emit('createRoom', { roomId: room.id, password });
+    } catch (error) {
+      this.logger.error(`Room creation error: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   // 게임 방 수정
@@ -652,34 +674,43 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].id) {
-      client.emit('alarm', { message: '방장이 아닙니다.' });
-      return;
+    try {
+      this.logger.log(`Starting last word game - Room: ${roomId}`);
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      if (
+        this.game[roomId].users.length + 1 !==
+        this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }
+
+      this.handleReady(roomId, client);
+
+      if (this.roomInfo[roomId].option.includes('팀전'))
+        this.socketService.teamShuffle(
+          this.game[roomId],
+          this.game[roomId].team,
+        );
+      else this.socketService.shuffle(this.game[roomId]);
+
+      this.game[roomId].option = this.socketService.getOption(
+        this.roomInfo[roomId].option,
+      );
+      this.game[roomId].roundTime = this.roomInfo[roomId].time;
+
+      await this.lastService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Game start error - Room: ${roomId}`, error.stack);
+      client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
     }
-    if (
-      this.game[roomId].users.length + 1 !==
-      this.roomInfo[roomId].users.length
-    ) {
-      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
-      return;
-    }
-
-    this.handleReady(roomId, client);
-
-    if (this.roomInfo[roomId].option.includes('팀전'))
-      this.socketService.teamShuffle(this.game[roomId], this.game[roomId].team);
-    else this.socketService.shuffle(this.game[roomId]);
-
-    this.game[roomId].option = this.socketService.getOption(
-      this.roomInfo[roomId].option,
-    );
-    this.game[roomId].roundTime = this.roomInfo[roomId].time;
-
-    await this.lastService.handleStart(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
   }
 
   @SubscribeMessage('last.round')
