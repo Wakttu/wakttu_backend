@@ -72,20 +72,30 @@ export class BellService {
   }
 
   getCombinations(len: number) {
-    const hint = [];
+    const requiredIndices = 2 * Math.floor(len / 3);
+    if (len < requiredIndices) {
+      return [];
+    }
 
-    for (let i = 0; i < 2; i++) {
+    const hint = [];
+    const usedIndices = new Set();
+    const hintSize = Math.floor(len / 3);
+
+    while (hint.length < 2) {
       const results = [];
-      let count = Math.floor(len / 3);
-      while (count) {
-        const idx = Math.floor(Math.random() * len);
-        if (results.includes(idx)) continue;
+      for (let i = 0; i < hintSize; i++) {
+        let idx;
+        do {
+          idx = Math.floor(Math.random() * len);
+        } while (usedIndices.has(idx));
+
         results.push(idx);
-        count--;
+        usedIndices.add(idx);
       }
       hint.push(results);
     }
-    return hint; // 결과 담긴 results return
+
+    return hint;
   }
 
   handleAnswer(idx: number, game: Game, score: number) {
