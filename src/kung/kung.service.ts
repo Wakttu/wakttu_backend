@@ -61,6 +61,8 @@ export class KungService {
     game.chain = 1;
     game.roundTime = roomInfo.time;
     game.turnTime = this.socketService.getTurnTime(roomInfo.time);
+    if (roomInfo.option.includes('팀전'))
+      this.socketService.teamShuffle(game, game.team);
     this.server.to(roomId).emit('kung.round', game);
   }
 
