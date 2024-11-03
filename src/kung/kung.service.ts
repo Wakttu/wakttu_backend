@@ -32,6 +32,8 @@ export class KungService {
       await this.socketService.setStart(roomId, roomInfo.start)
     ).start;
     game.keyword = await this.socketService.setWord(roomInfo.round);
+    if (roomInfo.option.includes('팀전'))
+      this.socketService.teamShuffle(game, game.team);
     this.rules[roomId] = new Rule(roomInfo.users.length);
     this.server.to(roomId).emit('kung.start', game);
   }
@@ -61,8 +63,6 @@ export class KungService {
     game.chain = 1;
     game.roundTime = roomInfo.time;
     game.turnTime = this.socketService.getTurnTime(roomInfo.time);
-    if (roomInfo.option.includes('팀전'))
-      this.socketService.teamShuffle(game, game.team);
     this.server.to(roomId).emit('kung.round', game);
   }
 
