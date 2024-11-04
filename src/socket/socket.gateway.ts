@@ -174,35 +174,62 @@ export class SocketGateway
 
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
-    const roomId = this.user[client.id]
-      ? this.user[client.id].roomId
-      : undefined;
-    if (roomId) {
-      this.handleExitReady(roomId, client);
-      if (this.game[roomId]) this.handleExitTeam(roomId, client);
-      await this.socketService.exitRoom(this.user[client.id].id);
+    try {
+      const roomId = this.user[client.id]
+        ? this.user[client.id].roomId
+        : undefined;
 
-      this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-      if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
-        const { id } = this.roomInfo[roomId].users[0];
+      if (roomId) {
+        this.logger.log(
+          `Client disconnecting from room ${roomId}: ${client.id}`,
+        );
 
-        if (this.game[roomId].host === this.user[client.id].id)
-          this.game[roomId].host = id;
+        this.handleExitReady(roomId, client);
+        if (this.game[roomId]) this.handleExitTeam(roomId, client);
+        await this.socketService.exitRoom(this.user[client.id].id);
 
-        if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
+        this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
+        if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
+          const { id } = this.roomInfo[roomId].users[0];
 
-        this.server.to(roomId).emit('exit', {
-          roomInfo: this.roomInfo[roomId],
-          game: this.game[roomId],
-        });
-      } else {
-        delete this.roomInfo[roomId];
-        delete this.game[roomId];
-        await this.socketService.deleteRoom(roomId);
+          if (this.game[roomId].host === this.user[client.id].id) {
+            this.game[roomId].host = id;
+          }
+
+          if (!this.roomInfo[roomId].start) {
+            this.handleHostReady({ roomId, id });
+          }
+
+          this.server.to(roomId).emit('exit', {
+            roomInfo: this.roomInfo[roomId],
+            game: this.game[roomId],
+          });
+        } else {
+          delete this.roomInfo[roomId];
+          delete this.game[roomId];
+          await this.socketService.deleteRoom(roomId);
+        }
+      }
+
+      delete this.user[client.id];
+      this.server.emit('list', this.user);
+
+      this.logger.log(`Client disconnected successfully: ${client.id}`);
+    } catch (error) {
+      this.logger.error(
+        `Disconnect error for client ${client.id}: ${error.message}`,
+        error.stack,
+      );
+      try {
+        delete this.user[client.id];
+        this.server.emit('list', this.user);
+      } catch (cleanupError) {
+        this.logger.error(
+          `Additional cleanup error: ${cleanupError.message}`,
+          cleanupError.stack,
+        );
       }
     }
-    delete this.user[client.id];
-    this.server.emit('list', this.user);
   }
 
   // ping
@@ -363,18 +390,23 @@ export class SocketGateway
     @MessageBody() { roomId, data }: { roomId: string; data: UpdateRoomDto },
     @ConnectedSocket() client: any,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].id) {
-      client.emit('alarm', { message: '방장이 아닙니다.' });
-      return;
+    try {
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      const roomInfo = await this.socketService.updateRoom(roomId, data);
+      this.roomInfo[roomId] = roomInfo;
+      this.game[roomId].users = [];
+      this.game[roomId].team = { woo: [], gomem: [], academy: [], isedol: [] };
+      this.server.to(roomId).emit('updateRoom', {
+        roomInfo: this.roomInfo[roomId],
+        game: this.game[roomId],
+      });
+    } catch (error) {
+      this.logger.error(`Room update error: ${error.message}`, error.stack);
+      client.emit('alarm', { message: '방 업데이트 중 오류가 발생했습니다.' });
     }
-    const roomInfo = await this.socketService.updateRoom(roomId, data);
-    this.roomInfo[roomId] = roomInfo;
-    this.game[roomId].users = [];
-    this.game[roomId].team = { woo: [], gomem: [], academy: [], isedol: [] };
-    this.server.to(roomId).emit('updateRoom', {
-      roomInfo: this.roomInfo[roomId],
-      game: this.game[roomId],
-    });
   }
 
   // 게임 방 입장
@@ -383,58 +415,65 @@ export class SocketGateway
     @MessageBody() { roomId, password }: { roomId: string; password: string },
     @ConnectedSocket() client: any,
   ) {
-    if (client.rooms.has(roomId)) {
-      return;
-    }
-    if (!this.user[client.id]) {
-      const user = client.request.session.user;
-      if (!user) {
+    try {
+      if (client.rooms.has(roomId)) {
+        return;
+      }
+      if (!this.user[client.id]) {
+        const user = client.request.session.user;
+        if (!user) {
+          client.emit('alarm', {
+            message: '계정에 오류가 있습니다. 새로고침 후 재접속하세요!',
+          });
+          return;
+        }
+        this.user[client.id] = user;
+      }
+      if (!this.roomInfo[roomId]) {
+        client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+        return;
+      }
+
+      if (this.roomInfo[roomId].total === this.roomInfo[roomId].users.length) {
+        client.emit('alarm', { message: '인원이 가득찼습니다!' });
+        return;
+      }
+
+      if (this.game[roomId].ban.includes(this.user[client.id].id)) {
         client.emit('alarm', {
-          message: '계정에 오류가 있습니다. 새로고침 후 재접속하세요!',
+          message: '추방 당한 유저는 접속이 불가능 해요!',
         });
         return;
       }
-      this.user[client.id] = user;
-    }
-    if (!this.roomInfo[roomId]) {
-      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
-      return;
-    }
+      const check = await this.socketService.checkPassword(roomId, password);
+      if (!check) {
+        client.emit('alarm', { message: '유효하지 않은 패스워드 입니다.' });
+        return;
+      }
 
-    if (this.roomInfo[roomId].total === this.roomInfo[roomId].users.length) {
-      client.emit('alarm', { message: '인원이 가득찼습니다!' });
-      return;
-    }
-
-    if (this.game[roomId].ban.includes(this.user[client.id].id)) {
-      client.emit('alarm', { message: '추방 당한 유저는 접속이 불가능 해요!' });
-      return;
-    }
-    const check = await this.socketService.checkPassword(roomId, password);
-    if (!check) {
-      client.emit('alarm', { message: '유효하지 않은 패스워드 입니다.' });
-      return;
-    }
-
-    this.roomInfo[roomId] = await this.socketService.enterRoom(
-      this.user[client.id].id,
-      roomId,
-    );
-    client.join(roomId);
-    this.user[client.id].roomId = roomId;
-    this.server.to(roomId).emit('enter', {
-      roomInfo: this.roomInfo[roomId],
-      game: this.game[roomId],
-    });
-    this.handleMessage(
-      {
+      this.roomInfo[roomId] = await this.socketService.enterRoom(
+        this.user[client.id].id,
         roomId,
-        chat: '님이 입장하였습니다.',
-        score: 0,
-        roundTime: null,
-      },
-      client,
-    );
+      );
+      client.join(roomId);
+      this.user[client.id].roomId = roomId;
+      this.server.to(roomId).emit('enter', {
+        roomInfo: this.roomInfo[roomId],
+        game: this.game[roomId],
+      });
+      this.handleMessage(
+        {
+          roomId,
+          chat: '님이 입장하였습니다.',
+          score: 0,
+          roundTime: null,
+        },
+        client,
+      );
+    } catch (error) {
+      this.logger.error(`Room enter error: ${error.message}`, error.stack);
+      client.emit('alarm', { message: '방 입장 중 오류가 발생했습니다.' });
+    }
   }
 
   // 게임방 퇴장
@@ -530,33 +569,21 @@ export class SocketGateway
     { roomId, team }: { roomId: string; team: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const InWoo = this.game[roomId].team['woo'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
+    const teams = ['woo', 'gomem', 'academy', 'isedol'] as const;
+    const userId = this.user[client.id].id;
 
-    const InGomem = this.game[roomId].team['gomem'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
+    // 모든 팀에서 유저 제거
+    teams.forEach((teamName) => {
+      const index = this.game[roomId].team[teamName].indexOf(userId);
+      if (index !== -1) {
+        this.game[roomId].team[teamName].splice(index, 1);
+      }
+    });
 
-    const InAcademy = this.game[roomId].team['academy'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
-
-    const InIsedol = this.game[roomId].team['isedol'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
-
-    if (InWoo !== -1) this.game[roomId].team['woo'].splice(InWoo, 1);
-
-    if (InGomem !== -1) this.game[roomId].team['gomem'].splice(InGomem, 1);
-
-    if (InAcademy !== -1)
-      this.game[roomId].team['academy'].splice(InAcademy, 1);
-
-    if (InIsedol !== -1) this.game[roomId].team['isedol'].splice(InIsedol, 1);
-
-    this.game[roomId].team[team].push(this.user[client.id].id);
+    // 새로운 팀에 유저 추가
+    this.game[roomId].team[team].push(userId);
     this.user[client.id].team = team;
+
     this.server.to(roomId).emit('team', this.game[roomId]);
   }
 
@@ -564,30 +591,17 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    const InWoo = this.game[roomId].team['woo'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
+    const teams = ['woo', 'gomem', 'academy', 'isedol'] as const;
 
-    const InGomem = this.game[roomId].team['gomem'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
-
-    const InAcademy = this.game[roomId].team['academy'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
-
-    const InIsedol = this.game[roomId].team['isedol'].findIndex(
-      (user) => user === this.user[client.id].id,
-    );
-
-    if (InWoo !== -1) this.game[roomId].team['woo'].splice(InWoo, 1);
-
-    if (InGomem !== -1) this.game[roomId].team['gomem'].splice(InGomem, 1);
-
-    if (InAcademy !== -1)
-      this.game[roomId].team['academy'].splice(InAcademy, 1);
-
-    if (InIsedol !== -1) this.game[roomId].team['isedol'].splice(InIsedol, 1);
+    // 모든 팀에서 유저 제거
+    teams.forEach((team) => {
+      const userIndex = this.game[roomId].team[team].findIndex(
+        (userId) => userId === this.user[client.id].id,
+      );
+      if (userIndex !== -1) {
+        this.game[roomId].team[team].splice(userIndex, 1);
+      }
+    });
   }
 
   // 유저들의 ready 확인
@@ -651,9 +665,18 @@ export class SocketGateway
   // room Strart 풀기
   @SubscribeMessage('start')
   async handleStart(@MessageBody() roomId: string) {
-    const roomInfo = await this.socketService.setStart(roomId, true);
-    this.game[roomId].users = [];
-    this.server.to(roomId).emit('start', { roomInfo, game: this.game[roomId] });
+    try {
+      const roomInfo = await this.socketService.setStart(roomId, true);
+      this.game[roomId].users = [];
+      this.server
+        .to(roomId)
+        .emit('start', { roomInfo, game: this.game[roomId] });
+    } catch (error) {
+      this.logger.error(`Start game error - Room: ${roomId}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
+    }
   }
 
   // Get 변수
@@ -715,11 +738,18 @@ export class SocketGateway
 
   @SubscribeMessage('last.round')
   async handleLastRound(@MessageBody() roomId: string) {
-    await this.lastService.handleRound(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
+    try {
+      await this.lastService.handleRound(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Last word round error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '라운드 진행 중 오류가 발생했습니다.' });
+    }
   }
 
   @SubscribeMessage('last.turnStart')
@@ -796,27 +826,32 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].id) {
-      client.emit('alarm', { message: '방장이 아닙니다.' });
-      return;
+    try {
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      if (
+        this.game[roomId].users.length + 1 !==
+        this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }
+      this.handleReady(roomId, client);
+      this.socketService.shuffle(this.game[roomId]);
+      this.game[roomId].option = this.socketService.getOption(
+        this.roomInfo[roomId].option,
+      );
+      await this.kungService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Kung game start error: ${error.message}`, error.stack);
+      client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
     }
-    if (
-      this.game[roomId].users.length + 1 !==
-      this.roomInfo[roomId].users.length
-    ) {
-      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
-      return;
-    }
-    this.handleReady(roomId, client);
-    this.socketService.shuffle(this.game[roomId]);
-    this.game[roomId].option = this.socketService.getOption(
-      this.roomInfo[roomId].option,
-    );
-    await this.kungService.handleStart(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
   }
 
   @SubscribeMessage('kung.round')
@@ -894,33 +929,45 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].id) {
-      client.emit('alarm', { message: '방장이 아닙니다.' });
-      return;
-    }
-    if (
-      this.game[roomId].users.length + 1 !==
-      this.roomInfo[roomId].users.length
-    ) {
-      client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
-      return;
-    }
-    this.handleReady(roomId, client);
+    try {
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      if (
+        this.game[roomId].users.length + 1 !==
+        this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }
+      this.handleReady(roomId, client);
 
-    await this.bellService.handleStart(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
+      await this.bellService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Bell game start error: ${error.message}`, error.stack);
+      client.emit('alarm', { message: '게임 시작 중 오류 발생했습니다.' });
+    }
   }
 
   @SubscribeMessage('bell.round')
   async handleBellRound(@MessageBody() roomId: string) {
-    await this.bellService.handleRound(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
+    try {
+      await this.bellService.handleRound(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Bell round error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '라운드 진행 중 오류가 발생했습니다.' });
+    }
   }
 
   // ping
@@ -952,10 +999,22 @@ export class SocketGateway
 
   @SubscribeMessage('bell.roundEnd')
   handleBellRoundEnd(@MessageBody() roomId: string) {
-    this.game[roomId].users.forEach((user) => {
-      if (!user.success) user.success = false;
-    });
-    this.server.to(roomId).emit('bell.roundEnd', this.game[roomId]);
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in bell.roundEnd`);
+        return;
+      }
+
+      this.game[roomId].users.forEach((user) => {
+        if (!user.success) user.success = false;
+      });
+      this.server.to(roomId).emit('bell.roundEnd', this.game[roomId]);
+    } catch (error) {
+      this.logger.error(`Bell round end error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '라운드 종료 중 오류가 발생했습니다.' });
+    }
   }
 
   @SubscribeMessage('bell.answer')
@@ -970,17 +1029,35 @@ export class SocketGateway
     },
     @ConnectedSocket() client: Socket,
   ) {
-    const idx = this.game[roomId].users.findIndex(
-      (user) => user.userId === this.user[client.id].id,
-    );
-    if (idx === -1) return;
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in bell.answer`);
+        return;
+      }
 
-    this.bellService.handleAnswer(idx, this.game[roomId], score);
-    const count = this.game[roomId].users.filter(
-      (user) => user.success === true,
-    );
-    if (count.length === this.game[roomId].users.length) {
-      this.handleBellPong(roomId);
-    } else this.server.to(roomId).emit('bell.game', this.game[roomId]);
+      const idx = this.game[roomId].users.findIndex(
+        (user) => user.userId === this.user[client.id].id,
+      );
+      if (idx === -1) {
+        this.logger.warn(`User not found in room ${roomId}`);
+        return;
+      }
+
+      this.bellService.handleAnswer(idx, this.game[roomId], score);
+      const count = this.game[roomId].users.filter(
+        (user) => user.success === true,
+      );
+
+      if (count.length === this.game[roomId].users.length) {
+        this.handleBellPong(roomId);
+      } else {
+        this.server.to(roomId).emit('bell.game', this.game[roomId]);
+      }
+    } catch (error) {
+      this.logger.error(`Bell answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
   }
 }
