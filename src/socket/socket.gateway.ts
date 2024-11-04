@@ -99,6 +99,8 @@ export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(SocketGateway.name);
+  private readonly MAX_CONNECTIONS = 500; // 최대 연결 수 설정
+  private currentConnections = 0; // 현재 연결된 소켓 수
 
   constructor(
     @Inject(forwardRef(() => LastService))
@@ -135,6 +137,17 @@ export class SocketGateway
   // 접속시 수행되는 코드
   async handleConnection(@ConnectedSocket() client: any) {
     try {
+      // 최대 연결 수 체크
+      if (this.currentConnections >= this.MAX_CONNECTIONS) {
+        this.logger.warn(
+          `Connection rejected - Max connections reached: ${client.id}`,
+        );
+        client.emit('full', {
+          message: '서버가 가득 찼습니다. 잠시 후 다시 시도해주세요.',
+        });
+        client.disconnect();
+        return;
+      }
       const user = client.request.session.user;
       this.logger.log(`Client connected: ${client.id}`);
 
@@ -151,9 +164,10 @@ export class SocketGateway
           this.handleDisconnect({ id: key });
         }
       }
+      this.currentConnections++; // 연결 수 증가
       this.user[client.id] = await this.socketService.reloadUser(user.id);
       this.user[client.id].color = this.socketService.getColor();
-      this.server.emit('list', this.user);
+      client.emit('list', this.user);
     } catch (error) {
       this.logger.error(`Connection error: ${error.message}`, error.stack);
     }
@@ -175,6 +189,7 @@ export class SocketGateway
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
     try {
+      this.currentConnections--; // 연결 수 감소
       const roomId = this.user[client.id]
         ? this.user[client.id].roomId
         : undefined;
@@ -221,6 +236,7 @@ export class SocketGateway
         error.stack,
       );
       try {
+        this.currentConnections--; // 에러가 발생해도 연결 수는 감소
         delete this.user[client.id];
         this.server.emit('list', this.user);
       } catch (cleanupError) {
