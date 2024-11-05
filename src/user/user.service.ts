@@ -197,4 +197,37 @@ export class UserService {
       throw new Error(`아이템 획득 실패: ${error.message}`);
     }
   }
+
+  async achieveAllItems(userId: string) {
+    try {
+      const allItems = await this.prisma.item.findMany({
+        select: { id: true },
+      });
+
+      const userItems = await this.prisma.userGetItem.findMany({
+        where: { userId },
+        select: { itemId: true },
+      });
+
+      const userItemIds = userItems.map((item) => item.itemId);
+
+      const itemsToAdd = allItems.filter(
+        (item) => !userItemIds.includes(item.id),
+      );
+
+      const result = await this.prisma.userGetItem.createMany({
+        data: itemsToAdd.map((item) => ({
+          userId,
+          itemId: item.id,
+        })),
+      });
+
+      return {
+        success: true,
+        message: `${result.count}개의 새로운 아이템을 획득했습니다!`,
+      };
+    } catch (error) {
+      throw new Error(`전체 아이템 획득 실패: ${error.message}`);
+    }
+  }
 }

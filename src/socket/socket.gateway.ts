@@ -44,6 +44,7 @@ export class Game {
     };
     this.ban = [];
     this.loading = false;
+    this.turnChanged = false;
   }
   host: string; // 호스트
   type: number; // 게임종류 0:끝말잇기 1:쿵쿵따 2:왁타버스 퀴즈
@@ -83,6 +84,7 @@ export class Game {
     hint: string[];
   }[];
   loading?: boolean;
+  turnChanged: boolean;
 }
 
 @UseGuards(SocketAuthenticatedGuard)
@@ -208,6 +210,7 @@ export class SocketGateway
   // ping
   @SubscribeMessage('ping')
   handlePing(@MessageBody() roomId: string) {
+    this.game[roomId].turnChanged = false;
     let time = this.game[roomId].turnTime / 100;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('ping');
@@ -733,10 +736,13 @@ export class SocketGateway
       setTimeout(() => this.handleTurnEnd(roomId), 100);
       return;
     }
-    if (!this.ping[roomId]) {
+
+    if (!this.ping[roomId] && !this.game[roomId].turnChanged) {
       this.lastService.handleTurnEnd(this.game[roomId]);
       this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
     }
+
+    this.game[roomId].turnChanged = false;
   }
 
   async handleLastAnswer(
@@ -774,6 +780,7 @@ export class SocketGateway
         score = Math.round(score);
         this.lastService.handleNextTurn(this.game[roomId], chat, score);
         this.handlePong(roomId);
+        this.game[roomId].turnChanged = true;
       }
       this.server.to(roomId).emit('last.game', {
         success: check.success,
@@ -857,6 +864,7 @@ export class SocketGateway
         score = Math.round(score);
         this.kungService.handleNextTurn(this.game[roomId], chat, score);
         this.handlePong(roomId);
+        this.game[roomId].turnChanged = true;
       }
       this.server.to(roomId).emit('kung.game', {
         success: check.success,
@@ -881,8 +889,13 @@ export class SocketGateway
       setTimeout(() => this.handleKTurnEnd(roomId), 100);
       return;
     }
-    this.kungService.handleTurnEnd(this.game[roomId]);
-    this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
+
+    if (!this.ping[roomId] && !this.game[roomId].turnChanged) {
+      this.kungService.handleTurnEnd(this.game[roomId]);
+      this.server.to(roomId).emit('kung.turnEnd', this.game[roomId]);
+    }
+
+    this.game[roomId].turnChanged = false;
   }
 
   /*
