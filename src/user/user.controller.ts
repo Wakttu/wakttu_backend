@@ -16,6 +16,8 @@ import { AuthGuard } from './user.guard';
 import { IsLoginedGuard } from 'src/auth/isLogined-auth.guard';
 import { IsNotLoginedGuard } from 'src/auth/isNotLogined-auth.guard';
 import { ScoreUserDto } from './dto/score-user.dto';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
 
 @ApiTags('User')
 @Controller('user')
@@ -90,5 +92,12 @@ export class UserController {
   ) {
     const user = session.user;
     return await this.userService.achieveItem(user.id, itemId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(['manager', 'staff'])
+  @Post('achieve/item/all')
+  async achieveAllItems(@Body('id') id: string) {
+    return await this.userService.achieveAllItems(id);
   }
 }
