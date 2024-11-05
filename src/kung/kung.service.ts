@@ -34,6 +34,7 @@ export class KungService {
     game.keyword = await this.socketService.setWord(roomInfo.round);
     if (roomInfo.option.includes('팀전'))
       this.socketService.teamShuffle(game, game.team);
+    else this.socketService.shuffle(game);
     this.rules[roomId] = new Rule(roomInfo.users.length);
     this.server.to(roomId).emit('kung.start', game);
   }
