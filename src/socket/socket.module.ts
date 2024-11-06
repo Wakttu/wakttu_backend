@@ -7,6 +7,7 @@ import { UserModule } from 'src/user/user.module';
 import { KungModule } from 'src/kung/kung.module';
 import { LastModule } from 'src/last/last.module';
 import { BellModule } from 'src/bell/bell.module';
+import { MusicModule } from 'src/music/music.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BellModule } from 'src/bell/bell.module';
     forwardRef(() => LastModule),
     forwardRef(() => KungModule),
     forwardRef(() => BellModule),
+    forwardRef(() => MusicModule),
   ],
   providers: [SocketGateway, SocketService],
   exports: [SocketGateway, SocketService],

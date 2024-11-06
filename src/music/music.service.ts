@@ -37,9 +37,9 @@ export class MusicService {
         answer: ['드라마', 'drama'],
       },
     ];
-    roomInfo.start = (
+    /*roomInfo.start = (
       await this.socketService.setStart(roomId, roomInfo.start)
-    ).start;
+    ).start;*/
     this.server.to(roomId).emit('music.start', game);
   }
 

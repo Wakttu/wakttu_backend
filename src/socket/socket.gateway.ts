@@ -1110,34 +1110,45 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
+    client.join(roomId);
+    this.game[roomId] = new Game();
+    this.game[roomId].host = this.user[client.id].id;
+    this.game[roomId].users = [this.user[client.id]];
+    this.roomInfo[roomId] = new Room();
+    this.roomInfo[roomId].users = [this.user[client.id]];
+    this.roomInfo[roomId].round = 1;
+    this.roomInfo[roomId].total = 1;
+
+    console.log(this.game[roomId]);
     try {
       this.logger.log(`Starting music quiz game - Room: ${roomId}`);
       if (this.game[roomId].host !== this.user[client.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
-      if (
+      /*if (
         this.game[roomId].users.length + 1 !==
-        this.roomInfo[roomId].users.length
+       / this.roomInfo[roomId].users.length
       ) {
         client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
         return;
-      }
+      }*/
 
-      this.handleReady(roomId, client);
+      //this.handleReady(roomId, client);
 
-      if (this.roomInfo[roomId].option.includes('팀전'))
+      /*if (this.roomInfo[roomId].option.includes('팀전'))
         this.socketService.teamShuffle(
           this.game[roomId],
           this.game[roomId].team,
         );
       else this.socketService.shuffle(this.game[roomId]);
-
+*/
+      /*
       this.game[roomId].option = this.socketService.getOption(
         this.roomInfo[roomId].option,
       );
       this.game[roomId].roundTime = this.roomInfo[roomId].time;
-
+*/
       await this.musicService.handleStart(
         roomId,
         this.roomInfo[roomId],
