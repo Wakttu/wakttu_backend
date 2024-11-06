@@ -18,6 +18,7 @@ import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 import { BellService } from 'src/bell/bell.service';
+import { MusicService } from 'src/music/music.service';
 
 interface Chat {
   roomId: string;
@@ -83,6 +84,13 @@ export class Game {
     choseong: string;
     hint: string[];
   }[];
+  music?: {
+    videoId: string;
+    channelId: string;
+    title: string;
+    thumbnail: string;
+    answer: string[];
+  }[];
   loading?: boolean;
   turnChanged: boolean;
 }
@@ -111,6 +119,8 @@ export class SocketGateway
     private readonly kungService: KungService,
     @Inject(forwardRef(() => BellService))
     private readonly bellService: BellService,
+    @Inject(forwardRef(() => MusicService))
+    private readonly musicService: MusicService,
     private readonly socketService: SocketService,
   ) {}
 
@@ -185,6 +195,7 @@ export class SocketGateway
     this.lastService.server = this.server;
     this.kungService.server = this.server;
     this.bellService.server = this.server;
+    this.musicService.server = this.server;
     console.log('socket is open!');
   }
 
@@ -1087,6 +1098,54 @@ export class SocketGateway
       this.server
         .to(roomId)
         .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
+  }
+
+  /*
+   * 왁타버스 뮤직 퀴즈
+   */
+
+  @SubscribeMessage('music.start')
+  async handleMusicStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      this.logger.log(`Starting music quiz game - Room: ${roomId}`);
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      if (
+        this.game[roomId].users.length + 1 !==
+        this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }
+
+      this.handleReady(roomId, client);
+
+      if (this.roomInfo[roomId].option.includes('팀전'))
+        this.socketService.teamShuffle(
+          this.game[roomId],
+          this.game[roomId].team,
+        );
+      else this.socketService.shuffle(this.game[roomId]);
+
+      this.game[roomId].option = this.socketService.getOption(
+        this.roomInfo[roomId].option,
+      );
+      this.game[roomId].roundTime = this.roomInfo[roomId].time;
+
+      await this.lastService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Game start error - Room: ${roomId}`, error.stack);
+      client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
     }
   }
 }

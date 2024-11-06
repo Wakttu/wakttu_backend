@@ -16,6 +16,7 @@ import { WakgamesModule } from './wakgames/wakgames.module';
 import { BellModule } from './bell/bell.module';
 import { ItemModule } from './item/item.module';
 import { StatsModule } from './stats/stats.module';
+import { MusicModule } from './music/music.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { StatsModule } from './stats/stats.module';
     BellModule,
     ItemModule,
     StatsModule,
+    MusicModule,
   ],
   controllers: [AppController],
   providers: [AppService],
