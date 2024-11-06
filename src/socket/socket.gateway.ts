@@ -64,7 +64,7 @@ export class Game {
     provider?: string;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
-  target: string; // 현재 게임 진행에서 사용될 단어 (세)
+  target: string | string[]; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
   chain: number; // 현재 체인정보
   roundTime: number; // 남은 라운드시간 정보
@@ -1138,7 +1138,7 @@ export class SocketGateway
       );
       this.game[roomId].roundTime = this.roomInfo[roomId].time;
 
-      await this.lastService.handleStart(
+      await this.musicService.handleStart(
         roomId,
         this.roomInfo[roomId],
         this.game[roomId],
@@ -1147,5 +1147,14 @@ export class SocketGateway
       this.logger.error(`Game start error - Room: ${roomId}`, error.stack);
       client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
     }
+  }
+
+  @SubscribeMessage('music.round')
+  handleMusicRound(@MessageBody() roomId: string) {
+    this.musicService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
   }
 }
