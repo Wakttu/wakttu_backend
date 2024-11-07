@@ -128,7 +128,7 @@ export class RoomService {
         },
       });
     } catch (error) {
-      throw new BadRequestException(`ID ${id}인 방 업��이트에 실패했습니다.`);
+      throw new BadRequestException(`ID ${id}인 방 업데이트에 실패했습니다.`);
     }
   }
 

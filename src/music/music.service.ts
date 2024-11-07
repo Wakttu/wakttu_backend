@@ -45,11 +45,26 @@ export class MusicService {
 
   handleRound(roomId: string, roomInfo: Room, game: Game) {
     if (!game) return;
-    if (game.round === roomInfo.round) {
+    /*if (game.round === roomInfo.round) {
       this.server.to(roomId).emit('music.end', game);
       return;
-    }
+    }*/
+    console.log('handle round');
     game.target = game.music[game.round++].answer;
     this.server.to(roomId).emit('music.round', game);
+  }
+
+  handleReady(roomId: string, game: Game, userId: string) {
+    if (!game || !roomId) return;
+    const idx = game.users.findIndex((user) => user.userId === userId);
+    if (idx !== -1) game.users[idx].success = true;
+    const count = game.users.filter((user) => user.success).length;
+    console.log('handle ready', count, idx);
+    if (count === game.total || count === 1) {
+      this.server.to(roomId).emit('music.play', game);
+      game.users.forEach((user) => {
+        user.success = false;
+      });
+    }
   }
 }

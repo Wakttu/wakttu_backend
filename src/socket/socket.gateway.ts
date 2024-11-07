@@ -1113,13 +1113,14 @@ export class SocketGateway
     client.join(roomId);
     this.game[roomId] = new Game();
     this.game[roomId].host = this.user[client.id].id;
-    this.game[roomId].users = [this.user[client.id]];
+    this.game[roomId].users = [
+      { userId: this.user[client.id].id, ...this.user[client.id] },
+    ];
     this.roomInfo[roomId] = new Room();
     this.roomInfo[roomId].users = [this.user[client.id]];
     this.roomInfo[roomId].round = 1;
     this.roomInfo[roomId].total = 1;
 
-    console.log(this.game[roomId]);
     try {
       this.logger.log(`Starting music quiz game - Room: ${roomId}`);
       if (this.game[roomId].host !== this.user[client.id].id) {
@@ -1166,6 +1167,28 @@ export class SocketGateway
       roomId,
       this.roomInfo[roomId],
       this.game[roomId],
+    );
+  }
+
+  @SubscribeMessage('music.ready')
+  handleMusicReady(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.user[client.id]) {
+      this.logger.warn(`User ${client.id} not found in music.ready`);
+      return;
+    }
+    if (!this.game[roomId]) {
+      this.logger.warn(`Room ${roomId} not found in music.ready`);
+      return;
+    }
+
+    this.logger.debug('Music Ready ');
+    this.musicService.handleReady(
+      roomId,
+      this.game[roomId],
+      this.user[client.id].id,
     );
   }
 }
