@@ -82,7 +82,7 @@ export class RoomService {
 
   async findById(id: string): Promise<Room> {
     try {
-      const room = await this.prisma.room.findUnique({
+      return await this.prisma.room.findUnique({
         where: { id },
         include: {
           users: {
@@ -97,12 +97,6 @@ export class RoomService {
           },
         },
       });
-
-      if (!room) {
-        throw new NotFoundException(`ID ${id}인 방을 찾을 수 없습니다.`);
-      }
-
-      return room;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new BadRequestException('방을 찾는 중 오류가 발생했습니다.');
@@ -128,7 +122,7 @@ export class RoomService {
         },
       });
     } catch (error) {
-      throw new BadRequestException(`ID ${id}인 방 업��이트에 실패했습니다.`);
+      throw new BadRequestException(`ID ${id}인 방 업데이트에 실패했습니다.`);
     }
   }
 
