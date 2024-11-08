@@ -1191,4 +1191,41 @@ export class SocketGateway
       this.user[client.id].id,
     );
   }
+
+  @SubscribeMessage('music.answer')
+  handleMusicAnswer(
+    @MessageBody() { roomId, score }: { roomId: string; score: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in music.answer`);
+        return;
+      }
+
+      const idx = this.game[roomId].users.findIndex(
+        (user) => user.userId === this.user[client.id].id,
+      );
+      if (idx === -1) {
+        this.logger.warn(`User not found in room ${roomId}`);
+        return;
+      }
+
+      this.musicService.handleAnswer(idx, this.game[roomId], score);
+      const count = this.game[roomId].users.filter(
+        (user) => user.success === true,
+      );
+
+      if (count.length === this.game[roomId].users.length) {
+        this.handleBellPong(roomId);
+      } else {
+        this.server.to(roomId).emit('bell.game', this.game[roomId]);
+      }
+    } catch (error) {
+      this.logger.error(`Bell answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
+  }
 }

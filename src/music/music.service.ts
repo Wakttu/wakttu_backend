@@ -67,4 +67,19 @@ export class MusicService {
       });
     }
   }
+
+  handleAnswer(idx: number, game: Game, score: number) {
+    const team = game.users[idx].team;
+    if (team) {
+      game.users.forEach((user) => {
+        if (user.team === team) {
+          user.score += score;
+          user.success = true;
+        }
+      });
+    } else {
+      game.users[idx].score += score;
+      game.users[idx].success = true;
+    }
+  }
 }
