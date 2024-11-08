@@ -141,7 +141,15 @@ export class WakgamesService extends WakGames {
         ],
       ],
       ['LILPA', (word) => ['LIL-1', ...(word.id === '띨파' ? ['LIL-2'] : [])]],
-      ['JURURU', (word) => ['JU-1', ...(word.id === '띨르르' ? ['JU-2'] : [])]],
+      [
+        'JURURU',
+        (word) => [
+          'JU-1',
+          ...(word.id === '주폭도' || word.id === '주스단' || word.id === '려우'
+            ? ['JU-2']
+            : []),
+        ],
+      ],
       [
         'GOSEGU',
         (word) => [

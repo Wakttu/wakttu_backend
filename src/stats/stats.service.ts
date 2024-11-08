@@ -187,7 +187,7 @@ export class StatsService {
         'JU-2': [
           {
             threshold: 5,
-            id: 'DERPJU',
+            id: 'MOT',
           },
         ],
         'GO-1': [
@@ -301,7 +301,15 @@ export class StatsService {
       ],
     ],
     ['LILPA', (word) => ['LIL-1', ...(word.id === '띨파' ? ['LIL-2'] : [])]],
-    ['JURURU', (word) => ['JU-1', ...(word.id === '띨르르' ? ['JU-2'] : [])]],
+    [
+      'JURURU',
+      (word) => [
+        'JU-1',
+        ...(word.id === '주폭도' || word.id === '주스단' || word.id === '려우'
+          ? ['JU-2']
+          : []),
+      ],
+    ],
     [
       'GOSEGU',
       (word) => [
