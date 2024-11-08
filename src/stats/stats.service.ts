@@ -187,7 +187,7 @@ export class StatsService {
         'JU-2': [
           {
             threshold: 5,
-            id: 'DERPJU',
+            id: 'MOT',
           },
         ],
         'GO-1': [
