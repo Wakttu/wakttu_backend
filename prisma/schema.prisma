@@ -17,11 +17,11 @@ model User {
   roomId    String?
   character Json           @default("{\"skin\": \"S-1\"}")
   keyboard  String[]
+  achieves  Achievements[]
+  stats     Stats[]
   room      Room?          @relation(fields: [roomId], references: [id])
   emoji     UserGetEmoji[]
   item      UserGetItem[]
-  stats     Stats[] // 유저가 가진 통계들
-  achieves  Achievements[] // 유저가 가진 업적들     
 }
 
 model Room {
@@ -95,8 +95,8 @@ model Item {
   hint        String?
   author      String
   url         String
-  user        UserGetItem[]
   achieveId   String[]
+  user        UserGetItem[]
 }
 
 model UserGetItem {
@@ -133,21 +133,21 @@ model Achieve {
 }
 
 model Achievements {
-  id        String   
-  userId    String // 유저와의 외래키
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String
+  userId    String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
- @@id([id, userId])
- }
+  @@id([id, userId])
+}
 
 model Stats {
-  id        String  
-  userId    String // 유저와의 외래키
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  value     Int // 통계 값
+  id        String
+  userId    String
+  value     Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([id, userId])
 }
