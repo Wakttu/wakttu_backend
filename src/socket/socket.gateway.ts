@@ -1228,4 +1228,26 @@ export class SocketGateway
         .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
     }
   }
+
+  // ping
+  @SubscribeMessage('music.ping')
+  handleMusicPing(@MessageBody() roomId: string) {
+    let time = 90;
+    const timeId = setInterval(() => {
+      this.server.to(roomId).emit('music.ping');
+      time--;
+      if (time === 0) {
+        this.handleMusicPong(roomId);
+      }
+    }, 1000);
+    this.ping[roomId] = timeId;
+  }
+
+  // pong
+  @SubscribeMessage('music.pong')
+  handleMusicPong(@MessageBody() roomId) {
+    clearInterval(this.ping[roomId]);
+    delete this.ping[roomId];
+    this.server.to(roomId).emit('music.pong');
+  }
 }
