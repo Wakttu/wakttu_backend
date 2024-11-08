@@ -1079,9 +1079,8 @@ export class SocketGateway
 
       if (count.length === this.game[roomId].users.length) {
         this.handleBellPong(roomId);
-      } else {
-        this.server.to(roomId).emit('bell.game', this.game[roomId]);
       }
+      this.server.to(roomId).emit('bell.game', this.game[roomId]);
     } catch (error) {
       this.logger.error(`Bell answer error: ${error.message}`, error.stack);
       this.server
