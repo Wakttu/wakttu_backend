@@ -81,7 +81,7 @@ model UserGetEmoji {
   emojiId   String
   createdAt DateTime @default(now()) @map("created_at")
   emoji     Emoji    @relation(fields: [emojiId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, emojiId])
   @@map("user_get_emoji")
@@ -103,8 +103,8 @@ model UserGetItem {
   userId    String
   itemId    String
   createdAt DateTime @default(now()) @map("created_at")
-  item      Item     @relation(fields: [itemId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, itemId])
   @@map("user_get_item")
