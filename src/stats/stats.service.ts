@@ -147,10 +147,6 @@ export class StatsService {
             threshold: 100,
             id: 'GANGAJI',
           },
-          {
-            threshold: 1,
-            id: 'test_achieve_2',
-          },
         ],
         'JING-2': [
           {
@@ -162,10 +158,6 @@ export class StatsService {
           {
             threshold: 10,
             id: 'BABYBAT',
-          },
-          {
-            threshold: 1,
-            id: 'test_achieve_3',
           },
           {
             threshold: 100,
