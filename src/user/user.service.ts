@@ -154,7 +154,10 @@ export class UserService {
       const result = {};
       await Promise.all(
         data.map(async (user) => {
-          const updatedScore = await this.updateScore(user.userId, user.score);
+          const updatedScore = await this.updateScore(
+            user.userId,
+            Math.floor(user.score / 10),
+          );
           result[user.id] = updatedScore.score;
         }),
       );
