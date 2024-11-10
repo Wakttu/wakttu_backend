@@ -31,15 +31,14 @@ export class LastService {
     const lastRound = roomInfo.round;
     if (curRound === lastRound) {
       game.users.sort((a, b) => b.score - a.score);
-      game.users.forEach((user) => {
-        this.socketGateway.user[user.id].score = user.exp + user.score;
-      });
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
-      await this.socketService.setResult(game.users);
+      const scores = await this.socketService.setResult(game.users);
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
-
+      game.users.forEach((user) => {
+        this.socketGateway.user[user.id].score = scores[user.id];
+      });
       game.users.splice(0, game.total);
       game.turn = -1;
       this.server

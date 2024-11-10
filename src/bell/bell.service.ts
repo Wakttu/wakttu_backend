@@ -36,10 +36,7 @@ export class BellService {
         .to(roomId)
         .emit('bell.result', { game: game, roomInfo: roomInfo });
       const scores = await this.socketService.setResult(game.users);
-      const result = await this.socketService.setStart(roomId, roomInfo.start);
-      roomInfo.start = result.start;
-      roomInfo.users = result.users;
-      roomInfo = { ...result };
+      roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
       game.users.forEach((user) => {
         this.socketGateway.user[user.id].score = scores[user.id];
       });
