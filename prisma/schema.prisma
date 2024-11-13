@@ -1,0 +1,153 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String         @id
+  name      String
+  score     Int            @default(0)
+  provider  String
+  password  String?
+  roomId    String?
+  character Json           @default("{\"skin\": \"S-1\"}")
+  keyboard  String[]
+  achieves  Achievements[]
+  stats     Stats[]
+  room      Room?          @relation(fields: [roomId], references: [id])
+  emoji     UserGetEmoji[]
+  item      UserGetItem[]
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  title     String
+  password  String?
+  type      Int
+  option    String[]
+  start     Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  round     Int
+  total     Int
+  idx       Int      @default(autoincrement())
+  time      Int      @default(60000)
+  users     User[]
+}
+
+model Dictionary {
+  id    String  @id @map("_id") @db.VarChar
+  type  String?
+  mean  String?
+  meta  Json?   @db.Json
+  hit   Int     @default(0)
+  wakta Boolean @default(false)
+
+  @@map("wakttu_ko")
+}
+
+model Quiz {
+  id    String  @id @map("_id") @db.VarChar
+  type  String?
+  mean  String?
+  meta  Json?   @db.Json
+  wakta Boolean @default(false)
+
+  @@map("wakttu_quiz")
+}
+
+model Manner {
+  id String @id @map("_id") @db.VarChar
+
+  @@map("wakttu_manner")
+}
+
+model Emoji {
+  id          String         @id @map("_id") @db.VarChar
+  name        String
+  url         String
+  author      String
+  description String?
+  users       UserGetEmoji[]
+}
+
+model UserGetEmoji {
+  userId    String
+  emojiId   String
+  createdAt DateTime @default(now()) @map("created_at")
+  emoji     Emoji    @relation(fields: [emojiId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, emojiId])
+  @@map("user_get_emoji")
+}
+
+model Item {
+  id          String        @id @map("_id")
+  name        String
+  category    String
+  description String?
+  hint        String?
+  author      String
+  url         String
+  achieveId   String[]
+  user        UserGetItem[]
+}
+
+model UserGetItem {
+  userId    String
+  itemId    String
+  createdAt DateTime @default(now()) @map("created_at")
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, itemId])
+  @@map("user_get_item")
+}
+
+model Ban {
+  id        Int      @id @default(autoincrement())
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model wakttu_mission {
+  id String @id @map("_id") @db.VarChar(1)
+}
+
+model Achieve {
+  id     String  @id
+  author String
+  name   String
+  desc   String
+  hint   String  @default("")
+  type   String  @default("woowakgood")
+  hidden Boolean @default(false)
+  statId String?
+}
+
+model Achievements {
+  id        String
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([id, userId])
+}
+
+model Stats {
+  id        String
+  userId    String
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([id, userId])
+}
