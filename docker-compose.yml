@@ -6,13 +6,7 @@ services:
     ports:
       - 1945:1945
     env_file:
-      - .env
+      - backend.env
     environment:
       - PORT=1945
-    networks:
-      - nginx-bridge
     restart: always
-
-networks:
-  nginx-bridge:
-    external: true
