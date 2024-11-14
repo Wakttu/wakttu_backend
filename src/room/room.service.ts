@@ -10,12 +10,17 @@ import { CreateRoom, Room } from './entities/room.entity';
 
 @Injectable()
 export class RoomService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    this.idx = 0;
+  }
+  public idx;
 
   async create(data: CreateRoomDto): Promise<CreateRoom> {
     try {
+      const _data = { ...data, idx: this.idx++ };
+      this.idx %= 1000;
       return this.prisma.room.create({
-        data,
+        data: _data,
         include: {
           users: {
             select: {
