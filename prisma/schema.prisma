@@ -35,7 +35,7 @@ model Room {
   updatedAt DateTime @updatedAt
   round     Int
   total     Int
-  idx       Int      @default(autoincrement())
+  idx       Int      @default(0)
   time      Int      @default(60000)
   users     User[]
 }
