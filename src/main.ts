@@ -13,7 +13,9 @@ async function bootstrap() {
     origin:
       process.env.NODE_ENV === 'production'
         ? ['https://wakttu.kr', 'https://www.wakttu.kr'] // production CORS
-        : ['http://localhost:3000'], // development CORS
+        : process.env.NODE_ENV === 'jogong'
+          ? ['for-jogong.wakttu.kr'] // jogong CORS
+          : ['http://localhost:3000'], // development CORS
     credentials: true,
   });
 
