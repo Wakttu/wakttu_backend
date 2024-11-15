@@ -28,9 +28,9 @@ export class KungService {
     game.target = '';
     game.total = game.users.length;
     game.roundTime = roomInfo.time;
-    roomInfo.start = (
-      await this.socketService.setStart(roomId, roomInfo.start)
-    ).start;
+    roomInfo.start = true;
+    await this.socketService.setStart(roomId, false);
+
     game.keyword = await this.socketService.setWord(roomInfo.round);
     if (roomInfo.option.includes('팀전'))
       this.socketService.teamShuffle(game, game.team);

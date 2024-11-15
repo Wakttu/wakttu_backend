@@ -22,9 +22,9 @@ export class BellService {
     game.target = '';
     game.total = game.users.length;
     game.quiz = await this.socketService.getQuiz(roomInfo.round);
-    roomInfo.start = (
-      await this.socketService.setStart(roomId, roomInfo.start)
-    ).start;
+    roomInfo.start = true;
+    await this.socketService.setStart(roomId, false);
+
     this.server.to(roomId).emit('bell.start', game);
   }
 
@@ -37,6 +37,8 @@ export class BellService {
         .emit('bell.result', { game: game, roomInfo: roomInfo });
       const scores = await this.socketService.setResult(game.users);
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
+      console.log(roomInfo);
+
       game.users.forEach((user) => {
         this.socketGateway.user[user.id].score = scores[user.id];
       });
