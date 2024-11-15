@@ -133,4 +133,9 @@ export class AuthController {
     req.session.refreshToken = refreshToken;
     return { status: 201, accessToken, refreshToken };
   }
+
+  @Get('discord')
+  async discordAuh(@Req() req: Request) {
+    return req.user;
+  }
 }
