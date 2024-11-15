@@ -19,9 +19,8 @@ export class LastService {
     game.total = game.users.length;
     game.roundTime = roomInfo.time;
     game.keyword = await this.socketService.setWord(roomInfo.round);
-    roomInfo.start = (
-      await this.socketService.setStart(roomId, roomInfo.start)
-    ).start;
+    roomInfo.start = true;
+    await this.socketService.setStart(roomId, false);
     this.server.to(roomId).emit('last.start', game);
   }
 
