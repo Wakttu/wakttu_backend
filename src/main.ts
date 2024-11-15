@@ -33,7 +33,8 @@ async function bootstrap() {
     saveUninitialized: false,
     cookie: {
       maxAge: 86400000 * 2,
-      httpOnly: true,
+      secure: process.env.NODE_ENV === 'development', // 배포 환경에서 HTTPS 사용 시 활성화
+      sameSite: 'none',
     },
     store: store,
   });
