@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SocketModule } from './socket/socket.module';
@@ -16,6 +16,7 @@ import { WakgamesModule } from './wakgames/wakgames.module';
 import { BellModule } from './bell/bell.module';
 import { ItemModule } from './item/item.module';
 import { StatsModule } from './stats/stats.module';
+import { CloudflareAuthMiddleware } from './cf-auth.middleware';
 
 @Module({
   imports: [
@@ -42,4 +43,10 @@ import { StatsModule } from './stats/stats.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(CloudflareAuthMiddleware) // Cloudflare 인증 미들웨어 적용
+      .forRoutes('*'); // 모든 라우트에 적용 (필요시 특정 경로만 설정 가능)
+  }
+}
