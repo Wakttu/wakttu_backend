@@ -16,6 +16,7 @@ async function bootstrap() {
         : ['http://localhost:3000'], // development CORS
     credentials: true,
   });
+
   const MongoStore = MongoDBStore(session);
 
   const store = new MongoStore({
