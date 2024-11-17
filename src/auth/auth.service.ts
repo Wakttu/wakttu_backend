@@ -161,6 +161,27 @@ export class AuthService {
     }
   }
 
+  async discordUser(custom: any) {
+    try {
+      const _user = await this.userService.findById(custom.id);
+      if (_user) {
+        return _user;
+      }
+      const user = {
+        id: custom.id,
+        name: custom.username,
+        provider: 'discord',
+        password: null,
+      };
+      const newUser = await this.userService.create(user);
+      return newUser;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      console.log(error);
+      throw new BadRequestException('디코 로그인 중 오류가 발생했습니다.');
+    }
+  }
+
   async guestUser() {
     try {
       const user = {
