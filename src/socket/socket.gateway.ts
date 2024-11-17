@@ -234,6 +234,10 @@ export class SocketGateway
         }
       }
 
+      if (this.user[client.id].provider === 'guest') {
+        await this.socketService.deleteGuest(this.user[client.id].id);
+      }
+
       delete this.user[client.id];
       this.server.emit('list', this.user);
 
