@@ -133,4 +133,10 @@ export class AuthController {
     req.session.refreshToken = refreshToken;
     return { status: 201, accessToken, refreshToken };
   }
+
+  @Get('guest')
+  async guest(@Session() session) {
+    session.user = await this.authService.guestUser();
+    return session.user ? { status: 200 } : { status: 400 };
+  }
 }
