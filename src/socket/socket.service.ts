@@ -393,4 +393,8 @@ export class SocketService {
   ) {
     return await this.userService.updateResult(users);
   }
+
+  async deleteGuest(id: string) {
+    await this.userService.deleteGuest(id);
+  }
 }
