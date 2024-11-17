@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { Inject, UseGuards, forwardRef, Logger } from '@nestjs/common';
+import { Inject, forwardRef, Logger } from '@nestjs/common';
 import { SocketAuthenticatedGuard } from 'src/socket/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
@@ -87,7 +87,6 @@ export class Game {
   turnChanged: boolean;
 }
 
-@UseGuards(SocketAuthenticatedGuard)
 @WebSocketGateway({
   namespace: 'wakttu',
   cors: { origin: true, credentials: true },
@@ -112,6 +111,7 @@ export class SocketGateway
     @Inject(forwardRef(() => BellService))
     private readonly bellService: BellService,
     private readonly socketService: SocketService,
+    private readonly guard: SocketAuthenticatedGuard,
   ) {}
 
   @WebSocketServer()
@@ -139,6 +139,12 @@ export class SocketGateway
   // 접속시 수행되는 코드
   async handleConnection(@ConnectedSocket() client: any) {
     try {
+      const isAuthenticated = await this.guard.validateClient(client);
+
+      if (!isAuthenticated) {
+        client.disconnect(); // 인증 실패 시 연결 해제
+        return;
+      }
       // 최대 연결 수 체크
       if (this.currentConnections >= this.MAX_CONNECTIONS) {
         this.logger.warn(
@@ -228,6 +234,10 @@ export class SocketGateway
         }
       }
 
+      if (this.user[client.id].provider === 'guest') {
+        await this.socketService.deleteGuest(this.user[client.id].id);
+      }
+
       delete this.user[client.id];
       this.server.emit('list', this.user);
 
@@ -298,7 +308,10 @@ export class SocketGateway
     @MessageBody() chat: string,
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.emit('lobby.chat', { user: this.user[client.id], chat: chat });
+    this.server.emit('lobby.chat', {
+      user: this.user[client.id],
+      chat: chat,
+    });
   }
 
   // 게임 방에서 대화
@@ -417,14 +430,21 @@ export class SocketGateway
       const roomInfo = await this.socketService.updateRoom(roomId, data);
       this.roomInfo[roomId] = roomInfo;
       this.game[roomId].users = [];
-      this.game[roomId].team = { woo: [], gomem: [], academy: [], isedol: [] };
+      this.game[roomId].team = {
+        woo: [],
+        gomem: [],
+        academy: [],
+        isedol: [],
+      };
       this.server.to(roomId).emit('updateRoom', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
       });
     } catch (error) {
       this.logger.error(`Room update error: ${error.message}`, error.stack);
-      client.emit('alarm', { message: '방 업데이트 중 오류가 발생했습니다.' });
+      client.emit('alarm', {
+        message: '방 업데이트 중 오류가 발생했습니다.',
+      });
     }
   }
 

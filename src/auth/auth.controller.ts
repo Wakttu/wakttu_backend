@@ -138,4 +138,10 @@ export class AuthController {
   async discordAuh(@Req() req: Request) {
     return req.user;
   }
+
+  @Get('guest')
+  async guest(@Session() session) {
+    session.user = await this.authService.guestUser();
+    return session.user ? { status: 200 } : { status: 400 };
+  }
 }
