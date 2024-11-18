@@ -20,7 +20,6 @@ export class MusicService {
     game.round = 0;
     game.target = '';
     game.total = game.users.length;
-    //game.quiz = await this.socketService.getQuiz(roomInfo.round);
     game.music = [
       {
         videoId: 'c5p1TEC0JqE',
@@ -28,6 +27,7 @@ export class MusicService {
         title: '노브레인(NoBrain) - 비와 당신 Covered by 바이터',
         thumbnail: 'https://i.ytimg.com/vi/c5p1TEC0JqE/default.jpg',
         answer: ['비와당신', '비와 당신'],
+        tag: ['고멤'],
       },
       {
         videoId: '8MImc3MxYZg',
@@ -35,21 +35,21 @@ export class MusicService {
         title: 'DRAMAㅣ징버거 COVER',
         thumbnail: 'https://i.ytimg.com/vi/8MImc3MxYZg/default.jpg',
         answer: ['드라마', 'drama'],
+        tag: ['징버거'],
       },
     ];
-    /*roomInfo.start = (
-      await this.socketService.setStart(roomId, roomInfo.start)
-    ).start;*/
+    roomInfo.start = true;
+    await this.socketService.setStart(roomId, false);
     this.server.to(roomId).emit('music.start', game);
   }
 
   handleRound(roomId: string, roomInfo: Room, game: Game) {
     if (!game) return;
-    /*if (game.round === roomInfo.round) {
+    if (game.round === roomInfo.round) {
       this.server.to(roomId).emit('music.end', game);
       return;
-    }*/
-    console.log('handle round');
+    }
+    game.users.forEach((user) => (user.success = undefined));
     game.target = game.music[game.round++].answer;
     this.server.to(roomId).emit('music.round', game);
   }
@@ -59,12 +59,11 @@ export class MusicService {
     const idx = game.users.findIndex((user) => user.userId === userId);
     if (idx !== -1) game.users[idx].success = true;
     const count = game.users.filter((user) => user.success).length;
-    console.log('handle ready', count, idx);
-    if (count === game.total || count === 1) {
-      this.server.to(roomId).emit('music.play', game);
+    if (count === game.users.length) {
       game.users.forEach((user) => {
         user.success = false;
       });
+      this.server.to(roomId).emit('music.play', game);
     }
   }
 

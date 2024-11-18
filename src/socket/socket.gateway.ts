@@ -91,6 +91,7 @@ export class Game {
     title: string;
     thumbnail: string;
     answer: string[];
+    tag: string[];
   }[];
   loading?: boolean;
   turnChanged: boolean;
@@ -1133,54 +1134,31 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(roomId);
-    this.game[roomId] = new Game();
-    this.game[roomId].host = this.user[client.id].id;
-    this.game[roomId].users = [
-      { userId: this.user[client.id].id, ...this.user[client.id] },
-    ];
-    this.roomInfo[roomId] = new Room();
-    this.roomInfo[roomId].users = [this.user[client.id]];
-    this.roomInfo[roomId].round = 1;
-    this.roomInfo[roomId].total = 1;
-
     try {
-      this.logger.log(`Starting music quiz game - Room: ${roomId}`);
       if (this.game[roomId].host !== this.user[client.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
-      /*if (
+      if (
         this.game[roomId].users.length + 1 !==
-       / this.roomInfo[roomId].users.length
+        this.roomInfo[roomId].users.length
       ) {
         client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
         return;
-      }*/
+      }
+      this.handleReady(roomId, client);
 
-      //this.handleReady(roomId, client);
-
-      /*if (this.roomInfo[roomId].option.includes('팀전'))
-        this.socketService.teamShuffle(
-          this.game[roomId],
-          this.game[roomId].team,
-        );
-      else this.socketService.shuffle(this.game[roomId]);
-*/
-      /*
-      this.game[roomId].option = this.socketService.getOption(
-        this.roomInfo[roomId].option,
-      );
-      this.game[roomId].roundTime = this.roomInfo[roomId].time;
-*/
       await this.musicService.handleStart(
         roomId,
         this.roomInfo[roomId],
         this.game[roomId],
       );
     } catch (error) {
-      this.logger.error(`Game start error - Room: ${roomId}`, error.stack);
-      client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
+      this.logger.error(
+        `music game start error: ${error.message}`,
+        error.stack,
+      );
+      client.emit('alarm', { message: '게임 시작 중 오류 발생했습니다.' });
     }
   }
 
@@ -1240,139 +1218,11 @@ export class SocketGateway
       );
 
       if (count.length === this.game[roomId].users.length) {
-        this.handleBellPong(roomId);
+        console.log('모두 정답!');
       }
-      this.server.to(roomId).emit('bell.game', this.game[roomId]);
+      this.server.to(roomId).emit('music.answer', this.game[roomId]);
     } catch (error) {
-      this.logger.error(`Bell answer error: ${error.message}`, error.stack);
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
-    }
-  }
-
-  /*
-   * 왁타버스 뮤직 퀴즈
-   */
-
-  @SubscribeMessage('music.start')
-  async handleMusicStart(
-    @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
-  ) {
-    client.join(roomId);
-    this.game[roomId] = new Game();
-    this.game[roomId].host = this.user[client.id].id;
-    this.game[roomId].users = [
-      { userId: this.user[client.id].id, ...this.user[client.id] },
-    ];
-    this.roomInfo[roomId] = new Room();
-    this.roomInfo[roomId].users = [this.user[client.id]];
-    this.roomInfo[roomId].round = 1;
-    this.roomInfo[roomId].total = 1;
-
-    try {
-      this.logger.log(`Starting music quiz game - Room: ${roomId}`);
-      if (this.game[roomId].host !== this.user[client.id].id) {
-        client.emit('alarm', { message: '방장이 아닙니다.' });
-        return;
-      }
-      /*if (
-        this.game[roomId].users.length + 1 !==
-       / this.roomInfo[roomId].users.length
-      ) {
-        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
-        return;
-      }*/
-
-      //this.handleReady(roomId, client);
-
-      /*if (this.roomInfo[roomId].option.includes('팀전'))
-        this.socketService.teamShuffle(
-          this.game[roomId],
-          this.game[roomId].team,
-        );
-      else this.socketService.shuffle(this.game[roomId]);
-*/
-      /*
-      this.game[roomId].option = this.socketService.getOption(
-        this.roomInfo[roomId].option,
-      );
-      this.game[roomId].roundTime = this.roomInfo[roomId].time;
-*/
-      await this.musicService.handleStart(
-        roomId,
-        this.roomInfo[roomId],
-        this.game[roomId],
-      );
-    } catch (error) {
-      this.logger.error(`Game start error - Room: ${roomId}`, error.stack);
-      client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
-    }
-  }
-
-  @SubscribeMessage('music.round')
-  handleMusicRound(@MessageBody() roomId: string) {
-    this.musicService.handleRound(
-      roomId,
-      this.roomInfo[roomId],
-      this.game[roomId],
-    );
-  }
-
-  @SubscribeMessage('music.ready')
-  handleMusicReady(
-    @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!this.user[client.id]) {
-      this.logger.warn(`User ${client.id} not found in music.ready`);
-      return;
-    }
-    if (!this.game[roomId]) {
-      this.logger.warn(`Room ${roomId} not found in music.ready`);
-      return;
-    }
-
-    this.logger.debug('Music Ready ');
-    this.musicService.handleReady(
-      roomId,
-      this.game[roomId],
-      this.user[client.id].id,
-    );
-  }
-
-  @SubscribeMessage('music.answer')
-  handleMusicAnswer(
-    @MessageBody() { roomId, score }: { roomId: string; score: number },
-    @ConnectedSocket() client: Socket,
-  ) {
-    try {
-      if (!this.game[roomId]) {
-        this.logger.warn(`Room ${roomId} not found in music.answer`);
-        return;
-      }
-
-      const idx = this.game[roomId].users.findIndex(
-        (user) => user.userId === this.user[client.id].id,
-      );
-      if (idx === -1) {
-        this.logger.warn(`User not found in room ${roomId}`);
-        return;
-      }
-
-      this.musicService.handleAnswer(idx, this.game[roomId], score);
-      const count = this.game[roomId].users.filter(
-        (user) => user.success === true,
-      );
-
-      if (count.length === this.game[roomId].users.length) {
-        this.handleBellPong(roomId);
-      } else {
-        this.server.to(roomId).emit('bell.game', this.game[roomId]);
-      }
-    } catch (error) {
-      this.logger.error(`Bell answer error: ${error.message}`, error.stack);
+      this.logger.error(`Music answer error: ${error.message}`, error.stack);
       this.server
         .to(roomId)
         .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
@@ -1399,5 +1249,40 @@ export class SocketGateway
     clearInterval(this.ping[roomId]);
     delete this.ping[roomId];
     this.server.to(roomId).emit('music.pong');
+  }
+
+  @SubscribeMessage('music.code')
+  handleCode(
+    @MessageBody() { roomId, code }: { roomId: string; code: string },
+  ) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in music.code`);
+        return;
+      }
+      if (code === '!p') this.server.to(roomId).emit('music.play');
+      if (code === '!s') this.handleMusicRoundEnd(roomId);
+    } catch (error) {
+      this.logger.error(`music code error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '명령어 입력 중 오류가 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('music.roundEnd')
+  handleMusicRoundEnd(@MessageBody() roomId: string) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in music.roundEnd`);
+        return;
+      }
+      this.server.to(roomId).emit('music.roundEnd', this.game[roomId]);
+    } catch (error) {
+      this.logger.error(`music round end error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '라운드 종료 중 오류가 발생했습니다.' });
+    }
   }
 }

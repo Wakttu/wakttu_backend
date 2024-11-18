@@ -151,3 +151,14 @@ model Stats {
 
   @@id([id, userId])
 }
+
+model Music {
+  videoId      String   @id
+  title        String
+  channelId    String
+  channelTitle String
+  thumnail_url String
+  answer       String[]
+  tag          String[]
+  start_time   Int @default(0)
+} 
