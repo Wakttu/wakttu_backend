@@ -331,4 +331,117 @@ export class StatsService {
     const handler = this.typeHandlers.get(word.type);
     return handler ? handler(word) : [];
   }
+
+  async getRanks() {
+    try {
+      const results = await this.prisma.$transaction([
+        this.prisma.user.findMany({
+          where: { provider: { notIn: ['manager', 'staff'] } },
+          orderBy: { score: 'desc' },
+          take: 10,
+          select: {
+            name: true,
+            score: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'WOO-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'INE-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'JING-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'LIL-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'JU-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'GO-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+        this.prisma.stats.findMany({
+          where: {
+            id: 'VIi-1',
+            user: { provider: { notIn: ['manager', 'staff'] } },
+          },
+          orderBy: { value: 'desc' },
+          take: 10,
+          select: {
+            user: { select: { name: true, score: true } },
+            value: true,
+          },
+        }),
+      ]);
+
+      return {
+        userRanks: results[0],
+        wooRanks: results[1],
+        ineRanks: results[2],
+        jingRanks: results[3],
+        lilRancks: results[4],
+        juRanks: results[5],
+        goRanks: results[6],
+        viRanks: results[7],
+      };
+    } catch (error) {
+      throw new Error(`랭킹 확인 중 오류 발생: ${error.message}`);
+    }
+  }
 }
