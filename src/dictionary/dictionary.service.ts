@@ -50,20 +50,12 @@ export class DictionaryService {
       const list: string[] = await this.prisma
         .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE LENGTH(_id) = ${length} AND wakta = true ORDER BY random() LIMIT 1`;
 
-      for (const word of list) {
-        let isMannerSafe = true;
-
-        for (const char of word) {
-          const isBlocked = await this.checkManner(char);
-          if (isBlocked) {
-            isMannerSafe = false;
-            break; // 매너에 걸리는 문자가 있으면 다음 단어로 이동
-          }
-        }
-
-        if (isMannerSafe) {
-          return word; // 매너 검사를 통과한 단어 반환
-        }
+      let isMannerSafe = true;
+      list[0]['_id'].split('').map(async (word) => {
+        isMannerSafe = await this.checkManner(word);
+      });
+      if (isMannerSafe) {
+        return list[0]; // 매너 검사를 통과한 단어 반환
       }
       return '우리모두품어놀자'.slice(0, length);
     } catch (error) {
