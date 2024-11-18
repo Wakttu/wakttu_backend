@@ -397,4 +397,10 @@ export class SocketService {
   async deleteGuest(id: string) {
     await this.userService.deleteGuest(id);
   }
+
+  async getFail(target: string) {
+    const data = await this.dicService.search(target, 1, 0);
+    if (data.length > 0) return data[0].id;
+    return '한방!';
+  }
 }
