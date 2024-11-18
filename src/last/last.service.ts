@@ -84,7 +84,7 @@ export class LastService {
     game.loading = false;
   }
 
-  handleTurnEnd(game: Game) {
+  async handleTurnEnd(game: Game) {
     const chain = game.chain;
     const score = game.users[game.turn].score;
 
@@ -92,12 +92,12 @@ export class LastService {
       -1 * Math.round(Math.min(10 + chain * 1.5 + score * 0.15, score));
 
     const team = game.users[game.turn].team;
-
     if (team) {
       game.users.forEach((user) => {
         if (user.team === team) user.score = score + after;
       });
     } else game.users[game.turn].score = score + after;
+    game.target = await this.socketService.getFail(game.target);
   }
 
   handleCheck(word: string, target: string) {
