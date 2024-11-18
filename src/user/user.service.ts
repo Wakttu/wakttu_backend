@@ -154,7 +154,10 @@ export class UserService {
       const result = {};
       await Promise.all(
         data.map(async (user) => {
-          const updatedScore = await this.updateScore(user.userId, user.score);
+          const updatedScore = await this.updateScore(
+            user.userId,
+            Math.ceil(user.score / 10),
+          );
           result[user.id] = updatedScore.score;
         }),
       );
@@ -228,6 +231,14 @@ export class UserService {
       };
     } catch (error) {
       throw new Error(`전체 아이템 획득 실패: ${error.message}`);
+    }
+  }
+
+  async deleteGuest(id: string) {
+    try {
+      return this.prisma.user.delete({ where: { id } });
+    } catch (error) {
+      throw new Error(`게스트 삭제 실패: ${error.message}`);
     }
   }
 }

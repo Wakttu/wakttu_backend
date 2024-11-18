@@ -17,9 +17,13 @@ export class SocketService {
   ) {}
 
   async reloadUser(id: string) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...res } = await this.userService.findById(id);
-    return res;
+    const data = await this.userService.findById(id);
+    if (data.password) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...res } = data;
+      return res;
+    }
+    return data;
   }
   /**
    *
@@ -388,5 +392,9 @@ export class SocketService {
     }[],
   ) {
     return await this.userService.updateResult(users);
+  }
+
+  async deleteGuest(id: string) {
+    await this.userService.deleteGuest(id);
   }
 }

@@ -10,13 +10,15 @@ import { PrismaClientExceptionFilter } from './prisma.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://wakttu.kr',
-      'https://www.wakttu.kr',
-    ],
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? ['https://wakttu.kr', 'https://www.wakttu.kr'] // production CORS
+        : process.env.NODE_ENV === 'jogong'
+          ? ['for-jogong.wakttu.kr'] // jogong CORS
+          : ['http://localhost:3000'], // development CORS
     credentials: true,
   });
+
   const MongoStore = MongoDBStore(session);
 
   const store = new MongoStore({

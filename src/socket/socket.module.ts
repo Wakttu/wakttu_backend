@@ -8,6 +8,7 @@ import { KungModule } from 'src/kung/kung.module';
 import { LastModule } from 'src/last/last.module';
 import { BellModule } from 'src/bell/bell.module';
 import { MusicModule } from 'src/music/music.module';
+import { SocketAuthenticatedGuard } from './socket-auth.guard';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { MusicModule } from 'src/music/music.module';
     forwardRef(() => BellModule),
     forwardRef(() => MusicModule),
   ],
-  providers: [SocketGateway, SocketService],
+  providers: [SocketGateway, SocketService, SocketAuthenticatedGuard],
   exports: [SocketGateway, SocketService],
 })
 export class SocketModule {}

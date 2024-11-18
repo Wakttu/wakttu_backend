@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SocketService } from './socket.service';
-import { Inject, UseGuards, forwardRef, Logger } from '@nestjs/common';
+import { Inject, forwardRef, Logger } from '@nestjs/common';
 import { SocketAuthenticatedGuard } from 'src/socket/socket-auth.guard';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { Room } from 'src/room/entities/room.entity';
@@ -18,6 +18,7 @@ import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 import { BellService } from 'src/bell/bell.service';
+import { ConfigService } from '@nestjs/config';
 import { MusicService } from 'src/music/music.service';
 
 interface Chat {
@@ -95,7 +96,6 @@ export class Game {
   turnChanged: boolean;
 }
 
-@UseGuards(SocketAuthenticatedGuard)
 @WebSocketGateway({
   namespace: 'wakttu',
   cors: { origin: true, credentials: true },
@@ -109,7 +109,7 @@ export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(SocketGateway.name);
-  private readonly MAX_CONNECTIONS = 500; // 최대 연결 수 설정
+  private readonly MAX_CONNECTIONS = 200; // 최대 연결 수 설정
   private currentConnections = 0; // 현재 연결된 소켓 수
 
   constructor(
@@ -122,6 +122,8 @@ export class SocketGateway
     @Inject(forwardRef(() => MusicService))
     private readonly musicService: MusicService,
     private readonly socketService: SocketService,
+    private readonly guard: SocketAuthenticatedGuard,
+    private readonly config: ConfigService,
   ) {}
 
   @WebSocketServer()
@@ -149,6 +151,12 @@ export class SocketGateway
   // 접속시 수행되는 코드
   async handleConnection(@ConnectedSocket() client: any) {
     try {
+      const isAuthenticated = await this.guard.validateClient(client);
+
+      if (!isAuthenticated) {
+        client.disconnect(); // 인증 실패 시 연결 해제
+        return;
+      }
       // 최대 연결 수 체크
       if (this.currentConnections >= this.MAX_CONNECTIONS) {
         this.logger.warn(
@@ -188,7 +196,8 @@ export class SocketGateway
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
     // 다시열릴시 존재하는 방 모두 삭제
-    await this.socketService.deleteAllRoom();
+    const ENV = this.config.get<string>('NODE_ENV');
+    if (ENV === 'production') await this.socketService.deleteAllRoom();
     this.user = {};
     this.game = {};
     // 서버를 service와 연결
@@ -237,6 +246,11 @@ export class SocketGateway
           delete this.game[roomId];
           await this.socketService.deleteRoom(roomId);
         }
+      }
+
+      if (this.user[client.id].provider === 'guest') {
+        await this.socketService.deleteGuest(this.user[client.id].id);
+        client.request.session.destroy(() => {});
       }
 
       delete this.user[client.id];
@@ -309,7 +323,10 @@ export class SocketGateway
     @MessageBody() chat: string,
     @ConnectedSocket() client: Socket,
   ) {
-    this.server.emit('lobby.chat', { user: this.user[client.id], chat: chat });
+    this.server.emit('lobby.chat', {
+      user: this.user[client.id],
+      chat: chat,
+    });
   }
 
   // 게임 방에서 대화
@@ -428,14 +445,21 @@ export class SocketGateway
       const roomInfo = await this.socketService.updateRoom(roomId, data);
       this.roomInfo[roomId] = roomInfo;
       this.game[roomId].users = [];
-      this.game[roomId].team = { woo: [], gomem: [], academy: [], isedol: [] };
+      this.game[roomId].team = {
+        woo: [],
+        gomem: [],
+        academy: [],
+        isedol: [],
+      };
       this.server.to(roomId).emit('updateRoom', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
       });
     } catch (error) {
       this.logger.error(`Room update error: ${error.message}`, error.stack);
-      client.emit('alarm', { message: '방 업데이트 중 오류가 발생했습니다.' });
+      client.emit('alarm', {
+        message: '방 업데이트 중 오류가 발생했습니다.',
+      });
     }
   }
 
@@ -1090,9 +1114,135 @@ export class SocketGateway
 
       if (count.length === this.game[roomId].users.length) {
         this.handleBellPong(roomId);
-      } else {
-        this.server.to(roomId).emit('bell.game', this.game[roomId]);
       }
+      this.server.to(roomId).emit('bell.game', this.game[roomId]);
+    } catch (error) {
+      this.logger.error(`Bell answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
+  }
+
+  /*
+   * 왁타버스 뮤직 퀴즈
+   */
+
+  @SubscribeMessage('music.start')
+  async handleMusicStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    client.join(roomId);
+    this.game[roomId] = new Game();
+    this.game[roomId].host = this.user[client.id].id;
+    this.game[roomId].users = [
+      { userId: this.user[client.id].id, ...this.user[client.id] },
+    ];
+    this.roomInfo[roomId] = new Room();
+    this.roomInfo[roomId].users = [this.user[client.id]];
+    this.roomInfo[roomId].round = 1;
+    this.roomInfo[roomId].total = 1;
+
+    try {
+      this.logger.log(`Starting music quiz game - Room: ${roomId}`);
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      /*if (
+        this.game[roomId].users.length + 1 !==
+       / this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }*/
+
+      //this.handleReady(roomId, client);
+
+      /*if (this.roomInfo[roomId].option.includes('팀전'))
+        this.socketService.teamShuffle(
+          this.game[roomId],
+          this.game[roomId].team,
+        );
+      else this.socketService.shuffle(this.game[roomId]);
+*/
+      /*
+      this.game[roomId].option = this.socketService.getOption(
+        this.roomInfo[roomId].option,
+      );
+      this.game[roomId].roundTime = this.roomInfo[roomId].time;
+*/
+      await this.musicService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Game start error - Room: ${roomId}`, error.stack);
+      client.emit('alarm', { message: '게임 시작 중 오류가 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('music.round')
+  handleMusicRound(@MessageBody() roomId: string) {
+    this.musicService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+  }
+
+  @SubscribeMessage('music.ready')
+  handleMusicReady(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.user[client.id]) {
+      this.logger.warn(`User ${client.id} not found in music.ready`);
+      return;
+    }
+    if (!this.game[roomId]) {
+      this.logger.warn(`Room ${roomId} not found in music.ready`);
+      return;
+    }
+
+    this.logger.debug('Music Ready ');
+    this.musicService.handleReady(
+      roomId,
+      this.game[roomId],
+      this.user[client.id].id,
+    );
+  }
+
+  @SubscribeMessage('music.answer')
+  handleMusicAnswer(
+    @MessageBody() { roomId, score }: { roomId: string; score: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in music.answer`);
+        return;
+      }
+
+      const idx = this.game[roomId].users.findIndex(
+        (user) => user.userId === this.user[client.id].id,
+      );
+      if (idx === -1) {
+        this.logger.warn(`User not found in room ${roomId}`);
+        return;
+      }
+
+      this.musicService.handleAnswer(idx, this.game[roomId], score);
+      const count = this.game[roomId].users.filter(
+        (user) => user.success === true,
+      );
+
+      if (count.length === this.game[roomId].users.length) {
+        this.handleBellPong(roomId);
+      }
+      this.server.to(roomId).emit('bell.game', this.game[roomId]);
     } catch (error) {
       this.logger.error(`Bell answer error: ${error.message}`, error.stack);
       this.server

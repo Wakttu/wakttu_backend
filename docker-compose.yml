@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/wakttu/wakttu_backend:latest
+    ports:
+      - 1945:1945
+    env_file:
+      - .env
+    environment:
+      - PORT=1945
+    networks:
+      - nginx-bridge
+    restart: always
+
+networks:
+  nginx-bridge:
+    external: true

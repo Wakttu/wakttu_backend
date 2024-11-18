@@ -10,12 +10,17 @@ import { CreateRoom, Room } from './entities/room.entity';
 
 @Injectable()
 export class RoomService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    this.idx = 0;
+  }
+  public idx;
 
   async create(data: CreateRoomDto): Promise<CreateRoom> {
     try {
+      const _data = { ...data, idx: this.idx++ };
+      this.idx %= 1000;
       return this.prisma.room.create({
-        data,
+        data: _data,
         include: {
           users: {
             select: {
@@ -82,7 +87,7 @@ export class RoomService {
 
   async findById(id: string): Promise<Room> {
     try {
-      const room = await this.prisma.room.findUnique({
+      return await this.prisma.room.findUnique({
         where: { id },
         include: {
           users: {
@@ -97,12 +102,6 @@ export class RoomService {
           },
         },
       });
-
-      if (!room) {
-        throw new NotFoundException(`ID ${id}인 방을 찾을 수 없습니다.`);
-      }
-
-      return room;
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new BadRequestException('방을 찾는 중 오류가 발생했습니다.');

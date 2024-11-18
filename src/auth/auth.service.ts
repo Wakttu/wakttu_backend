@@ -8,6 +8,7 @@ import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -53,6 +54,8 @@ export class AuthService {
   }
 
   async logout(@Req() request: Request): Promise<any> {
+    const { id, provider } = request.session.user;
+    if (provider === 'guest') this.userService.deleteGuest(id);
     request.session.destroy(() => {});
     return { success: true, message: 'Logout Success' };
   }
@@ -155,6 +158,23 @@ export class AuthService {
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       throw new BadRequestException('토큰 업데이트 중 오류가 발생했습니다.');
+    }
+  }
+
+  async guestUser() {
+    try {
+      const user = {
+        id: randomUUID(),
+        name: '게스트' + Math.floor(Math.random() * 1000),
+        provider: 'guest',
+        password: null,
+      };
+      const newUser = await this.userService.create(user);
+      return newUser;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      console.log(error);
+      throw new BadRequestException('게스트 생성 중 오류가 발생했습니다.');
     }
   }
 }
