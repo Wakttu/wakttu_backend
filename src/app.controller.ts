@@ -14,6 +14,8 @@ export class AppController {
 
   @Get('/test')
   getSession(@Req() req: Request): any {
+    const user = this.appService.findUser(req.session.user);
+    if (!user) req.session.destroy(() => {});
     return req.session;
   }
 
