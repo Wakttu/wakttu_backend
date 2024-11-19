@@ -6,8 +6,8 @@ import { SessionAdapter } from './session.adapter';
 import * as session from 'express-session';
 import * as MongoDBStore from 'connect-mongodb-session';
 
-import Redis from 'ioredis';
-import * as connectRedis from 'connect-redis';
+import { createClient } from 'redis';
+import RedisStore from 'connect-redis';
 import { PrismaClientExceptionFilter } from './prisma.filter';
 
 async function bootstrap() {
@@ -23,16 +23,16 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Redis 클라이언트 생성
-  const redisClient = new Redis({
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+  const redisClient = createClient({
+    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`,
     password: process.env.REDIS_PASSWORD || undefined,
-    db: parseInt(process.env.REDIS_DB, 10) || 0,
+    database: parseInt(process.env.REDIS_DB || '0', 10), // 문자열을 숫자로 변환
   });
 
+  redisClient.on('error', (err) => console.error('Redis Client Error', err));
+  await redisClient.connect(); // Redis v4에서는 connect()를 호출해야 합니다.
+
   const MongoStore = MongoDBStore(session);
-  const RedisStore = connectRedis(session);
 
   const sessionMiddleware = session({
     store:
