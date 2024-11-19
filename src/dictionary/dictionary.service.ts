@@ -48,8 +48,16 @@ export class DictionaryService {
   async getWord(length: number): Promise<string> {
     try {
       const list: string[] = await this.prisma
-        .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} AND wakta = true ORDER BY random() LIMIT 1`;
-      return list[0];
+        .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE LENGTH(_id) = ${length} AND wakta = true ORDER BY random() LIMIT 1`;
+
+      let isMannerSafe = true;
+      list[0]['_id'].split('').map(async (word) => {
+        isMannerSafe = await this.checkManner(word);
+      });
+      if (isMannerSafe) {
+        return list[0]; // 매너 검사를 통과한 단어 반환
+      }
+      return '우리모두품어놀자'.slice(0, length);
     } catch (error) {
       throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
     }

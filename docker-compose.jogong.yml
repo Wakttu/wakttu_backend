@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/wakttu/wakttu_backend:latest
+    ports:
+      - 1945:1945
+    env_file:
+      - backend.env
+    environment:
+      - PORT=1945
+    networks:
+      - nginx-bridge
+      - wakttu
+    restart: unless-stopped
+
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    env_file:
+      - postgres.env
+    environment:
+      TZ: Asia/Seoul
+      PGDATA: /data/postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+    volumes:
+       - ./postgres/data:/data/postgres
+    networks:
+      - wakttu
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - 6379:6379
+    env_file:
+      - redis.env
+    command: redis-server --requirepass $$PASSWORD --port 6379 /usr/local/etc/redis/redis.conf
+    labels:
+      - 'name=redis'
+      - 'mode=standalone'
+    volumes:
+      - ./redis/data:/data
+      - ./redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - wakttu
+    restart: unless-stopped
+
+networks:
+  wakttu:
+    driver: bridge
+  nginx-bridge:
+    external: true

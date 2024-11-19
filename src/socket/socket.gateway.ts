@@ -18,6 +18,7 @@ import { KungService } from 'src/kung/kung.service';
 import { LastService } from 'src/last/last.service';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 import { BellService } from 'src/bell/bell.service';
+import { ConfigService } from '@nestjs/config';
 
 interface Chat {
   roomId: string;
@@ -112,6 +113,7 @@ export class SocketGateway
     private readonly bellService: BellService,
     private readonly socketService: SocketService,
     private readonly guard: SocketAuthenticatedGuard,
+    private readonly config: ConfigService,
   ) {}
 
   @WebSocketServer()
@@ -184,7 +186,8 @@ export class SocketGateway
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
     // 다시열릴시 존재하는 방 모두 삭제
-    // await this.socketService.deleteAllRoom();
+    const ENV = this.config.get<string>('NODE_ENV');
+    if (ENV === 'production') await this.socketService.deleteAllRoom();
     this.user = {};
     this.game = {};
     // 서버를 service와 연결
@@ -236,6 +239,7 @@ export class SocketGateway
 
       if (this.user[client.id].provider === 'guest') {
         await this.socketService.deleteGuest(this.user[client.id].id);
+        client.request.session.destroy(() => {});
       }
 
       delete this.user[client.id];
@@ -797,14 +801,14 @@ export class SocketGateway
   }
 
   @SubscribeMessage('last.turnEnd')
-  handleTurnEnd(@MessageBody() roomId: string) {
+  async handleTurnEnd(@MessageBody() roomId: string) {
     if (this.game[roomId].loading) {
       setTimeout(() => this.handleTurnEnd(roomId), 100);
       return;
     }
 
     if (!this.ping[roomId] && !this.game[roomId].turnChanged) {
-      this.lastService.handleTurnEnd(this.game[roomId]);
+      await this.lastService.handleTurnEnd(this.game[roomId]);
       this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
     }
 
