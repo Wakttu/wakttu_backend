@@ -35,7 +35,9 @@ services:
     image: redis:7.4-alpine
     ports:
       - 6379:6379
-    command: redis-server /usr/local/etc/redis/redis.conf
+    env_file:
+      - redis.env
+    command: redis-server --requirepass $$PASSWORD --port 6379 /usr/local/etc/redis/redis.conf
     labels:
       - 'name=redis'
       - 'mode=standalone'
