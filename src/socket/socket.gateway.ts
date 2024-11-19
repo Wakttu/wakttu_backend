@@ -801,14 +801,14 @@ export class SocketGateway
   }
 
   @SubscribeMessage('last.turnEnd')
-  handleTurnEnd(@MessageBody() roomId: string) {
+  async handleTurnEnd(@MessageBody() roomId: string) {
     if (this.game[roomId].loading) {
       setTimeout(() => this.handleTurnEnd(roomId), 100);
       return;
     }
 
     if (!this.ping[roomId] && !this.game[roomId].turnChanged) {
-      this.lastService.handleTurnEnd(this.game[roomId]);
+      await this.lastService.handleTurnEnd(this.game[roomId]);
       this.server.to(roomId).emit('last.turnEnd', this.game[roomId]);
     }
 
