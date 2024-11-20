@@ -16,8 +16,8 @@ export class AppService {
   }
 
   async findUser(user: any) {
-    if (!user) return false;
+    if (!user || !user.id) return { status: false };
     const data = await this.userService.findById(user.id);
-    return !!data;
+    return { user: data, status: !!data };
   }
 }

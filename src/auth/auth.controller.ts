@@ -146,7 +146,8 @@ export class AuthController {
 
   @Get('guest')
   async guest(@Session() session) {
-    session.user = await this.authService.guestUser();
-    return session.user ? { status: 200 } : { status: 400 };
+    const { status, message, user } = await this.authService.guestUser();
+    session.user = user;
+    return { status, message, user };
   }
 }

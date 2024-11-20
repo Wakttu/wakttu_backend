@@ -29,7 +29,7 @@ async function bootstrap() {
     database: parseInt(process.env.REDIS_DB || '0', 10), // 문자열을 숫자로 변환
   });
 
-  if (process.env.NODE_ENV === 'jogong') {
+  if (process.env.NODE_ENV !== 'development') {
     redisClient.on('error', (err) => console.error('Redis Client Error', err));
     await redisClient.connect(); // Redis v4에서는 connect()를 호출해야 합니다.
   }
@@ -38,7 +38,7 @@ async function bootstrap() {
 
   const sessionMiddleware = session({
     store:
-      process.env.NODE_ENV === 'jogong'
+      process.env.NODE_ENV !== 'development'
         ? new RedisStore({ client: redisClient })
         : new MongoStore({
             uri: process.env.SESSION_DB_URI,

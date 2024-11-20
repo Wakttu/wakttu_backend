@@ -9,12 +9,14 @@ import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
 import { randomUUID } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly wakgamesService: WakgamesService,
+    private readonly config: ConfigService,
   ) {}
 
   async OAuthLogin(user) {
@@ -183,6 +185,32 @@ export class AuthService {
   }
 
   async guestUser() {
+    /*
+    const { captchaToken } = body;
+    if (!captchaToken) return { status: 405, message: '토큰이 존재하지 않음' };
+    try {
+      const response = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            secret: this.config.get<string>('CAPTCHA_SECRET'),
+            response: captchaToken,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        console.error('Turnstile 검증 오류:', data['error-codes']);
+        return { status: 400, message: '검증 오류' };
+      }
+    } catch (error) {
+      console.error('Turnstile 요청 오류:', error);
+      return { status: 400, message: '서버 오류' };
+    }*/
     try {
       const user = {
         id: randomUUID(),
@@ -191,7 +219,7 @@ export class AuthService {
         password: null,
       };
       const newUser = await this.userService.create(user);
-      return newUser;
+      return { status: 200, message: '성공', user: newUser };
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       console.log(error);
