@@ -16,8 +16,8 @@ export class AppService {
   }
 
   async findUser(user: any) {
-    if (!user) return false;
+    if (!user || !user.id) return { status: 400, message: 'Not session' };
     const data = await this.userService.findById(user.id);
-    return !!data;
+    return { status: !!data, message: 'user 정보 확인', user: data };
   }
 }
