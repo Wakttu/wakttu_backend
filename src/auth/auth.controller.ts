@@ -18,6 +18,7 @@ import { IsNotLoginedGuard } from './isNotLogined-auth.guard';
 import { LocalAuthenticatedGuard } from './local-auth.guard';
 import { LoginUserDto } from 'src/user/dto/login-user.dto';
 import { ConfigService } from '@nestjs/config';
+import { CloudflareGuard } from './cf-auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -132,6 +133,15 @@ export class AuthController {
     req.session.accessToken = accessToken;
     req.session.refreshToken = refreshToken;
     return { status: 201, accessToken, refreshToken };
+  }
+
+  @UseGuards(CloudflareGuard)
+  @Get('discord')
+  async discordAuh(@Req() req: Request, @Session() session) {
+    const { custom } = req.user;
+    const user = await this.authService.discordUser(custom);
+    session.user = user;
+    return user;
   }
 
   @Get('guest')
