@@ -6,13 +6,56 @@ services:
     ports:
       - 1945:1945
     env_file:
-      - .env
+      - backend.env
     environment:
       - PORT=1945
     networks:
       - nginx-bridge
-    restart: always
+      - wakttu
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    env_file:
+      - postgres.env
+    environment:
+      TZ: Asia/Seoul
+      PGDATA: /data/postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+    volumes:
+       - ./postgres/data:/data/postgres
+    networks:
+      - wakttu
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - 6379:6379
+    env_file:
+      - redis.env
+    command: redis-server --requirepass "$${PASSWORD}" --include /usr/local/etc/redis/redis.conf
+    labels:
+      - 'name=redis'
+      - 'mode=standalone'
+    volumes:
+      - ./redis/data:/data
+      - ./redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - wakttu
+    restart: unless-stopped
 
 networks:
+  wakttu:
+    driver: bridge
   nginx-bridge:
     external: true
