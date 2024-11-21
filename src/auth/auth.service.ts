@@ -9,12 +9,14 @@ import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
 import { randomUUID } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly wakgamesService: WakgamesService,
+    private readonly config: ConfigService,
   ) {}
 
   async OAuthLogin(user) {
