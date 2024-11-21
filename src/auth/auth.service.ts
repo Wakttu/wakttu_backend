@@ -176,6 +176,7 @@ export class AuthService {
         password: null,
       };
       const newUser = await this.userService.create(user);
+      await this.userService.achieveAllItems(newUser.id);
       return newUser;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;

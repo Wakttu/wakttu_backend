@@ -14,7 +14,7 @@ export class IsJogongGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const NODE_ENV = this.configService.get<string>('NODE_ENV');
 
-    if (NODE_ENV !== 'jogong') {
+    if (NODE_ENV === 'jogong') {
       throw new ForbiddenException(
         'Access to this resource is forbidden in the current environment.',
       );
