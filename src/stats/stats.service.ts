@@ -207,7 +207,7 @@ export class StatsService {
         'VIi-2': [
           {
             threshold: 20,
-            id: 'RANI',
+            id: 'PEACH',
           },
         ],
         'GOMEM-1': [
