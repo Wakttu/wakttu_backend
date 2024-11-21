@@ -18,6 +18,10 @@ export class StatsService {
 
   async createAchieve(id: string, userId: string) {
     try {
+      const check = await this.prisma.achievements.findUnique({
+        where: { id_userId: { id, userId } },
+      });
+      if (check) return null;
       return await this.prisma.achievements.create({
         data: {
           id,
