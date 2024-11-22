@@ -187,7 +187,7 @@ export class SocketGateway
   async afterInit() {
     // 다시열릴시 존재하는 방 모두 삭제
     const ENV = this.config.get<string>('NODE_ENV');
-    if (ENV === 'production') await this.socketService.deleteAllRoom();
+    if (ENV !== 'development') await this.socketService.deleteAllRoom();
     this.user = {};
     this.game = {};
     // 서버를 service와 연결
