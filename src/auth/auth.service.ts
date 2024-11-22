@@ -9,14 +9,14 @@ import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
 import { randomUUID } from 'crypto';
-import { ConfigService } from '@nestjs/config';
+import { StatsService } from 'src/stats/stats.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly wakgamesService: WakgamesService,
-    private readonly config: ConfigService,
+    private readonly statsService: StatsService,
   ) {}
 
   async OAuthLogin(user) {
@@ -177,6 +177,7 @@ export class AuthService {
       };
       const newUser = await this.userService.create(user);
       await this.userService.achieveAllItems(newUser.id);
+      await this.statsService.setJogong(newUser.id);
       return newUser;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
