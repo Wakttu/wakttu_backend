@@ -30,7 +30,7 @@ services:
       TZ: Asia/Seoul
       PGDATA: /data/postgres
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD", "pg_isready", "-U", "wakttu"]
     volumes:
        - ./postgres/data:/data/postgres
     networks:
@@ -43,7 +43,7 @@ services:
       - 6379:6379
     env_file:
       - redis.env
-    command: redis-server --requirepass "$${PASSWORD}" --include /usr/local/etc/redis/redis.conf
+    command: /bin/sh -c "redis-server --requirepass $$PASSWORD --include /usr/local/etc/redis/redis.conf"
     labels:
       - 'name=redis'
       - 'mode=standalone'

@@ -1,11 +1,17 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import * as jwksClient from 'jwks-rsa';
 
 @Injectable()
 export class CloudflareGuard implements CanActivate {
-  private client: jwksClient.JwksClient;
+  private readonly client: jwksClient.JwksClient;
+  private readonly logger = new Logger(CloudflareGuard.name);
 
   constructor(config: ConfigService) {
     const domain = config.get('CLOUD_DOMAIN');
@@ -23,17 +29,17 @@ export class CloudflareGuard implements CanActivate {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      console.error('JWT 없음: Authorization 헤더가 비어 있습니다.');
+      this.logger.error('JWT 없음: Authorization 헤더가 비어 있습니다.');
       return false;
     }
 
     try {
       const decoded = await this.verifyToken(token);
-      // 검증 성공 시 사용자 정보를 요청 객체에 저장
       request.user = decoded;
+      this.logger.log('JWT 검증 성공');
       return true;
     } catch (error) {
-      console.error('JWT 검증 실패:', error.message);
+      this.logger.error('JWT 검증 실패:', error.message);
       return false;
     }
   }
@@ -43,11 +49,13 @@ export class CloudflareGuard implements CanActivate {
       jwt.verify(
         token,
         (header, callback) => this.getKey(header, callback),
-        { algorithms: ['RS256'] }, // Cloudflare는 RS256 알고리즘 사용
+        { algorithms: ['RS256'] },
         (err, decoded) => {
           if (err) {
+            this.logger.error('토큰 검증 오류:', err.message);
             return reject(err);
           }
+          this.logger.log('토큰 검증 완료');
           resolve(decoded);
         },
       );
@@ -57,9 +65,11 @@ export class CloudflareGuard implements CanActivate {
   private getKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
     this.client.getSigningKey(header.kid, (err, key) => {
       if (err) {
+        this.logger.error(`키 가져오기 실패: ${err.message}`);
         return callback(err, null);
       }
       const signingKey = key.getPublicKey();
+      this.logger.log(`키 가져오기 성공: kid=${header.kid}`);
       callback(null, signingKey);
     });
   }

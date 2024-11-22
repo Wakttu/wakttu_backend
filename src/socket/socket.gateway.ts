@@ -101,7 +101,7 @@ export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(SocketGateway.name);
-  private readonly MAX_CONNECTIONS = 200; // 최대 연결 수 설정
+  private readonly MAX_CONNECTIONS = 50; // 최대 연결 수 설정
   private currentConnections = 0; // 현재 연결된 소켓 수
 
   constructor(

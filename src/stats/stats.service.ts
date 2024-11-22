@@ -18,6 +18,10 @@ export class StatsService {
 
   async createAchieve(id: string, userId: string) {
     try {
+      const check = await this.prisma.achievements.findUnique({
+        where: { id_userId: { id, userId } },
+      });
+      if (check) return null;
       return await this.prisma.achievements.create({
         data: {
           id,
@@ -100,6 +104,39 @@ export class StatsService {
       });
     } catch (error) {
       throw new Error(`통계 업데이트 중 오류 발생: ${error.message}`);
+    }
+  }
+
+  async setJogong(userId: string) {
+    const statsArray = {
+      'WOO-1': 98,
+      'WOO-2': 9,
+      'INE-1': 98,
+      'INE-2': 19,
+      'JING-1': 98,
+      'JING-2': 19,
+      'LIL-1': 98,
+      'LIL-2': 4,
+      'JU-1': 98,
+      'JU-2': 4,
+      'GO-1': 98,
+      'GO-2': 19,
+      'VIi-1': 98,
+      'VIi-2': 19,
+      'GOMEM-1': 48,
+      'GOMEM-2': 48,
+      EXIT: 9,
+      FILTER: 9,
+    };
+
+    for (const [statId, incrementValue] of Object.entries(statsArray)) {
+      try {
+        await this.putStat(userId, statId, incrementValue);
+      } catch (error) {
+        console.error(
+          `통계 업데이트 실패 (statId: ${statId}): ${error.message}`,
+        );
+      }
     }
   }
 
