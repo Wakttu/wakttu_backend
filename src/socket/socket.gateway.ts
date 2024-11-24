@@ -138,48 +138,55 @@ export class SocketGateway
     [roomId: string]: NodeJS.Timeout;
   } = {};
 
-  // 접속시 수행되는 코드
   async handleConnection(@ConnectedSocket() client: any) {
     try {
       const isAuthenticated = await this.guard.validateClient(client);
 
       if (!isAuthenticated) {
-        client.disconnect(); // 인증 실패 시 연결 해제
+        client.disconnect();
         return;
       }
-      // 최대 연결 수 체크
-      if (this.currentConnections >= this.MAX_CONNECTIONS) {
+
+      this.currentConnections++; // 연결 수 증가
+
+      // 최대 연결 수 확인
+      if (this.currentConnections > this.MAX_CONNECTIONS) {
         this.logger.warn(
           `Connection rejected - Max connections reached: ${client.id}`,
         );
         client.emit('full', {
           message: '서버가 가득 찼습니다. 잠시 후 다시 시도해주세요.',
         });
-        client.disconnect();
+        setTimeout(() => client.disconnect(), 200);
         return;
       }
-      const user = client.request.session.user;
-      this.logger.log(`Client connected: ${client.id}`);
 
+      const user = client.request.session?.user;
       if (!user) {
         this.logger.warn(`Connection rejected - No user session: ${client.id}`);
         client.disconnect();
         return;
       }
-      for (const key in this.user) {
-        if (this.user[key].id === user.id) {
-          this.server
-            .to(key)
-            .emit('alarm', { message: '이미 접속중인 유저입니다!' });
-          this.handleDisconnect({ id: key });
-        }
+
+      // 중복 접속 확인 및 처리
+      const existingClientId = Object.keys(this.user).find(
+        (key) => this.user[key].id === user.id,
+      );
+      if (existingClientId) {
+        this.server
+          .to(existingClientId)
+          .emit('alarm', { message: '이미 접속중인 유저입니다!' });
+        this.handleDisconnect({ id: existingClientId });
       }
-      this.currentConnections++; // 연결 수 증가
+
       this.user[client.id] = await this.socketService.reloadUser(user.id);
       this.user[client.id].color = this.socketService.getColor();
-      client.emit('list', this.user);
+
+      client.emit('connected'); // 필요한 정보만 전달
+      this.logger.log(`Client connected: ${client.id}`);
     } catch (error) {
       this.logger.error(`Connection error: ${error.message}`, error.stack);
+      client.emit('error', { message: '서버 오류가 발생했습니다.' });
     }
   }
 
@@ -237,7 +244,7 @@ export class SocketGateway
         }
       }
 
-      if (this.user[client.id].provider === 'guest') {
+      if (this.user[client.id] && this.user[client.id].provider === 'guest') {
         await this.socketService.deleteGuest(this.user[client.id].id);
         client.request.session.destroy(() => {});
       }
