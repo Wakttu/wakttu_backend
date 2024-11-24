@@ -56,8 +56,6 @@ export class AuthService {
   }
 
   async logout(@Req() request: Request): Promise<any> {
-    const { id, provider } = request.session.user;
-    if (provider === 'guest') this.userService.deleteGuest(id);
     request.session.destroy(() => {});
     return { success: true, message: 'Logout Success' };
   }
