@@ -28,6 +28,12 @@ interface Chat {
   success?: boolean;
 }
 
+interface Emoticon {
+  emoticonId: string;
+  userId: string;
+  roomId: string;
+}
+
 export class Game {
   constructor() {
     this.host = ''; // 호스트
@@ -401,6 +407,13 @@ export class SocketGateway
     } finally {
       this.game[roomId].loading = false;
     }
+  }
+
+  // Emoticon
+  @SubscribeMessage('emoticon')
+  handleEmoticon(@MessageBody() data: Emoticon) {
+    console.log('emoticon');
+    this.server.to(data.roomId).emit('emoticon', data);
   }
 
   // 게임 방 생성
