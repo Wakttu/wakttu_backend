@@ -412,7 +412,6 @@ export class SocketGateway
   // Emoticon
   @SubscribeMessage('emoticon')
   handleEmoticon(@MessageBody() data: Emoticon) {
-    console.log('emoticon');
     this.server.to(data.roomId).emit('emoticon', data);
   }
 
