@@ -45,7 +45,7 @@ export class DictionaryService {
     return await this.prisma.dictionary.delete({ where: { id } });
   }
 
-  async getWord(length: number): Promise<string> {
+  async getWord(length: number): Promise<any> {
     try {
       const list: string[] = await this.prisma
         .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE LENGTH(_id) = ${length} AND wakta = true ORDER BY random() LIMIT 1`;
@@ -55,11 +55,17 @@ export class DictionaryService {
       for (const char of word.split('')) {
         const isSafe = await this.checkManner(char);
         if (!isSafe) {
-          return '우리모두품어놀자'.slice(0, length);
+          return {
+            _id: '우리모두품어놀자'.slice(0, length),
+            mean: '더미',
+            type: '더미',
+            meta: { url: null },
+            hit: 0,
+          };
         }
       }
 
-      return word;
+      return list[0];
     } catch (error) {
       throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
     }
