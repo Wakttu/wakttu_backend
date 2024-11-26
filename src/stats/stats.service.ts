@@ -320,7 +320,13 @@ export class StatsService {
       [x: string]: any;
     }) => string[]
   >([
-    ['WOO', () => ['WOO-1']],
+    [
+      'WOO',
+      (word) => [
+        'WOO-1',
+        ...(word.id === '신세계의신이되는거다' ? ['WOO-2'] : []),
+      ],
+    ],
     ['INE', (word) => ['INE-1', ...(word.id === '오야' ? ['INE-2'] : [])]],
     [
       'JINGBURGER',
