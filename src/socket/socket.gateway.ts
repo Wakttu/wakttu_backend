@@ -787,6 +787,8 @@ export class SocketGateway
       );
       this.game[roomId].roundTime = this.roomInfo[roomId].time;
 
+      if (this.ping[roomId]) this.handlePong(roomId);
+
       await this.lastService.handleStart(
         roomId,
         this.roomInfo[roomId],
@@ -909,6 +911,9 @@ export class SocketGateway
       this.game[roomId].option = this.socketService.getOption(
         this.roomInfo[roomId].option,
       );
+
+      if (this.ping[roomId]) this.handlePong(roomId);
+
       await this.kungService.handleStart(
         roomId,
         this.roomInfo[roomId],
@@ -1014,6 +1019,8 @@ export class SocketGateway
         return;
       }
       this.handleReady(roomId, client);
+
+      if (this.ping[roomId]) this.handlePong(roomId);
 
       await this.bellService.handleStart(
         roomId,
