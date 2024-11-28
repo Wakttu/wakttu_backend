@@ -381,7 +381,7 @@ export class StatsService {
         this.prisma.user.findMany({
           where: { provider: { notIn: ['manager', 'staff'] } },
           orderBy: { score: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             name: true,
             score: true,
@@ -393,7 +393,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -405,7 +405,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -417,7 +417,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -429,7 +429,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -441,7 +441,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -453,7 +453,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -465,7 +465,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -474,11 +474,13 @@ export class StatsService {
       ]);
 
       return {
-        userRanks: results[0],
+        userRanks: results[0].map((item) => {
+          return { user: item };
+        }),
         wooRanks: results[1],
         ineRanks: results[2],
         jingRanks: results[3],
-        lilRancks: results[4],
+        lilRanks: results[4],
         juRanks: results[5],
         goRanks: results[6],
         viRanks: results[7],
