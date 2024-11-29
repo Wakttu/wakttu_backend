@@ -243,13 +243,13 @@ export class StatsService {
             id: 'PEACH',
           },
         ],
-        'GOMEM-1': [
+        'GOM-1': [
           {
             threshold: 50,
             id: 'GOMEM',
           },
         ],
-        'GOMEM-2': [
+        'GOM-2': [
           {
             threshold: 50,
             id: 'ACADEMY',
