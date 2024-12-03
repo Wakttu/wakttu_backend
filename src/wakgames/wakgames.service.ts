@@ -131,7 +131,13 @@ export class WakgamesService extends WakGames {
 
   private readonly typeHandlers = new Map<string, (word: WordData) => string[]>(
     [
-      ['WOO', () => ['WOO-1']],
+      [
+        'WOO',
+        (word) => [
+          'WOO-1',
+          ...(word.id === '신세계의신이되는거다' ? ['WOO-2'] : []),
+        ],
+      ],
       ['INE', (word) => ['INE-1', ...(word.id === '오야' ? ['INE-2'] : [])]],
       [
         'JINGBURGER',
@@ -164,7 +170,7 @@ export class WakgamesService extends WakGames {
       [
         'GOMEM',
         (word) => [
-          ...(word.meta?.tag.includes('고멤') ? ['GOM-1'] : []),
+          ...(word.meta?.tag.includes('클래식') ? ['GOM-1'] : []),
           ...(word.meta?.tag.includes('아카데미') ? ['GOM-2'] : []),
         ],
       ],
