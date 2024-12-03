@@ -728,11 +728,12 @@ export class SocketGateway
   @SubscribeMessage('start')
   async handleStart(@MessageBody() roomId: string) {
     try {
-      const roomInfo = await this.socketService.setStart(roomId, true);
+      this.roomInfo[roomId] = await this.socketService.setStart(roomId, true);
       this.game[roomId].users = [];
-      this.server
-        .to(roomId)
-        .emit('start', { roomInfo, game: this.game[roomId] });
+      this.server.to(roomId).emit('start', {
+        roomInfo: this.roomInfo[roomId],
+        game: this.game[roomId],
+      });
     } catch (error) {
       this.logger.error(`Start game error - Room: ${roomId}`, error.stack);
       this.server
