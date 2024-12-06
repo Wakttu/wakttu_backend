@@ -19,6 +19,7 @@ import { LastService } from 'src/last/last.service';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 import { BellService } from 'src/bell/bell.service';
 import { ConfigService } from '@nestjs/config';
+import { CloudService } from 'src/cloud/cloud.service';
 
 interface Chat {
   roomId: string;
@@ -90,6 +91,14 @@ export class Game {
     choseong: string;
     hint: string[];
   }[];
+  cloud?: {
+    _id: string;
+    x: string;
+    y: string;
+    delay: string;
+    duration: string;
+    [x: string]: any;
+  }[];
   loading?: boolean;
   turnChanged: boolean;
 }
@@ -117,6 +126,8 @@ export class SocketGateway
     private readonly kungService: KungService,
     @Inject(forwardRef(() => BellService))
     private readonly bellService: BellService,
+    @Inject(forwardRef(() => CloudService))
+    private readonly cloudService: CloudService,
     private readonly socketService: SocketService,
     private readonly guard: SocketAuthenticatedGuard,
     private readonly config: ConfigService,
@@ -1134,6 +1145,142 @@ export class SocketGateway
       this.server.to(roomId).emit('bell.game', this.game[roomId]);
     } catch (error) {
       this.logger.error(`Bell answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
+  }
+
+  /**
+   * Cloud
+   */
+
+  @SubscribeMessage('cloud.start')
+  async handleCloudStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      if (
+        this.game[roomId].users.length + 1 !==
+        this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }
+      this.handleReady(roomId, client);
+
+      if (this.ping[roomId]) this.handlePong(roomId);
+
+      await this.cloudService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(
+        `Cloud game start error: ${error.message}`,
+        error.stack,
+      );
+      client.emit('alarm', { message: '게임 시작 중 오류 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('cloud.round')
+  async handleCloudRound(@MessageBody() roomId: string) {
+    try {
+      await this.bellService.handleRound(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(`Cloud round error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '라운드 진행 중 오류가 발생했습니다.' });
+    }
+  }
+
+  // ping
+  @SubscribeMessage('cloud.ping')
+  handleCloudPing(@MessageBody() roomId: string) {
+    let time = 3000;
+    const timeId = setInterval(() => {
+      this.server.to(roomId).emit('cloud.ping');
+      time--;
+      if (time === 0) {
+        this.handleCloudPong(roomId);
+      }
+    }, 1000);
+    this.ping[roomId] = timeId;
+  }
+
+  // pong
+  @SubscribeMessage('cloud.pong')
+  handleCloudPong(@MessageBody() roomId) {
+    clearInterval(this.ping[roomId]);
+    delete this.ping[roomId];
+    this.server.to(roomId).emit('cloud.pong');
+  }
+
+  @SubscribeMessage('cloud.roundStart')
+  handleCloudRoundStart(@MessageBody() roomId: string) {
+    this.server.to(roomId).emit('cloud.roundStart');
+  }
+
+  @SubscribeMessage('cloud.roundEnd')
+  handleCloudRoundEnd(@MessageBody() roomId: string) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in cloud.roundEnd`);
+        return;
+      }
+
+      this.server.to(roomId).emit('cloud.roundEnd', this.game[roomId]);
+    } catch (error) {
+      this.logger.error(`cloud round end error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '라운드 종료 중 오류가 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('cloud.answer')
+  handleCloudAnswer(
+    @MessageBody()
+    {
+      roomId,
+      score,
+    }: {
+      roomId: string;
+      score: number;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in cloud.answer`);
+        return;
+      }
+
+      const idx = this.game[roomId].users.findIndex(
+        (user) => user.userId === this.user[client.id].id,
+      );
+      if (idx === -1) {
+        this.logger.warn(`User not found in room ${roomId}`);
+        return;
+      }
+
+      this.cloudService.handleAnswer(idx, this.game[roomId], score);
+
+      this.server.to(roomId).emit('cloud.game', this.game[roomId]);
+    } catch (error) {
+      this.logger.error(`Cloud answer error: ${error.message}`, error.stack);
       this.server
         .to(roomId)
         .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });

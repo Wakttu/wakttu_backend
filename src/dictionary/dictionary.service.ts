@@ -71,6 +71,17 @@ export class DictionaryService {
     }
   }
 
+  async getCloud(round: number): Promise<any> {
+    try {
+      const list: string[] = await this.prisma
+        .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT 20*${round}`;
+
+      return list;
+    } catch (error) {
+      throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
+    }
+  }
+
   async checkManner(keyword: string): Promise<boolean> {
     try {
       const res = await this.prisma.manner.findUnique({
