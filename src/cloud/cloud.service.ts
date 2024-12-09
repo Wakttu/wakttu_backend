@@ -24,6 +24,7 @@ export class CloudService {
       return {
         ...item,
         ...createCloudInfo(),
+        clear: false,
       };
     });
     roomInfo.start = true;

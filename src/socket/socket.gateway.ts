@@ -97,6 +97,7 @@ export class Game {
     y: string;
     delay: string;
     duration: string;
+    clear: boolean;
     [x: string]: any;
   }[];
   loading?: boolean;
@@ -218,6 +219,8 @@ export class SocketGateway
     this.lastService.server = this.server;
     this.kungService.server = this.server;
     this.bellService.server = this.server;
+    this.cloudService.server = this.server;
+
     console.log('socket is open!');
   }
 
@@ -242,7 +245,10 @@ export class SocketGateway
         if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
           const { id } = this.roomInfo[roomId].users[0];
 
-          if (this.game[roomId].host === this.user[client.id].id) {
+          if (
+            this.game[roomId] &&
+            this.game[roomId].host === this.user[client.id].id
+          ) {
             this.game[roomId].host = id;
           }
 
@@ -408,6 +414,9 @@ export class SocketGateway
         case 2:
           this.handleBellAnswer({ roomId, score }, client);
           break;
+        case 4:
+          this.handleCloudAnswer({ roomId, chat, score }, client);
+          break;
       }
     } catch (error) {
       this.logger.error(
@@ -434,7 +443,6 @@ export class SocketGateway
   ) {
     try {
       this.logger.log(`Creating room - User: ${client.id}`);
-      this.user[client.id] = client.request.session.user;
       const info = await this.socketService.createRoom(
         this.user[client.id].id,
         data,
@@ -1193,7 +1201,7 @@ export class SocketGateway
   @SubscribeMessage('cloud.round')
   async handleCloudRound(@MessageBody() roomId: string) {
     try {
-      await this.bellService.handleRound(
+      await this.cloudService.handleRound(
         roomId,
         this.roomInfo[roomId],
         this.game[roomId],
@@ -1209,7 +1217,7 @@ export class SocketGateway
   // ping
   @SubscribeMessage('cloud.ping')
   handleCloudPing(@MessageBody() roomId: string) {
-    let time = 3000;
+    let time = 30;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('cloud.ping');
       time--;
@@ -1255,9 +1263,11 @@ export class SocketGateway
     @MessageBody()
     {
       roomId,
+      chat,
       score,
     }: {
       roomId: string;
+      chat: string;
       score: number;
     },
     @ConnectedSocket() client: Socket,
@@ -1276,9 +1286,19 @@ export class SocketGateway
         return;
       }
 
-      this.cloudService.handleAnswer(idx, this.game[roomId], score);
+      const cloudIdx = this.game[roomId].cloud.findIndex(
+        (item) => item._id === chat && !item.clear,
+      );
 
-      this.server.to(roomId).emit('cloud.game', this.game[roomId]);
+      if (cloudIdx === -1)
+        this.server
+          .to(roomId)
+          .emit('chat', { user: this.user[client.id], chat });
+      else {
+        this.game[roomId].cloud[cloudIdx].clear = true;
+        this.cloudService.handleAnswer(idx, this.game[roomId], score);
+        this.server.to(roomId).emit('cloud.game', this.game[roomId]);
+      }
     } catch (error) {
       this.logger.error(`Cloud answer error: ${error.message}`, error.stack);
       this.server
