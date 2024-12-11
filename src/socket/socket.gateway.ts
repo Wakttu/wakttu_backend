@@ -98,6 +98,7 @@ export class Game {
     delay: string;
     duration: string;
     clear: boolean;
+    weather?: string;
     [x: string]: any;
   }[];
   loading?: boolean;

@@ -74,7 +74,7 @@ export class DictionaryService {
   async getCloud(round: number): Promise<any> {
     try {
       const list: string[] = await this.prisma
-        .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT 20*${round}`;
+        .$queryRaw`SELECT _id, meta FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT 20*${round}`;
 
       return list;
     } catch (error) {

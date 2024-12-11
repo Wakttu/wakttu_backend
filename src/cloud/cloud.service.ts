@@ -20,11 +20,12 @@ export class CloudService {
     game.round = 0;
     game.total = game.users.length;
     const cloud = await this.socketService.getCloud(roomInfo.round);
-    game.cloud = cloud.map((item) => {
+    game.cloud = cloud.map((item, idx) => {
       return {
         ...item,
         ...createCloudInfo(),
         clear: false,
+        type: (idx + 1) % 20 === 0 ? 1 : 0,
       };
     });
     roomInfo.start = true;
@@ -53,12 +54,11 @@ export class CloudService {
         .emit('cloud.end', { game: game, roomInfo: roomInfo });
       return;
     }
-    game.users.forEach((user) => (user.success = undefined));
-    game.roundTime = 30000;
+    game.roundTime = 60000;
 
     game.round += 1;
 
-    this.server.to(roomId).emit('cloud.round', game);
+    this.server.to(roomId).emit('cloud.round', { game, weather: setWeather() });
   }
 
   handleAnswer(idx: number, game: Game, score: number) {
@@ -83,4 +83,25 @@ const createCloudInfo = () => {
   const duration = `${Math.random() * 3 + 3}s`; // 3초에서 6초 사이의 지속 시간
   const delay = `${Math.random() * 2}s`;
   return { x, y, duration, delay, clear: false };
+};
+
+const setWeather = () => {
+  const weatherOptions = [
+    { type: 'cloud', probability: 0.5 }, // 50% chance
+    { type: 'wind', probability: 0.2 }, // 20% chance
+    { type: 'fog', probability: 0.2 }, // 20% chance
+    { type: 'segu', probability: 0.1 }, // 10% chance
+  ];
+
+  const random = Math.random();
+
+  let cumulativeProbability = 0;
+  for (const weather of weatherOptions) {
+    cumulativeProbability += weather.probability;
+    if (random < cumulativeProbability) {
+      return weather.type;
+    }
+  }
+
+  return 'cloud';
 };
