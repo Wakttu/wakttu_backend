@@ -20,12 +20,13 @@ export class CloudService {
     game.round = 0;
     game.total = game.users.length;
     const cloud = await this.socketService.getCloud(roomInfo.round);
+    const infos = createCloudInfo(roomInfo.round * 20);
     game.cloud = cloud.map((item, idx) => {
       return {
         ...item,
-        ...createCloudInfo(),
+        ...infos[idx],
         clear: false,
-        type: (idx + 1) % 20 === 0 ? 1 : 0,
+        type: setCloudType(idx),
       };
     });
     roomInfo.start = true;
@@ -75,14 +76,28 @@ export class CloudService {
   }
 }
 
-const createCloudInfo = () => {
-  const maxWidth = 82 - 10.875;
-  const maxHeight = 32.6875 - 7.4375;
-  const x = `${Math.random() * maxWidth}rem`;
-  const y = `${Math.random() * maxHeight}rem`;
-  const duration = `${Math.random() * 3 + 3}s`; // 3초에서 6초 사이의 지속 시간
-  const delay = `${Math.random() * 2}s`;
-  return { x, y, duration, delay, clear: false };
+const createCloudInfo = (count = 20) => {
+  const maxWidth = 71.125; // 82 - 10.875
+  const maxHeight = 25.25; // 32.6875 - 7.4375
+  const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+  const clouds = Array.from({ length: count }, (_, i) => {
+    const xSegment = i % Math.sqrt(count); // x를 구간별로 분리
+    const ySegment = Math.floor(i / Math.sqrt(count)); // y를 구간별로 분리
+
+    const segmentWidth = maxWidth / Math.sqrt(count);
+    const segmentHeight = maxHeight / Math.sqrt(count);
+
+    const x = `${randomInRange(xSegment * segmentWidth, (xSegment + 1) * segmentWidth)}rem`;
+    const y = `${randomInRange(ySegment * segmentHeight, (ySegment + 1) * segmentHeight)}rem`;
+    const duration = `${randomInRange(3, 6)}s`;
+    const delay = `${randomInRange(0, 2)}s`;
+
+    return { x, y, duration, delay, clear: false };
+  });
+
+  clouds.sort(() => Math.random() - 0.5);
+  return clouds;
 };
 
 const setWeather = () => {
@@ -104,4 +119,11 @@ const setWeather = () => {
   }
 
   return 'cloud';
+};
+
+const setCloudType = (idx: number) => {
+  const mul = (idx + 1) % 20;
+  if (mul === 0) return 1;
+  else if (mul === 1) return 2;
+  return 0;
 };
