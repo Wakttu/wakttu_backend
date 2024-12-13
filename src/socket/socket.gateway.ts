@@ -157,6 +157,8 @@ export class SocketGateway
     [roomId: string]: NodeJS.Timeout;
   } = {};
 
+  public roomlist: Room[];
+
   async handleConnection(@ConnectedSocket() client: any) {
     try {
       const isAuthenticated = await this.guard.validateClient(client);
@@ -216,6 +218,9 @@ export class SocketGateway
     if (ENV !== 'development') await this.socketService.deleteAllRoom();
     this.user = {};
     this.game = {};
+    setInterval(async () => {
+      this.roomlist = await this.socketService.getRoomList();
+    }, 5000);
     // 서버를 service와 연결
     this.lastService.server = this.server;
     this.kungService.server = this.server;
@@ -333,8 +338,8 @@ export class SocketGateway
   // 서버에접속해있는 유저에게 현재 방들의 정보 List 전달
   @SubscribeMessage('roomList')
   async handleRoomList(@ConnectedSocket() client: Socket) {
-    const roomList = await this.socketService.getRoomList();
-    client.emit('roomList', roomList);
+    console.log(this.roomlist);
+    client.emit('roomList', this.roomlist);
   }
 
   // 로비 챗
@@ -1296,8 +1301,17 @@ export class SocketGateway
           .to(roomId)
           .emit('chat', { user: this.user[client.id], chat });
       else {
+        const cloudType = this.game[roomId].cloud[cloudIdx].type;
         this.game[roomId].cloud[cloudIdx].clear = true;
-        this.cloudService.handleAnswer(idx, this.game[roomId], score);
+        this.cloudService.handleAnswer(
+          idx,
+          this.game[roomId],
+          cloudType === 2 ? 2 * score : score,
+        );
+        if (cloudType === 1) {
+          client.emit('cloud.penalty');
+        }
+
         this.server.to(roomId).emit('cloud.game', this.game[roomId]);
       }
     } catch (error) {

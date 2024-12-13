@@ -56,23 +56,13 @@ export class CloudService {
       return;
     }
     game.roundTime = 60000;
-
     game.round += 1;
 
     this.server.to(roomId).emit('cloud.round', { game, weather: setWeather() });
   }
 
   handleAnswer(idx: number, game: Game, score: number) {
-    const team = game.users[idx].team;
-    if (team) {
-      game.users.forEach((user) => {
-        if (user.team === team) {
-          user.score += score;
-        }
-      });
-    } else {
-      game.users[idx].score += score;
-    }
+    game.users[idx].score += score;
   }
 }
 
@@ -123,7 +113,7 @@ const setWeather = () => {
 
 const setCloudType = (idx: number) => {
   const mul = (idx + 1) % 20;
-  if (mul === 0) return 1;
-  else if (mul === 1) return 2;
+  if (mul <= 2) return 1;
+  else if (mul === 3) return 2;
   return 0;
 };
