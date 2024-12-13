@@ -220,7 +220,7 @@ export class SocketGateway
     this.game = {};
     setInterval(async () => {
       this.roomlist = await this.socketService.getRoomList();
-    }, 5000);
+    }, 3000);
     // 서버를 service와 연결
     this.lastService.server = this.server;
     this.kungService.server = this.server;
@@ -338,7 +338,6 @@ export class SocketGateway
   // 서버에접속해있는 유저에게 현재 방들의 정보 List 전달
   @SubscribeMessage('roomList')
   async handleRoomList(@ConnectedSocket() client: Socket) {
-    console.log(this.roomlist);
     client.emit('roomList', this.roomlist);
   }
 
@@ -1223,7 +1222,7 @@ export class SocketGateway
   // ping
   @SubscribeMessage('cloud.ping')
   handleCloudPing(@MessageBody() roomId: string) {
-    let time = 30;
+    let time = 60;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('cloud.ping');
       time--;
