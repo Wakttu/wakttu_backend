@@ -1242,7 +1242,7 @@ export class SocketGateway
       delete this.ping[roomId];
     }
     
-    let time = 25;
+    let time = 40;
     const timeId = setInterval(() => {
       if (time <= 0) {
         this.handleMusicPong(roomId);
