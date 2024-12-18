@@ -92,6 +92,8 @@ export class Game {
     thumbnail: string;
     answer: string[];
     tag: string[];
+    videoStartSec: number;
+    hint: string[];
   }[];
   loading?: boolean;
   turnChanged: boolean;
@@ -1219,8 +1221,11 @@ export class SocketGateway
 
       if (count.length === this.game[roomId].users.length) {
         console.log('모두 정답!');
+        this.handleMusicPong(roomId);
+        this.server.to(roomId).emit('music.answer', this.game[roomId]);
+      } else {
+        this.server.to(roomId).emit('music.answer', this.game[roomId]);
       }
-      this.server.to(roomId).emit('music.answer', this.game[roomId]);
     } catch (error) {
       this.logger.error(`Music answer error: ${error.message}`, error.stack);
       this.server
@@ -1232,13 +1237,19 @@ export class SocketGateway
   // ping
   @SubscribeMessage('music.ping')
   handleMusicPing(@MessageBody() roomId: string) {
-    let time = 90;
+    if (this.ping[roomId]) {
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
+    }
+    
+    let time = 25;
     const timeId = setInterval(() => {
+      if (time <= 0) {
+        this.handleMusicPong(roomId);
+        return;
+      }
       this.server.to(roomId).emit('music.ping');
       time--;
-      if (time === 0) {
-        this.handleMusicPong(roomId);
-      }
     }, 1000);
     this.ping[roomId] = timeId;
   }
@@ -1246,8 +1257,10 @@ export class SocketGateway
   // pong
   @SubscribeMessage('music.pong')
   handleMusicPong(@MessageBody() roomId) {
-    clearInterval(this.ping[roomId]);
-    delete this.ping[roomId];
+    if (this.ping[roomId]) {
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
+    }
     this.server.to(roomId).emit('music.pong');
   }
 
