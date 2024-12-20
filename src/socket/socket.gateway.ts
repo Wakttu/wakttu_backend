@@ -1222,7 +1222,7 @@ export class SocketGateway
   // ping
   @SubscribeMessage('cloud.ping')
   handleCloudPing(@MessageBody() roomId: string) {
-    let time = 60;
+    let time = 45;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('cloud.ping');
       time--;
