@@ -541,6 +541,7 @@ export class SocketGateway
         this.user[client.id].id,
         roomId,
       );
+
       client.join(roomId);
       this.user[client.id].roomId = roomId;
       this.server.to(roomId).emit('enter', {
@@ -1187,7 +1188,7 @@ export class SocketGateway
       }
       this.handleReady(roomId, client);
 
-      if (this.ping[roomId]) this.handlePong(roomId);
+      if (this.ping[roomId]) this.handleCloudPong(roomId);
 
       await this.cloudService.handleStart(
         roomId,
