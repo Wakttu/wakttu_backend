@@ -120,7 +120,7 @@ export class MusicService {
     const idx = game.users.findIndex((user) => user.userId === userId);
     if (idx !== -1) game.users[idx].success = true;
     const count = game.users.filter((user) => user.success).length;
-    console.log(count)
+    console.log(count);
     if (count === game.users.length) {
       game.users.forEach((user) => {
         user.success = false;
@@ -144,8 +144,7 @@ export class MusicService {
     }
   }
 
-
-  handleLog(roomId: string, game: Game, userId: string) {
+  handleLog(roomId: string, game: Game) {
     if (!game || !roomId) return;
     this.server.to(roomId).emit('music.log', game);
   }

@@ -1128,7 +1128,7 @@ export class SocketGateway
   }
 
   /*
-   * 왁타버스 뮤직 퀴즈
+   * 왁타버스 레코드 퀴즈
    */
 
   @SubscribeMessage('music.start')
@@ -1220,11 +1220,12 @@ export class SocketGateway
       );
 
       if (count.length === this.game[roomId].users.length) {
-        console.log('모두 정답!');
         this.handleMusicPong(roomId);
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
+        this.logger.log(`${roomId} all users answered`);
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
+        this.logger.log(`${client.id} user answered`);
       }
     } catch (error) {
       this.logger.error(`Music answer error: ${error.message}`, error.stack);
@@ -1241,7 +1242,7 @@ export class SocketGateway
       clearInterval(this.ping[roomId]);
       delete this.ping[roomId];
     }
-    
+
     let time = 40;
     const timeId = setInterval(() => {
       if (time <= 0) {
