@@ -397,4 +397,8 @@ export class SocketService {
   async deleteGuest(id: string) {
     await this.userService.deleteGuest(id);
   }
+
+  async setMusic(round: number) {
+    return await this.dicService.getMusic(round);
+  }
 }

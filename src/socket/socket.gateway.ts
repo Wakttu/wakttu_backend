@@ -87,13 +87,13 @@ export class Game {
   }[];
   music?: {
     videoId: string;
-    channelId: string;
     title: string;
-    thumbnail: string;
     answer: string[];
-    tag: string[];
-    videoStartSec: number;
-    hint: string[];
+    channel: string;
+    img: string;
+    singer: string[];
+    start_time: number;
+    hint: string;
   }[];
   loading?: boolean;
   turnChanged: boolean;
