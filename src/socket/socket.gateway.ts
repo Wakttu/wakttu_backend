@@ -1166,6 +1166,7 @@ export class SocketGateway
 
   @SubscribeMessage('music.round')
   handleMusicRound(@MessageBody() roomId: string) {
+    this.logger.debug('round');
     this.musicService.handleRound(
       roomId,
       this.roomInfo[roomId],
@@ -1243,6 +1244,8 @@ export class SocketGateway
       delete this.ping[roomId];
     }
 
+    this.logger.debug(`ping start, ${roomId}`);
+
     let time = 40;
     const timeId = setInterval(() => {
       if (time <= 0) {
@@ -1263,25 +1266,6 @@ export class SocketGateway
       delete this.ping[roomId];
     }
     this.server.to(roomId).emit('music.pong');
-  }
-
-  @SubscribeMessage('music.code')
-  handleCode(
-    @MessageBody() { roomId, code }: { roomId: string; code: string },
-  ) {
-    try {
-      if (!this.game[roomId]) {
-        this.logger.warn(`Room ${roomId} not found in music.code`);
-        return;
-      }
-      if (code === '!p') this.server.to(roomId).emit('music.play');
-      if (code === '!s') this.handleMusicRoundEnd(roomId);
-    } catch (error) {
-      this.logger.error(`music code error: ${error.message}`, error.stack);
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '명령어 입력 중 오류가 발생했습니다.' });
-    }
   }
 
   @SubscribeMessage('music.roundEnd')

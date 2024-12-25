@@ -39,8 +39,8 @@ export class MusicService {
     }
     game.users.forEach((user) => (user.success = undefined));
 
-    game.round++;
     game.target = game.music[game.round].answer;
+    game.round++;
     this.server.to(roomId).emit('music.round', game);
   }
 
@@ -49,7 +49,6 @@ export class MusicService {
     const idx = game.users.findIndex((user) => user.userId === userId);
     if (idx !== -1) game.users[idx].success = true;
     const count = game.users.filter((user) => user.success).length;
-    console.log(count);
     if (count === game.users.length) {
       game.users.forEach((user) => {
         user.success = false;
