@@ -1188,7 +1188,7 @@ export class SocketGateway
       return;
     }
 
-    this.logger.debug('Music Ready ');
+    this.logger.debug(`Music Ready ${this.user[client.id].id}`);
     this.musicService.handleReady(
       roomId,
       this.game[roomId],

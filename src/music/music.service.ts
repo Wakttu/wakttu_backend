@@ -31,8 +31,6 @@ export class MusicService {
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
     if (!game) return;
     if (game.round === roomInfo.round) {
-      console.log('music end');
-      console.log(game, roomInfo);
       game.users.sort((a, b) => b.score - a.score);
       this.server.to(roomId).emit('music.end', { game, roomInfo });
       return;
