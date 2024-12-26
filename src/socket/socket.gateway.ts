@@ -101,7 +101,7 @@ export class Game {
     singer: string[];
     start_time: number;
     hint: string;
-  };
+  }[];
   cloud?: {
     _id: string;
     x: string;
