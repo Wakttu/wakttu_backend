@@ -9,12 +9,14 @@ import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 import { WakgamesService } from 'src/wakgames/wakgames.service';
 import { randomUUID } from 'crypto';
+import { StatsService } from 'src/stats/stats.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly wakgamesService: WakgamesService,
+    private readonly statsService: StatsService,
   ) {}
 
   async OAuthLogin(user) {
@@ -54,8 +56,6 @@ export class AuthService {
   }
 
   async logout(@Req() request: Request): Promise<any> {
-    const { id, provider } = request.session.user;
-    if (provider === 'guest') this.userService.deleteGuest(id);
     request.session.destroy(() => {});
     return { success: true, message: 'Logout Success' };
   }
@@ -158,6 +158,29 @@ export class AuthService {
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       throw new BadRequestException('토큰 업데이트 중 오류가 발생했습니다.');
+    }
+  }
+
+  async discordUser(custom: any) {
+    try {
+      const _user = await this.userService.findById(custom.id);
+      if (_user) {
+        return _user;
+      }
+      const user = {
+        id: custom.id,
+        name: custom.username,
+        provider: 'discord',
+        password: null,
+      };
+      const newUser = await this.userService.create(user);
+      await this.userService.achieveAllItems(newUser.id);
+      await this.statsService.setJogong(newUser.id);
+      return newUser;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      console.log(error);
+      throw new BadRequestException('디코 로그인 중 오류가 발생했습니다.');
     }
   }
 

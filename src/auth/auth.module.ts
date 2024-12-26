@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { UserModule } from 'src/user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { WakgamesModule } from 'src/wakgames/wakgames.module';
+import { StatsModule } from 'src/stats/stats.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { WakgamesModule } from 'src/wakgames/wakgames.module';
       session: true,
     }),
     WakgamesModule,
+    StatsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

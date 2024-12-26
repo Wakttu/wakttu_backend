@@ -18,6 +18,10 @@ export class StatsService {
 
   async createAchieve(id: string, userId: string) {
     try {
+      const check = await this.prisma.achievements.findUnique({
+        where: { id_userId: { id, userId } },
+      });
+      if (check) return null;
       return await this.prisma.achievements.create({
         data: {
           id,
@@ -100,6 +104,39 @@ export class StatsService {
       });
     } catch (error) {
       throw new Error(`통계 업데이트 중 오류 발생: ${error.message}`);
+    }
+  }
+
+  async setJogong(userId: string) {
+    const statsArray = {
+      'WOO-1': 98,
+      'WOO-2': 9,
+      'INE-1': 98,
+      'INE-2': 19,
+      'JING-1': 98,
+      'JING-2': 19,
+      'LIL-1': 98,
+      'LIL-2': 4,
+      'JU-1': 98,
+      'JU-2': 4,
+      'GO-1': 98,
+      'GO-2': 19,
+      'VIi-1': 98,
+      'VIi-2': 19,
+      'GOMEM-1': 48,
+      'GOMEM-2': 48,
+      EXIT: 9,
+      FILTER: 9,
+    };
+
+    for (const [statId, incrementValue] of Object.entries(statsArray)) {
+      try {
+        await this.putStat(userId, statId, incrementValue);
+      } catch (error) {
+        console.error(
+          `통계 업데이트 실패 (statId: ${statId}): ${error.message}`,
+        );
+      }
     }
   }
 
@@ -203,16 +240,16 @@ export class StatsService {
         'VIi-2': [
           {
             threshold: 20,
-            id: 'RANI',
+            id: 'PEACH',
           },
         ],
-        'GOMEM-1': [
+        'GOM-1': [
           {
             threshold: 50,
             id: 'GOMEM',
           },
         ],
-        'GOMEM-2': [
+        'GOM-2': [
           {
             threshold: 50,
             id: 'ACADEMY',
@@ -283,7 +320,13 @@ export class StatsService {
       [x: string]: any;
     }) => string[]
   >([
-    ['WOO', () => ['WOO-1']],
+    [
+      'WOO',
+      (word) => [
+        'WOO-1',
+        ...(word.id === '신세계의신이되는거다' ? ['WOO-2'] : []),
+      ],
+    ],
     ['INE', (word) => ['INE-1', ...(word.id === '오야' ? ['INE-2'] : [])]],
     [
       'JINGBURGER',
@@ -338,7 +381,7 @@ export class StatsService {
         this.prisma.user.findMany({
           where: { provider: { notIn: ['manager', 'staff'] } },
           orderBy: { score: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             name: true,
             score: true,
@@ -350,7 +393,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -362,7 +405,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -374,7 +417,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -386,7 +429,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -398,7 +441,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -410,7 +453,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -422,7 +465,7 @@ export class StatsService {
             user: { provider: { notIn: ['manager', 'staff'] } },
           },
           orderBy: { value: 'desc' },
-          take: 10,
+          take: 7,
           select: {
             user: { select: { name: true, score: true } },
             value: true,
@@ -431,11 +474,13 @@ export class StatsService {
       ]);
 
       return {
-        userRanks: results[0],
+        userRanks: results[0].map((item) => {
+          return { user: item };
+        }),
         wooRanks: results[1],
         ineRanks: results[2],
         jingRanks: results[3],
-        lilRancks: results[4],
+        lilRanks: results[4],
         juRanks: results[5],
         goRanks: results[6],
         viRanks: results[7],

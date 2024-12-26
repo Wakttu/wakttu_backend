@@ -5,38 +5,57 @@ import { ValidationPipe } from '@nestjs/common';
 import { SessionAdapter } from './session.adapter';
 import * as session from 'express-session';
 import * as MongoDBStore from 'connect-mongodb-session';
+
+import { createClient } from 'redis';
+import RedisStore from 'connect-redis';
 import { PrismaClientExceptionFilter } from './prisma.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.enableCors({
     origin:
       process.env.NODE_ENV === 'production'
         ? ['https://wakttu.kr', 'https://www.wakttu.kr'] // production CORS
         : process.env.NODE_ENV === 'jogong'
-          ? ['for-jogong.wakttu.kr'] // jogong CORS
+          ? ['https://for-jogong.wakttu.kr'] // jogong CORS
           : ['http://localhost:3000'], // development CORS
     credentials: true,
   });
 
+  const redisClient = createClient({
+    url: `redis://${process.env.REDIS_HOST || '127.0.0.1'}:${process.env.REDIS_PORT || 6379}`,
+    password: process.env.REDIS_PASSWORD || undefined,
+    database: parseInt(process.env.REDIS_DB || '0', 10), // 문자열을 숫자로 변환
+  });
+
+  if (process.env.NODE_ENV !== 'development') {
+    redisClient.on('error', (err) => console.error('Redis Client Error', err));
+    await redisClient.connect(); // Redis v4에서는 connect()를 호출해야 합니다.
+  }
+
   const MongoStore = MongoDBStore(session);
 
-  const store = new MongoStore({
-    uri: process.env.SESSION_DB_URI,
-    databaseName: process.env.SESSION_DB_NAME,
-    collection: process.env.SESSION_DB_COLLECTION,
+  const sessionMiddleware = session({
+    store:
+      process.env.NODE_ENV !== 'development'
+        ? new RedisStore({ client: redisClient })
+        : new MongoStore({
+            uri: process.env.SESSION_DB_URI,
+            databaseName: process.env.SESSION_DB_NAME,
+            collection: process.env.SESSION_DB_COLLECTION,
+          }),
+    secret: process.env.SECRET, // 세션 암호화 키
+    resave: false, // 세션이 변경되지 않으면 저장하지 않음
+    saveUninitialized: false, // 초기화되지 않은 세션 저장 안 함
+    cookie: {
+      maxAge: 86400000 * 2, // 2일
+      httpOnly:
+        process.env.NODE_ENV === 'production' ||
+        process.env.NODE_ENV === 'jogong', // HTTP 전용 쿠키 (XSS 방지)
+    },
   });
 
-  const sessionMiddleware = session({
-    secret: process.env.SECRET, // 세션을 암호화하기 위한 암호기 설정
-    resave: false, // 모든 request마다 기존에 있던 session에 아무런 변경 사항이 없을 시에도 그 session을 다시 저장하는 옵션.
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 86400000 * 2,
-      httpOnly: true,
-    },
-    store: store,
-  });
   app.use(sessionMiddleware);
   app.useWebSocketAdapter(new SessionAdapter(sessionMiddleware, app));
 
@@ -48,8 +67,8 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-
   SwaggerModule.setup('api', app, document);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -57,6 +76,7 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
   app.useGlobalFilters(new PrismaClientExceptionFilter());
 
   await app.listen(process.env.PORT || 3000);

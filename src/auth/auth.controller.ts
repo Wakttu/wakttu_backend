@@ -18,6 +18,8 @@ import { IsNotLoginedGuard } from './isNotLogined-auth.guard';
 import { LocalAuthenticatedGuard } from './local-auth.guard';
 import { LoginUserDto } from 'src/user/dto/login-user.dto';
 import { ConfigService } from '@nestjs/config';
+import { CloudflareGuard } from './cf-auth.guard';
+import { IsJogongGuard } from './jogong-auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -43,6 +45,7 @@ export class AuthController {
     },
   })
   @Post('login')
+  @UseGuards(IsJogongGuard)
   @UseGuards(LocalAuthenticatedGuard)
   @UseGuards(IsNotLoginedGuard)
   async localLogin(
@@ -66,6 +69,7 @@ export class AuthController {
     },
   })
   @Post('signup')
+  @UseGuards(IsJogongGuard)
   @UseGuards(IsNotLoginedGuard)
   async signup(@Body() user: CreateUserDto): Promise<any> {
     return await this.authService.signup(user);
@@ -104,6 +108,7 @@ export class AuthController {
   }
 
   @Get('wakta')
+  @UseGuards(IsJogongGuard)
   async waktaOauth(@Session() session: Record<string, any>) {
     const data = await this.authService.waktaOauth();
     session.auth = data;
@@ -134,7 +139,17 @@ export class AuthController {
     return { status: 201, accessToken, refreshToken };
   }
 
+  @UseGuards(CloudflareGuard)
+  @Get('discord')
+  async discordAuh(@Req() req: Request, @Session() session) {
+    const { custom } = req.user;
+    const user = await this.authService.discordUser(custom);
+    session.user = user;
+    return user;
+  }
+
   @Get('guest')
+  @UseGuards(IsJogongGuard)
   async guest(@Session() session) {
     session.user = await this.authService.guestUser();
     return session.user ? { status: 200 } : { status: 400 };

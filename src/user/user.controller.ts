@@ -59,8 +59,14 @@ export class UserController {
   })
   @UseGuards(IsLoginedGuard, AuthGuard)
   @Patch(':id')
-  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
-    return await this.userService.update(id, body);
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: UpdateUserDto,
+    @Session() session,
+  ) {
+    const user = await this.userService.update(id, body);
+    session.user = user;
+    return user;
   }
   @ApiOperation({ summary: 'Update Score' })
   @ApiParam({

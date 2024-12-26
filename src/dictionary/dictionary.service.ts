@@ -46,11 +46,38 @@ export class DictionaryService {
     return await this.prisma.dictionary.delete({ where: { id } });
   }
 
-  async getWord(length: number): Promise<string> {
+  async getWord(length: number): Promise<any> {
     try {
       const list: string[] = await this.prisma
-        .$queryRaw`SELECT * FROM "public"."wakttu_ko" WHERE LENGTH(_id) =${length} AND wakta = true ORDER BY random() LIMIT 1`;
+        .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE LENGTH(_id) = ${length} AND wakta = true ORDER BY random() LIMIT 1`;
+
+      const word = list[0]['_id'];
+
+      for (const char of word.split('')) {
+        const isSafe = await this.checkManner(char);
+        if (!isSafe) {
+          return {
+            _id: '우리모두품어놀자'.slice(0, length),
+            mean: '더미',
+            type: '더미',
+            meta: { url: null },
+            hit: 0,
+          };
+        }
+      }
+
       return list[0];
+    } catch (error) {
+      throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
+    }
+  }
+
+  async getCloud(round: number): Promise<any> {
+    try {
+      const list: string[] = await this.prisma
+        .$queryRaw`SELECT _id, meta FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT 20*${round}`;
+
+      return list;
     } catch (error) {
       throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
     }
