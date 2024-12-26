@@ -32,6 +32,15 @@ export class MusicService {
     if (!game) return;
     if (game.round === roomInfo.round) {
       game.users.sort((a, b) => b.score - a.score);
+      this.server
+        .to(roomId)
+        .emit('music.result', { game: game, roomInfo: roomInfo });
+      const scores = await this.socketService.setResult(game.users);
+      roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
+      game.users.forEach((user) => {
+        this.socketGateway.user[user.id].score = scores[user.id];
+      });
+      game.users.splice(0, game.total);
       this.server.to(roomId).emit('music.end', { game, roomInfo });
       return;
     }
@@ -53,6 +62,14 @@ export class MusicService {
       });
       this.server.to(roomId).emit('music.play', game);
     }
+  }
+
+  handleStrongPlay(roomId: string, game: Game) {
+    if (!game || !roomId) return;
+    game.users.forEach((user) => {
+      user.success = false;
+    });
+    this.server.to(roomId).emit('music.play', game);
   }
 
   handleAnswer(idx: number, game: Game, score: number) {

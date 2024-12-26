@@ -1172,6 +1172,10 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
+    this.server.to(roomId).emit('chat', {
+      user: { name: '시스템', color: 'red' },
+      chat: '라운드 준비 중입니다!',
+    });
   }
 
   @SubscribeMessage('music.ready')
@@ -1194,6 +1198,12 @@ export class SocketGateway
       this.game[roomId],
       this.user[client.id].id,
     );
+    if (this.game[roomId].host === this.user[client.id].id) {
+      client.emit('chat', {
+        user: { color: 'red', name: '시스템' },
+        chat: '강제로 게임을 진행 하려면 !p을 입력해주세요',
+      });
+    }
   }
 
   @SubscribeMessage('music.answer')
@@ -1224,9 +1234,23 @@ export class SocketGateway
         this.handleMusicPong(roomId);
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
         this.logger.log(`${roomId} all users answered`);
+        this.server.to(roomId).emit('chat', {
+          user: {
+            color: 'red',
+            name: '시스템',
+            chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
+          },
+        });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
         this.logger.log(`${client.id} user answered`);
+        this.server.to(roomId).emit('chat', {
+          user: {
+            color: 'red',
+            name: '시스템',
+            chat: `${this.user[client.id].name}님, 정답!`,
+          },
+        });
       }
     } catch (error) {
       this.logger.error(`Music answer error: ${error.message}`, error.stack);
@@ -1266,21 +1290,25 @@ export class SocketGateway
       delete this.ping[roomId];
     }
     this.server.to(roomId).emit('music.pong');
+    this.server.to(roomId).emit('chat', {
+      user: { name: '시스템', color: 'red' },
+      chat: '라운드 종료!',
+    });
   }
 
-  @SubscribeMessage('music.roundEnd')
-  handleMusicRoundEnd(@MessageBody() roomId: string) {
-    try {
-      if (!this.game[roomId]) {
-        this.logger.warn(`Room ${roomId} not found in music.roundEnd`);
-        return;
-      }
-      this.server.to(roomId).emit('music.roundEnd', this.game[roomId]);
-    } catch (error) {
-      this.logger.error(`music round end error: ${error.message}`, error.stack);
-      this.server
-        .to(roomId)
-        .emit('alarm', { message: '라운드 종료 중 오류가 발생했습니다.' });
+  @SubscribeMessage('music.command')
+  handleCode(
+    @MessageBody() { roomId, command }: { roomId: string; command: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].id) return;
+
+    if (command === '!p') {
+      this.musicService.handleStrongPlay(roomId, this.game[roomId]);
+      this.server.to(roomId).emit('chat', {
+        user: { color: 'red', name: '시스템' },
+        chat: '강제로 다음 곡을 실행합니다.',
+      });
     }
   }
 }
