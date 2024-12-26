@@ -19,6 +19,7 @@ import { LastService } from 'src/last/last.service';
 import { UpdateRoomDto } from 'src/room/dto/update-room.dto';
 import { BellService } from 'src/bell/bell.service';
 import { ConfigService } from '@nestjs/config';
+import { MusicService } from 'src/music/music.service';
 import { CloudService } from 'src/cloud/cloud.service';
 
 interface Chat {
@@ -71,7 +72,7 @@ export class Game {
     provider?: string;
   }[]; // user의 socketId 정보가 들어가있음. 점수정보포함
   keyword: string | undefined; // 바탕단어 (이세계아이돌)
-  target: string; // 현재 게임 진행에서 사용될 단어 (세)
+  target: string | string[]; // 현재 게임 진행에서 사용될 단어 (세)
   option: boolean[] | undefined; // [매너,품어,외수] 설정이 되어있을때 true,false로 확인 가능
   chain: number; // 현재 체인정보
   roundTime: number; // 남은 라운드시간 정보
@@ -91,6 +92,16 @@ export class Game {
     choseong: string;
     hint: string[];
   }[];
+  music?: {
+    videoId: string;
+    title: string;
+    answer: string[];
+    channel: string;
+    img: string;
+    singer: string[];
+    start_time: number;
+    hint: string;
+  };
   cloud?: {
     _id: string;
     x: string;
@@ -128,6 +139,8 @@ export class SocketGateway
     private readonly kungService: KungService,
     @Inject(forwardRef(() => BellService))
     private readonly bellService: BellService,
+    @Inject(forwardRef(() => MusicService))
+    private readonly musicService: MusicService,
     @Inject(forwardRef(() => CloudService))
     private readonly cloudService: CloudService,
     private readonly socketService: SocketService,
@@ -225,6 +238,7 @@ export class SocketGateway
     this.lastService.server = this.server;
     this.kungService.server = this.server;
     this.bellService.server = this.server;
+    this.musicService.server = this.server;
     this.cloudService.server = this.server;
 
     console.log('socket is open!');
@@ -1319,6 +1333,191 @@ export class SocketGateway
       this.server
         .to(roomId)
         .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
+  }
+
+  /*
+   * 왁타버스 레코드 퀴즈
+   */
+
+  @SubscribeMessage('music.start')
+  async handleMusicStart(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (this.game[roomId].host !== this.user[client.id].id) {
+        client.emit('alarm', { message: '방장이 아닙니다.' });
+        return;
+      }
+      if (
+        this.game[roomId].users.length + 1 !==
+        this.roomInfo[roomId].users.length
+      ) {
+        client.emit('alarm', { message: '모두 준비상태가 아닙니다.' });
+        return;
+      }
+      this.handleReady(roomId, client);
+
+      await this.musicService.handleStart(
+        roomId,
+        this.roomInfo[roomId],
+        this.game[roomId],
+      );
+    } catch (error) {
+      this.logger.error(
+        `music game start error: ${error.message}`,
+        error.stack,
+      );
+      client.emit('alarm', { message: '게임 시작 중 오류 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('music.round')
+  handleMusicRound(@MessageBody() roomId: string) {
+    this.logger.debug('round');
+    this.musicService.handleRound(
+      roomId,
+      this.roomInfo[roomId],
+      this.game[roomId],
+    );
+    this.server.to(roomId).emit('chat', {
+      user: { name: '시스템', color: 'red' },
+      chat: '라운드 준비 중입니다!',
+    });
+  }
+
+  @SubscribeMessage('music.ready')
+  handleMusicReady(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.user[client.id]) {
+      this.logger.warn(`User ${client.id} not found in music.ready`);
+      return;
+    }
+    if (!this.game[roomId]) {
+      this.logger.warn(`Room ${roomId} not found in music.ready`);
+      return;
+    }
+
+    this.logger.debug(`Music Ready ${this.user[client.id].id}`);
+    this.musicService.handleReady(
+      roomId,
+      this.game[roomId],
+      this.user[client.id].id,
+    );
+    if (this.game[roomId].host === this.user[client.id].id) {
+      client.emit('chat', {
+        user: { color: 'red', name: '시스템' },
+        chat: '강제로 게임을 진행 하려면 !p을 입력해주세요',
+      });
+    }
+  }
+
+  @SubscribeMessage('music.answer')
+  handleMusicAnswer(
+    @MessageBody() { roomId, score }: { roomId: string; score: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (!this.game[roomId]) {
+        this.logger.warn(`Room ${roomId} not found in music.answer`);
+        return;
+      }
+
+      const idx = this.game[roomId].users.findIndex(
+        (user) => user.userId === this.user[client.id].id,
+      );
+      if (idx === -1) {
+        this.logger.warn(`User not found in room ${roomId}`);
+        return;
+      }
+
+      this.musicService.handleAnswer(idx, this.game[roomId], score);
+      const count = this.game[roomId].users.filter(
+        (user) => user.success === true,
+      );
+
+      if (count.length === this.game[roomId].users.length) {
+        this.handleMusicPong(roomId);
+        this.server.to(roomId).emit('music.answer', this.game[roomId]);
+        this.logger.log(`${roomId} all users answered`);
+        this.server.to(roomId).emit('chat', {
+          user: {
+            color: 'red',
+            name: '시스템',
+            chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
+          },
+        });
+      } else {
+        this.server.to(roomId).emit('music.answer', this.game[roomId]);
+        this.logger.log(`${client.id} user answered`);
+        this.server.to(roomId).emit('chat', {
+          user: {
+            color: 'red',
+            name: '시스템',
+            chat: `${this.user[client.id].name}님, 정답!`,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Music answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '답변 처리 중 오류가 발생했습니다.' });
+    }
+  }
+
+  // ping
+  @SubscribeMessage('music.ping')
+  handleMusicPing(@MessageBody() roomId: string) {
+    if (this.ping[roomId]) {
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
+    }
+
+    this.logger.debug(`ping start, ${roomId}`);
+
+    let time = 40;
+    const timeId = setInterval(() => {
+      if (time <= 0) {
+        this.handleMusicPong(roomId);
+        return;
+      }
+      this.server.to(roomId).emit('music.ping');
+      time--;
+    }, 1000);
+    this.ping[roomId] = timeId;
+  }
+
+  // pong
+  @SubscribeMessage('music.pong')
+  handleMusicPong(@MessageBody() roomId) {
+    if (this.ping[roomId]) {
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
+    }
+    this.server.to(roomId).emit('music.pong');
+    this.server.to(roomId).emit('chat', {
+      user: { name: '시스템', color: 'red' },
+      chat: '라운드 종료!',
+    });
+  }
+
+  @SubscribeMessage('music.command')
+  handleCode(
+    @MessageBody() { roomId, command }: { roomId: string; command: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (this.game[roomId].host !== this.user[client.id].id) return;
+
+    if (command === '!p') {
+      this.musicService.handleStrongPlay(roomId, this.game[roomId]);
+      this.server.to(roomId).emit('chat', {
+        user: { color: 'red', name: '시스템' },
+        chat: '강제로 다음 곡을 실행합니다.',
+      });
     }
   }
 }

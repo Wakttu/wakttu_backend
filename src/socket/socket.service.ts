@@ -407,6 +407,10 @@ export class SocketService {
     await this.userService.deleteGuest(id);
   }
 
+  async setMusic(round: number) {
+    return await this.dicService.getMusic(round);
+  }
+
   async getFail(target: string) {
     const data = await this.dicService.search(target, 1, 0);
     if (data.length > 0) return data[0].id;

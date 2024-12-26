@@ -7,6 +7,7 @@ import { UserModule } from 'src/user/user.module';
 import { KungModule } from 'src/kung/kung.module';
 import { LastModule } from 'src/last/last.module';
 import { BellModule } from 'src/bell/bell.module';
+import { MusicModule } from 'src/music/music.module';
 import { CloudModule } from 'src/cloud/cloud.module';
 import { SocketAuthenticatedGuard } from './socket-auth.guard';
 
@@ -18,6 +19,7 @@ import { SocketAuthenticatedGuard } from './socket-auth.guard';
     forwardRef(() => LastModule),
     forwardRef(() => KungModule),
     forwardRef(() => BellModule),
+    forwardRef(() => MusicModule),
     forwardRef(() => CloudModule),
   ],
   providers: [SocketGateway, SocketService, SocketAuthenticatedGuard],
