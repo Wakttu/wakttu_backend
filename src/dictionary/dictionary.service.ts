@@ -131,4 +131,10 @@ export class DictionaryService {
       ...item,
     }));
   }
+
+  async getBotAnswer(target: string) {
+    const list: { _id: string }[] = await this.prisma
+      .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE _id LIKE ${target} || '%' ORDER BY random() LIMIT 1`;
+    return list.length > 0 ? list[0]._id : null;
+  }
 }

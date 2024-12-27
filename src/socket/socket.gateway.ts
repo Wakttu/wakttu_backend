@@ -116,6 +116,71 @@ export class Game {
   turnChanged: boolean;
 }
 
+class Bot {
+  id: string;
+  userId: string;
+  name: string;
+  character: JSON;
+  roomId: string;
+  exp: number;
+  score: number;
+  provider: string;
+  success?: boolean;
+  team?: string;
+  idx?: number;
+
+  private socketService: SocketService;
+
+  constructor(roomId: string, socketService: SocketService) {
+    this.id = roomId;
+    this.userId = 'minsoo-' + roomId;
+    this.name = '민수 봇';
+    this.roomId = roomId;
+    this.character = JSON.parse('{ "skin": "S-1" }');
+    this.exp = 0;
+    this.score = 0;
+    this.provider = 'bot';
+    this.socketService = socketService; // SocketService 할당
+    this.idx = -1;
+  }
+
+  public getBotInfo() {
+    return {
+      id: this.id,
+      userId: this.userId,
+      name: this.name,
+      character: this.character,
+      exp: this.exp,
+      score: this.score,
+      success: this.success,
+      provider: this.provider,
+    };
+  }
+
+  public addBotToRoom(roomId: string, game: Game) {
+    game.users.push(this.getBotInfo());
+  }
+
+  public removeBotFromRoom(game: Game, roomId: string) {
+    game.users = game.users.filter((user) => user.id !== roomId);
+  }
+
+  public getLastAnswer(target: string) {
+    return this.socketService.getBotAnswer(target);
+  }
+
+  public chatToBot(type: number, chat?: string) {
+    if (chat) return chat;
+    if (type === 0) {
+      return '수듄 ㅋㅋ';
+    } else if (type === 1) {
+      return '자, 이거야말로 기다렸던 순간이네.';
+    } else if (type === 2) {
+      return '아니, 이 민수님이 실수하다니';
+    }
+  }
+}
+
 @WebSocketGateway({
   namespace: 'wakttu',
   cors: { origin: true, credentials: true },
@@ -171,6 +236,10 @@ export class SocketGateway
   } = {};
 
   public roomlist: Room[];
+
+  public bot: {
+    [roomId: string]: Bot;
+  } = {};
 
   async handleConnection(@ConnectedSocket() client: any) {
     try {
@@ -1519,5 +1588,53 @@ export class SocketGateway
         chat: '강제로 다음 곡을 실행합니다.',
       });
     }
+  }
+
+  /**
+   * Bot
+   */
+
+  @SubscribeMessage('last.practice')
+  async handleCreateBot(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.roomlist.some((room: Room) => room.id === roomId)) {
+      this.logger.error('해당하는 방이 존재하지 않습니다.');
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
+
+    if (this.ping[roomId]) this.handlePong(roomId);
+
+    const roomInfo = this.roomInfo[roomId];
+    const game = this.game[roomId];
+
+    if (this.bot[roomId]) {
+      this.logger.error(`${roomId} : 이미 봇이 존재합니다`);
+      client.emit('alarm', { message: '이미 봇이 존재합니다.' });
+      return;
+    }
+
+    // 봇생성 및 Ready
+    this.bot[roomId] = new Bot(roomId, this.socketService);
+    this.bot[roomId].addBotToRoom(roomId, game);
+    this.handleReady(roomId, client);
+
+    roomInfo.option = roomInfo.option.filter((option) => option !== '팀전'); // 팀전기능끄기
+    game.option = this.socketService.getOption(roomInfo.option);
+    game.roundTime = roomInfo.time;
+
+    await this.lastService.handleStart(roomId, roomInfo, this.game[roomId]);
+
+    const bot = this.bot[roomId];
+    bot.idx = game.users.findIndex((user) => user.provider === 'bot');
+
+    setTimeout(() => {
+      this.server.to(roomId).emit('chat', {
+        user: bot.getBotInfo(),
+        chat: bot.chatToBot(1),
+      });
+    }, 3000);
   }
 }

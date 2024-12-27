@@ -416,4 +416,8 @@ export class SocketService {
     if (data.length > 0) return data[0].id;
     return '한방!';
   }
+
+  async getBotAnswer(target: string) {
+    return await this.getBotAnswer(target);
+  }
 }
