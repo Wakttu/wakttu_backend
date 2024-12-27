@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateDictionaryDto } from './dto/create-dictionary.dto';
 import { UpdateDictionaryDto } from './dto/update-dictionary.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Music } from '@prisma/client';
 
 @Injectable()
 export class DictionaryService {
@@ -71,6 +72,17 @@ export class DictionaryService {
     }
   }
 
+  async getCloud(round: number): Promise<any> {
+    try {
+      const list: string[] = await this.prisma
+        .$queryRaw`SELECT _id, meta FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT 20*${round}`;
+
+      return list;
+    } catch (error) {
+      throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
+    }
+  }
+
   async checkManner(keyword: string): Promise<boolean> {
     try {
       const res = await this.prisma.manner.findUnique({
@@ -109,5 +121,14 @@ export class DictionaryService {
     const list: [] = await this.prisma
       .$queryRaw`SELECT * FROM "public"."wakttu_quiz" WHERE LENGTH(_id) BETWEEN 3 AND 10 ORDER BY random() LIMIT ${round}`;
     return list;
+  }
+
+  async getMusic(round: number): Promise<Music[]> {
+    const list: [] = await this.prisma
+      .$queryRaw`SELECT * FROM "public"."wakttu_music" ORDER BY random() LIMIT ${round}`;
+    return list.map((item: any) => ({
+      videoId: item._id,
+      ...item,
+    }));
   }
 }

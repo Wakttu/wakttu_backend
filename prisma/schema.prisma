@@ -151,3 +151,16 @@ model Stats {
 
   @@id([id, userId])
 }
+
+model Music {
+  title      String
+  channel    String
+  img        String
+  answer     String[]
+  hint       String
+  start_time Int      @default(0)
+  singer     String[]
+  videoId    String   @id @map("_id")
+
+  @@map("wakttu_music")
+}

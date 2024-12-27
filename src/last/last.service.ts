@@ -97,7 +97,7 @@ export class LastService {
         if (user.team === team) user.score = score + after;
       });
     } else game.users[game.turn].score = score + after;
-    game.target = await this.socketService.getFail(game.target);
+    game.target = await this.socketService.getFail(game.target as string);
   }
 
   handleCheck(word: string, target: string) {

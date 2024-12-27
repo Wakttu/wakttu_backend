@@ -56,6 +56,15 @@ export class SocketService {
   }
 
   /**
+   * @param round 필요한 단어수에 대한 총 라운드
+   * @return {_id:string}[];
+   */
+
+  async getCloud(round: number): Promise<{ _id: string; meta: any }[]> {
+    return await this.dicService.getCloud(round);
+  }
+
+  /**
    *
    * @param userId 방만들기할때 필요한 유저아이디
    * @param data 방만들기 정보
@@ -396,6 +405,10 @@ export class SocketService {
 
   async deleteGuest(id: string) {
     await this.userService.deleteGuest(id);
+  }
+
+  async setMusic(round: number) {
+    return await this.dicService.getMusic(round);
   }
 
   async getFail(target: string) {

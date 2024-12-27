@@ -88,6 +88,13 @@ export class UserService {
 
   async enter(id: string, roomId: string) {
     try {
+      const room = await this.prisma.room.findUnique({
+        where: { id: roomId },
+        select: { start: true },
+      });
+      if (room.start) {
+        throw new Error('이미 시작된 방입니다.');
+      }
       const response = await this.prisma.user.update({
         where: { id },
         data: {
