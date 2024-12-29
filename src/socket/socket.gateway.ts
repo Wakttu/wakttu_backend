@@ -133,7 +133,7 @@ class Bot {
 
   constructor(roomId: string, socketService: SocketService) {
     this.id = roomId;
-    this.userId = 'minsoo-' + roomId;
+    this.userId = roomId;
     this.name = '민수 봇';
     this.roomId = roomId;
     this.character = JSON.parse('{ "skin": "S-1" }');
@@ -1599,7 +1599,7 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    if (!this.roomlist.some((room: Room) => room.id === roomId)) {
+    if (!this.roomInfo[roomId]) {
       this.logger.error('해당하는 방이 존재하지 않습니다.');
       client.emit('alarm', { message: '존재하지 않는 방입니다.' });
       return;
@@ -1625,16 +1625,104 @@ export class SocketGateway
     game.option = this.socketService.getOption(roomInfo.option);
     game.roundTime = roomInfo.time;
 
-    await this.lastService.handleStart(roomId, roomInfo, this.game[roomId]);
+    await this.lastService.handleStart(
+      roomId,
+      roomInfo,
+      this.game[roomId],
+      true,
+    );
 
     const bot = this.bot[roomId];
     bot.idx = game.users.findIndex((user) => user.provider === 'bot');
 
     setTimeout(() => {
-      this.server.to(roomId).emit('chat', {
-        user: bot.getBotInfo(),
-        chat: bot.chatToBot(1),
-      });
+      this.handleBotChat({ roomId, type: 1 });
     }, 3000);
+  }
+
+  @SubscribeMessage('bot.chat')
+  handleBotChat(
+    @MessageBody()
+    { roomId, type, chat }: { roomId: string; type: number; chat?: string },
+  ) {
+    const bot = this.bot[roomId];
+    this.server.to(roomId).emit('chat', {
+      user: bot.getBotInfo(),
+      chat: bot.chatToBot(type, chat),
+    });
+  }
+
+  @SubscribeMessage('last.getAnswer')
+  async handleLastGetAnswer(@MessageBody() roomId: string) {
+    if (!this.bot[roomId] || !this.game[roomId]) {
+      this.logger.error('bot error');
+      this.server.to(roomId).emit('alarm', {
+        message: '로봇 답 가져오는 중 오류가 발생했습니다.',
+      });
+    }
+    try {
+      const answer = await this.bot[roomId].getLastAnswer(
+        this.game[roomId].target as string,
+      );
+      this.logger.debug(`${roomId} bot gets ${answer}`);
+      this.server.to(roomId).emit('last.getAnswer', answer);
+    } catch (error) {
+      this.logger.error(`Bot get answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '로봇 답 가져오는 중 오류가 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('last.botAnswer')
+  async handleLastBotAnswer(
+    @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
+  ) {
+    this.game[roomId].loading = true;
+
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = this.socketService.getTurnTime(
+      roundTime,
+      this.game[roomId].chain,
+    );
+
+    if (success) {
+      this.server.to(roomId).emit('last.game', {
+        success: false,
+        answer: chat,
+        game: this.game[roomId],
+        message: '5',
+        word: undefined,
+        who: roomId,
+      });
+    } else {
+      const check = await this.socketService.check(
+        chat,
+        this.game[roomId].option,
+      );
+      if (check.success) {
+        score = this.socketService.checkWakta(check.word.wakta)
+          ? score * 1.58
+          : score;
+        const mission = await this.lastService.handleCheckMission(
+          chat,
+          this.game[roomId],
+        );
+        score = mission ? score * 1.2 : score;
+        score = Math.round(score);
+        this.lastService.handleNextTurn(this.game[roomId], chat, score);
+        this.handlePong(roomId);
+        this.game[roomId].turnChanged = true;
+      }
+      this.server.to(roomId).emit('last.game', {
+        success: check.success,
+        answer: chat,
+        game: this.game[roomId],
+        message: check.message,
+        word: check.word,
+        who: roomId,
+      });
+    }
+    this.game[roomId].loading = false;
   }
 }

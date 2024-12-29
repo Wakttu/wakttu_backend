@@ -418,6 +418,6 @@ export class SocketService {
   }
 
   async getBotAnswer(target: string) {
-    return await this.getBotAnswer(target);
+    return await this.dicService.getBotAnswer(target);
   }
 }
