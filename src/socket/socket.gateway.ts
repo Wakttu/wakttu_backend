@@ -1382,7 +1382,7 @@ export class SocketGateway
       this.game[roomId],
     );
     this.server.to(roomId).emit('chat', {
-      user: { name: '시스템', color: 'red' },
+      user: { name: '시스템', color: '#A377FF' },
       chat: '라운드 준비 중입니다!',
     });
   }
@@ -1409,7 +1409,7 @@ export class SocketGateway
     );
     if (this.game[roomId].host === this.user[client.id].id) {
       client.emit('chat', {
-        user: { color: 'red', name: '시스템' },
+        user: { color: '#A377FF', name: '시스템' },
         chat: '강제로 게임을 진행 하려면 !p을 입력해주세요',
       });
     }
@@ -1445,20 +1445,20 @@ export class SocketGateway
         this.logger.log(`${roomId} all users answered`);
         this.server.to(roomId).emit('chat', {
           user: {
-            color: 'red',
+            color: '#A377FF',
             name: '시스템',
-            chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
           },
+          chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
         });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
         this.logger.log(`${client.id} user answered`);
         this.server.to(roomId).emit('chat', {
           user: {
-            color: 'red',
+            color: '#A377FF',
             name: '시스템',
-            chat: `${this.user[client.id].name}님, 정답!`,
           },
+          chat: `${this.user[client.id].name}님, 정답!`,
         });
       }
     } catch (error) {
@@ -1500,7 +1500,7 @@ export class SocketGateway
     }
     this.server.to(roomId).emit('music.pong');
     this.server.to(roomId).emit('chat', {
-      user: { name: '시스템', color: 'red' },
+      user: { name: '시스템', color: '#A377FF' },
       chat: '라운드 종료!',
     });
   }
@@ -1515,7 +1515,7 @@ export class SocketGateway
     if (command === '!p') {
       this.musicService.handleStrongPlay(roomId, this.game[roomId]);
       this.server.to(roomId).emit('chat', {
-        user: { color: 'red', name: '시스템' },
+        user: { color: '#A377FF', name: '시스템' },
         chat: '강제로 다음 곡을 실행합니다.',
       });
     }
