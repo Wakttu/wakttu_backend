@@ -81,6 +81,7 @@ export class DictionaryService {
         _id: item._id,
         bgm: item.meta.bgm ? item.meta.bgm : 'woo-2',
       }));
+
     } catch (error) {
       throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
     }
@@ -140,4 +141,5 @@ export class DictionaryService {
       .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE _id LIKE ${target} || '%' ORDER BY random() LIMIT 1`;
     return list.length > 0 ? list[0]._id : null;
   }
+
 }

@@ -241,6 +241,7 @@ export class SocketGateway
     [roomId: string]: Bot;
   } = {};
 
+
   async handleConnection(@ConnectedSocket() client: any) {
     try {
       const isAuthenticated = await this.guard.validateClient(client);
@@ -1311,6 +1312,7 @@ export class SocketGateway
   @SubscribeMessage('cloud.ping')
   handleCloudPing(@MessageBody() roomId: string) {
     let time = 40;
+
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('cloud.ping');
       time--;
@@ -1484,7 +1486,6 @@ export class SocketGateway
       client.emit('chat', {
         user: { color: 'red', name: '시스템' },
         chat: '시작이 안된다면 !p을 입력해주세요',
-
       });
     }
   }
@@ -1523,6 +1524,7 @@ export class SocketGateway
             name: '시스템',
           },
           chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
+
         });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
@@ -1533,6 +1535,7 @@ export class SocketGateway
             name: '시스템',
           },
           chat: `${this.user[client.id].name}님, 정답!`,
+
         });
       }
     } catch (error) {
@@ -1790,4 +1793,5 @@ export class SocketGateway
     }
     this.game[roomId].loading = false;
   }
+
 }
