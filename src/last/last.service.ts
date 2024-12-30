@@ -40,11 +40,13 @@ export class LastService {
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
-      const scores = await this.socketService.setResult(game.users);
+      if (!game.users.some((user) => user.provider === 'bot')) {
+        const scores = await this.socketService.setResult(game.users);
+        game.users.forEach((user) => {
+          this.socketGateway.user[user.id].score = scores[user.id];
+        });
+      }
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
-      game.users.forEach((user) => {
-        this.socketGateway.user[user.id].score = scores[user.id];
-      });
       game.users.splice(0, game.total);
       game.turn = -1;
       this.server

@@ -60,8 +60,8 @@ export class SocketService {
    * @return {_id:string}[];
    */
 
-  async getCloud(round: number): Promise<{ _id: string; meta: any }[]> {
-    return await this.dicService.getCloud(round);
+  async getCloud(count: number): Promise<{ _id: string; bgm: string }[]> {
+    return await this.dicService.getCloud(count);
   }
 
   /**

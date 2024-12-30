@@ -352,6 +352,8 @@ export class SocketGateway
         } else {
           delete this.roomInfo[roomId];
           delete this.game[roomId];
+          clearInterval(this.ping[roomId]);
+          delete this.ping[roomId];
           await this.socketService.deleteRoom(roomId);
         }
       }
@@ -673,6 +675,8 @@ export class SocketGateway
     } else {
       delete this.roomInfo[roomId];
       delete this.game[roomId];
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
       await this.socketService.deleteRoom(roomId);
     }
   }
@@ -1306,7 +1310,7 @@ export class SocketGateway
   // ping
   @SubscribeMessage('cloud.ping')
   handleCloudPing(@MessageBody() roomId: string) {
-    let time = 45;
+    let time = 40;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('cloud.ping');
       time--;
@@ -1479,7 +1483,7 @@ export class SocketGateway
     if (this.game[roomId].host === this.user[client.id].id) {
       client.emit('chat', {
         user: { color: 'red', name: '시스템' },
-        chat: '강제로 게임을 진행 하려면 !p을 입력해주세요',
+        chat: '시작이 안된다면 !p을 입력해주세요',
       });
     }
   }
@@ -1594,6 +1598,37 @@ export class SocketGateway
    * Bot
    */
 
+  @SubscribeMessage('exit.practice')
+  async handleExitPractice(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.roomInfo[roomId] || !this.game[roomId]) {
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
+
+    try {
+      const game = this.game[roomId];
+      let roomInfo = this.roomInfo[roomId];
+      game.users.splice(0, game.users.length);
+
+      game.turn = -1;
+      roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
+
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
+
+      this.logger.debug(`Finish Practice : ${roomId}`);
+      client.emit('exit.practice', { roomInfo, game });
+    } catch (err) {
+      this.logger.error(`Exit Practice error : ${err}`);
+      client.emit('alarm', {
+        message: '연습모드 종료 중 오류 발생',
+      });
+    }
+  }
+
   @SubscribeMessage('last.practice')
   async handleCreateBot(
     @MessageBody() roomId: string,
@@ -1638,6 +1673,35 @@ export class SocketGateway
     setTimeout(() => {
       this.handleBotChat({ roomId, type: 1 });
     }, 3000);
+  }
+
+  // music bell cloud 는 공통됨
+  @SubscribeMessage('game.practice')
+  async handlePractice(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: any,
+  ) {
+    if (!this.roomInfo[roomId]) {
+      this.logger.error('해당하는 방이 존재하지 않습니다.');
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
+
+    if (this.ping[roomId]) this.handlePong(roomId);
+
+    const roomInfo = this.roomInfo[roomId];
+    const game = this.game[roomId];
+
+    this.handleReady(roomId, client);
+
+    const practiceFunction: Record<number, any> = {
+      2: await this.bellService.handleStart(roomId, roomInfo, game, true),
+      3: await this.musicService.handleStart(roomId, roomInfo, game, true),
+      4: await this.cloudService.handleStart(roomId, roomInfo, game, true),
+    };
+
+    this.logger.debug(`Room : ${roomId} / ${roomInfo.type} start!`);
+    practiceFunction[roomInfo.type];
   }
 
   @SubscribeMessage('bot.chat')
