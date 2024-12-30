@@ -15,7 +15,6 @@ export class CloudService {
     [roomId: string]: string[];
   } = {};
 
-
   async handleStart(
     roomId: string,
     roomInfo: Room,
@@ -35,7 +34,6 @@ export class CloudService {
         ...infos[idx],
         clear: false,
         type: setCloudType(idx, count),
-
       };
     });
     roomInfo.start = true;
@@ -44,7 +42,6 @@ export class CloudService {
     this.server
       .to(roomId)
       .emit(practice ? 'cloud.practice' : 'cloud.start', game);
-
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
@@ -122,7 +119,6 @@ const setWeather = () => {
 
   return 'cloud';
 };
-
 
 const setCloudType = (idx: number, count: number) => {
   const mul = (idx + 1) % count;

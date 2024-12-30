@@ -1380,17 +1380,18 @@ export class SocketGateway
         return;
       }
 
-      const cloudIdx = this.game[roomId].cloud.findIndex(
+      const cloud = this.game[roomId].cloud.find(
         (item) => item._id === chat && !item.clear,
       );
 
-      if (cloudIdx === -1)
+      if (!cloud)
         this.server
           .to(roomId)
           .emit('chat', { user: this.user[client.id], chat });
       else {
-        const cloudType = this.game[roomId].cloud[cloudIdx].type;
-        this.game[roomId].cloud[cloudIdx].clear = true;
+        const cloudType = cloud.type;
+        cloud.clear = true;
+
         this.cloudService.handleAnswer(
           idx,
           this.game[roomId],
@@ -1401,6 +1402,7 @@ export class SocketGateway
         }
 
         this.server.to(roomId).emit('cloud.game', this.game[roomId]);
+        client.emit('cloud.answer', cloud.bgm);
       }
     } catch (error) {
       this.logger.error(`Cloud answer error: ${error.message}`, error.stack);
