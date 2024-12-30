@@ -136,7 +136,7 @@ class Bot {
     this.userId = roomId;
     this.name = '민수 봇';
     this.roomId = roomId;
-    this.character = JSON.parse('{ "skin": "S-1" }');
+    this.character = JSON.parse('{ "skin": "S-9" }');
     this.exp = 0;
     this.score = 0;
     this.provider = 'bot';
