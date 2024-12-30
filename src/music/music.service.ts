@@ -15,7 +15,14 @@ export class MusicService {
     this.server = this.socketGateway.server;
   }
 
-  async handleStart(roomId: string, roomInfo: Room, game: Game) {
+
+  async handleStart(
+    roomId: string,
+    roomInfo: Room,
+    game: Game,
+    practice?: boolean,
+  ) {
+
     game.turn = -1;
     game.round = 0;
     game.target = '';
@@ -25,7 +32,10 @@ export class MusicService {
     await this.socketService.setStart(roomId, false);
 
     game.target = game.music[game.round].answer;
-    this.server.to(roomId).emit('music.start', game);
+    this.server
+      .to(roomId)
+      .emit(practice ? 'music.practice' : 'music.start', game);
+
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {

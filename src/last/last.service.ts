@@ -12,7 +12,12 @@ export class LastService {
   ) {}
   public server;
 
-  async handleStart(roomId: string, roomInfo: Room, game: Game) {
+  async handleStart(
+    roomId: string,
+    roomInfo: Room,
+    game: Game,
+    practice?: boolean,
+  ) {
     game.turn = 0;
     game.round = 0;
     game.target = '';
@@ -21,7 +26,9 @@ export class LastService {
     game.keyword = await this.socketService.setWord(roomInfo.round);
     roomInfo.start = true;
     await this.socketService.setStart(roomId, false);
-    this.server.to(roomId).emit('last.start', game);
+    this.server
+      .to(roomId)
+      .emit(practice ? 'last.practice' : 'last.start', game);
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
@@ -33,11 +40,13 @@ export class LastService {
       this.server
         .to(roomId)
         .emit('last.result', { game: game, roomInfo: roomInfo });
-      const scores = await this.socketService.setResult(game.users);
+      if (!game.users.some((user) => user.provider === 'bot')) {
+        const scores = await this.socketService.setResult(game.users);
+        game.users.forEach((user) => {
+          this.socketGateway.user[user.id].score = scores[user.id];
+        });
+      }
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
-      game.users.forEach((user) => {
-        this.socketGateway.user[user.id].score = scores[user.id];
-      });
       game.users.splice(0, game.total);
       game.turn = -1;
       this.server

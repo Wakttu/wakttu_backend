@@ -16,7 +16,12 @@ export class BellService {
     [roomId: string]: string[];
   } = {};
 
-  async handleStart(roomId: string, roomInfo: Room, game: Game) {
+  async handleStart(
+    roomId: string,
+    roomInfo: Room,
+    game: Game,
+    practice?: boolean,
+  ) {
     game.turn = -1;
     game.round = 0;
     game.target = '';
@@ -25,7 +30,9 @@ export class BellService {
     roomInfo.start = true;
     await this.socketService.setStart(roomId, false);
 
-    this.server.to(roomId).emit('bell.start', game);
+    this.server
+      .to(roomId)
+      .emit(practice ? 'bell.practice' : 'bell.start', game);
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {

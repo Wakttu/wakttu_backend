@@ -15,24 +15,36 @@ export class CloudService {
     [roomId: string]: string[];
   } = {};
 
-  async handleStart(roomId: string, roomInfo: Room, game: Game) {
+
+  async handleStart(
+    roomId: string,
+    roomInfo: Room,
+    game: Game,
+    practice?: boolean,
+  ) {
     game.turn = -1;
     game.round = 0;
     game.total = game.users.length;
-    const cloud = await this.socketService.getCloud(roomInfo.round);
-    const infos = createCloudInfo(roomInfo.round * 20);
+    const count = (game.total - 1) * 5 + 15;
+    const cloud = await this.socketService.getCloud(roomInfo.round * count);
+    const infos = createCloudInfo(roomInfo.round * count);
+
     game.cloud = cloud.map((item, idx) => {
       return {
         ...item,
         ...infos[idx],
         clear: false,
-        type: setCloudType(idx),
+        type: setCloudType(idx, count),
+
       };
     });
     roomInfo.start = true;
     await this.socketService.setStart(roomId, false);
 
-    this.server.to(roomId).emit('cloud.start', game);
+    this.server
+      .to(roomId)
+      .emit(practice ? 'cloud.practice' : 'cloud.start', game);
+
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
@@ -111,8 +123,9 @@ const setWeather = () => {
   return 'cloud';
 };
 
-const setCloudType = (idx: number) => {
-  const mul = (idx + 1) % 20;
+
+const setCloudType = (idx: number, count: number) => {
+  const mul = (idx + 1) % count;
   if (mul <= 2) return 1;
   else if (mul === 3) return 2;
   return 0;

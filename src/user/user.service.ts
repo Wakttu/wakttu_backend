@@ -163,7 +163,7 @@ export class UserService {
         data.map(async (user) => {
           const updatedScore = await this.updateScore(
             user.userId,
-            Math.ceil(user.score / 10),
+            Math.ceil(user.score / 5),
           );
           result[user.id] = updatedScore.score;
         }),

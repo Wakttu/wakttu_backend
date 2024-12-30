@@ -60,8 +60,8 @@ export class SocketService {
    * @return {_id:string}[];
    */
 
-  async getCloud(round: number): Promise<{ _id: string; meta: any }[]> {
-    return await this.dicService.getCloud(round);
+  async getCloud(count: number): Promise<{ _id: string; bgm: string }[]> {
+    return await this.dicService.getCloud(count);
   }
 
   /**
@@ -415,5 +415,9 @@ export class SocketService {
     const data = await this.dicService.search(target, 1, 0);
     if (data.length > 0) return data[0].id;
     return '한방!';
+  }
+
+  async getBotAnswer(target: string) {
+    return await this.dicService.getBotAnswer(target);
   }
 }
