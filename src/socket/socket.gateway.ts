@@ -241,7 +241,6 @@ export class SocketGateway
     [roomId: string]: Bot;
   } = {};
 
-
   async handleConnection(@ConnectedSocket() client: any) {
     try {
       const isAuthenticated = await this.guard.validateClient(client);
@@ -1524,7 +1523,6 @@ export class SocketGateway
             name: '시스템',
           },
           chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
-
         });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
@@ -1535,7 +1533,6 @@ export class SocketGateway
             name: '시스템',
           },
           chat: `${this.user[client.id].name}님, 정답!`,
-
         });
       }
     } catch (error) {
@@ -1698,14 +1695,22 @@ export class SocketGateway
 
     this.handleReady(roomId, client);
 
-    const practiceFunction: Record<number, any> = {
-      2: await this.bellService.handleStart(roomId, roomInfo, game, true),
-      3: await this.musicService.handleStart(roomId, roomInfo, game, true),
-      4: await this.cloudService.handleStart(roomId, roomInfo, game, true),
-    };
+    switch (roomInfo.type) {
+      case 2:
+        await this.bellService.handleStart(roomId, roomInfo, game, true);
+        break;
+      case 3:
+        await this.musicService.handleStart(roomId, roomInfo, game, true);
+        break;
+      case 4:
+        await this.cloudService.handleStart(roomId, roomInfo, game, true);
+        break;
+      default:
+        this.logger.warn(`Unknown room type: ${roomInfo.type}`);
+        return;
+    }
 
     this.logger.debug(`Room : ${roomId} / ${roomInfo.type} start!`);
-    practiceFunction[roomInfo.type];
   }
 
   @SubscribeMessage('bot.chat')
@@ -1793,5 +1798,4 @@ export class SocketGateway
     }
     this.game[roomId].loading = false;
   }
-
 }
