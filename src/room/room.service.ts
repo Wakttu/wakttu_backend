@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -11,9 +12,11 @@ import { CreateRoom, Room } from './entities/room.entity';
 @Injectable()
 export class RoomService {
   constructor(private readonly prisma: PrismaService) {
+    this.logger;
     this.idx = 0;
   }
   public idx;
+  private readonly logger = new Logger(RoomService.name);
 
   async create(data: CreateRoomDto): Promise<CreateRoom> {
     try {
@@ -35,6 +38,7 @@ export class RoomService {
         },
       });
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException('방 생성에 실패했습니다.');
     }
   }
@@ -79,6 +83,7 @@ export class RoomService {
         },
       });
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException(
         '방 목록을 가져오는 중 오류가 발생했습니다.',
       );
@@ -103,6 +108,7 @@ export class RoomService {
         },
       });
     } catch (error) {
+      this.logger.error(error);
       if (error instanceof NotFoundException) throw error;
       throw new BadRequestException('방을 찾는 중 오류가 발생했습니다.');
     }
@@ -127,6 +133,7 @@ export class RoomService {
         },
       });
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException(`ID ${id}인 방 업데이트에 실패했습니다.`);
     }
   }
@@ -154,6 +161,7 @@ export class RoomService {
         },
       });
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException(
         `게임 시작 상태 변경 중 오류가 발생했습니다.`,
       );
@@ -164,6 +172,7 @@ export class RoomService {
     try {
       return await this.prisma.room.deleteMany({ where: { id } });
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException(`방 삭제 중 오류가 발생했습니다.`);
     }
   }
@@ -172,6 +181,7 @@ export class RoomService {
     try {
       return await this.prisma.room.deleteMany();
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException('전체 방 삭제 중 오류가 발생했습니다.');
     }
   }
@@ -186,6 +196,7 @@ export class RoomService {
       });
       return !!room;
     } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException('비밀번호 확인 중 오류가 발생했습니다.');
     }
   }
