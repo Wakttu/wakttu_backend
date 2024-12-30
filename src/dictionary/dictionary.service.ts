@@ -72,12 +72,15 @@ export class DictionaryService {
     }
   }
 
-  async getCloud(round: number): Promise<any> {
+  async getCloud(count: number): Promise<any> {
     try {
-      const list: string[] = await this.prisma
-        .$queryRaw`SELECT _id, meta FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT 20*${round}`;
+      const list: [] = await this.prisma
+        .$queryRaw`SELECT _id, meta FROM "public"."wakttu_ko" WHERE LENGTH(_id) <=14 AND wakta = true ORDER BY random() LIMIT ${count}`;
 
-      return list;
+      return list.map((item: { _id: string; meta: any }) => ({
+        _id: item._id,
+        bgm: item.meta.bgm ? item.meta.bgm : 'woo-2',
+      }));
     } catch (error) {
       throw new Error(`단어 가져오기 중 오류 발생: ${error.message}`);
     }
@@ -130,5 +133,11 @@ export class DictionaryService {
       videoId: item._id,
       ...item,
     }));
+  }
+
+  async getBotAnswer(target: string) {
+    const list: { _id: string }[] = await this.prisma
+      .$queryRaw`SELECT _id FROM "public"."wakttu_ko" WHERE _id LIKE ${target} || '%' ORDER BY random() LIMIT 1`;
+    return list.length > 0 ? list[0]._id : null;
   }
 }

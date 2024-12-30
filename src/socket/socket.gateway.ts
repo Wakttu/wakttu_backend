@@ -116,6 +116,71 @@ export class Game {
   turnChanged: boolean;
 }
 
+class Bot {
+  id: string;
+  userId: string;
+  name: string;
+  character: JSON;
+  roomId: string;
+  exp: number;
+  score: number;
+  provider: string;
+  success?: boolean;
+  team?: string;
+  idx?: number;
+
+  private socketService: SocketService;
+
+  constructor(roomId: string, socketService: SocketService) {
+    this.id = roomId;
+    this.userId = roomId;
+    this.name = '민수 봇';
+    this.roomId = roomId;
+    this.character = JSON.parse('{ "skin": "S-1" }');
+    this.exp = 0;
+    this.score = 0;
+    this.provider = 'bot';
+    this.socketService = socketService; // SocketService 할당
+    this.idx = -1;
+  }
+
+  public getBotInfo() {
+    return {
+      id: this.id,
+      userId: this.userId,
+      name: this.name,
+      character: this.character,
+      exp: this.exp,
+      score: this.score,
+      success: this.success,
+      provider: this.provider,
+    };
+  }
+
+  public addBotToRoom(roomId: string, game: Game) {
+    game.users.push(this.getBotInfo());
+  }
+
+  public removeBotFromRoom(game: Game, roomId: string) {
+    game.users = game.users.filter((user) => user.id !== roomId);
+  }
+
+  public getLastAnswer(target: string) {
+    return this.socketService.getBotAnswer(target);
+  }
+
+  public chatToBot(type: number, chat?: string) {
+    if (chat) return chat;
+    if (type === 0) {
+      return '수듄 ㅋㅋ';
+    } else if (type === 1) {
+      return '자, 이거야말로 기다렸던 순간이네.';
+    } else if (type === 2) {
+      return '아니, 이 민수님이 실수하다니';
+    }
+  }
+}
+
 @WebSocketGateway({
   namespace: 'wakttu',
   cors: { origin: true, credentials: true },
@@ -171,6 +236,10 @@ export class SocketGateway
   } = {};
 
   public roomlist: Room[];
+
+  public bot: {
+    [roomId: string]: Bot;
+  } = {};
 
   async handleConnection(@ConnectedSocket() client: any) {
     try {
@@ -283,6 +352,8 @@ export class SocketGateway
         } else {
           delete this.roomInfo[roomId];
           delete this.game[roomId];
+          clearInterval(this.ping[roomId]);
+          delete this.ping[roomId];
           await this.socketService.deleteRoom(roomId);
         }
       }
@@ -604,6 +675,8 @@ export class SocketGateway
     } else {
       delete this.roomInfo[roomId];
       delete this.game[roomId];
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
       await this.socketService.deleteRoom(roomId);
     }
   }
@@ -1237,7 +1310,7 @@ export class SocketGateway
   // ping
   @SubscribeMessage('cloud.ping')
   handleCloudPing(@MessageBody() roomId: string) {
-    let time = 45;
+    let time = 40;
     const timeId = setInterval(() => {
       this.server.to(roomId).emit('cloud.ping');
       time--;
@@ -1409,8 +1482,9 @@ export class SocketGateway
     );
     if (this.game[roomId].host === this.user[client.id].id) {
       client.emit('chat', {
-        user: { color: '#A377FF', name: '시스템' },
-        chat: '강제로 게임을 진행 하려면 !p을 입력해주세요',
+        user: { color: 'red', name: '시스템' },
+        chat: '시작이 안된다면 !p을 입력해주세요',
+
       });
     }
   }
@@ -1519,5 +1593,201 @@ export class SocketGateway
         chat: '강제로 다음 곡을 실행합니다.',
       });
     }
+  }
+
+  /**
+   * Bot
+   */
+
+  @SubscribeMessage('exit.practice')
+  async handleExitPractice(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.roomInfo[roomId] || !this.game[roomId]) {
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
+
+    try {
+      const game = this.game[roomId];
+      let roomInfo = this.roomInfo[roomId];
+      game.users.splice(0, game.users.length);
+
+      game.turn = -1;
+      roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
+
+      clearInterval(this.ping[roomId]);
+      delete this.ping[roomId];
+
+      this.logger.debug(`Finish Practice : ${roomId}`);
+      client.emit('exit.practice', { roomInfo, game });
+    } catch (err) {
+      this.logger.error(`Exit Practice error : ${err}`);
+      client.emit('alarm', {
+        message: '연습모드 종료 중 오류 발생',
+      });
+    }
+  }
+
+  @SubscribeMessage('last.practice')
+  async handleCreateBot(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.roomInfo[roomId]) {
+      this.logger.error('해당하는 방이 존재하지 않습니다.');
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
+
+    if (this.ping[roomId]) this.handlePong(roomId);
+
+    const roomInfo = this.roomInfo[roomId];
+    const game = this.game[roomId];
+
+    if (this.bot[roomId]) {
+      this.logger.error(`${roomId} : 이미 봇이 존재합니다`);
+      client.emit('alarm', { message: '이미 봇이 존재합니다.' });
+      return;
+    }
+
+    // 봇생성 및 Ready
+    this.bot[roomId] = new Bot(roomId, this.socketService);
+    this.bot[roomId].addBotToRoom(roomId, game);
+    this.handleReady(roomId, client);
+
+    roomInfo.option = roomInfo.option.filter((option) => option !== '팀전'); // 팀전기능끄기
+    game.option = this.socketService.getOption(roomInfo.option);
+    game.roundTime = roomInfo.time;
+
+    await this.lastService.handleStart(
+      roomId,
+      roomInfo,
+      this.game[roomId],
+      true,
+    );
+
+    const bot = this.bot[roomId];
+    bot.idx = game.users.findIndex((user) => user.provider === 'bot');
+
+    setTimeout(() => {
+      this.handleBotChat({ roomId, type: 1 });
+    }, 3000);
+  }
+
+  // music bell cloud 는 공통됨
+  @SubscribeMessage('game.practice')
+  async handlePractice(
+    @MessageBody() roomId: string,
+    @ConnectedSocket() client: any,
+  ) {
+    if (!this.roomInfo[roomId]) {
+      this.logger.error('해당하는 방이 존재하지 않습니다.');
+      client.emit('alarm', { message: '존재하지 않는 방입니다.' });
+      return;
+    }
+
+    if (this.ping[roomId]) this.handlePong(roomId);
+
+    const roomInfo = this.roomInfo[roomId];
+    const game = this.game[roomId];
+
+    this.handleReady(roomId, client);
+
+    const practiceFunction: Record<number, any> = {
+      2: await this.bellService.handleStart(roomId, roomInfo, game, true),
+      3: await this.musicService.handleStart(roomId, roomInfo, game, true),
+      4: await this.cloudService.handleStart(roomId, roomInfo, game, true),
+    };
+
+    this.logger.debug(`Room : ${roomId} / ${roomInfo.type} start!`);
+    practiceFunction[roomInfo.type];
+  }
+
+  @SubscribeMessage('bot.chat')
+  handleBotChat(
+    @MessageBody()
+    { roomId, type, chat }: { roomId: string; type: number; chat?: string },
+  ) {
+    const bot = this.bot[roomId];
+    this.server.to(roomId).emit('chat', {
+      user: bot.getBotInfo(),
+      chat: bot.chatToBot(type, chat),
+    });
+  }
+
+  @SubscribeMessage('last.getAnswer')
+  async handleLastGetAnswer(@MessageBody() roomId: string) {
+    if (!this.bot[roomId] || !this.game[roomId]) {
+      this.logger.error('bot error');
+      this.server.to(roomId).emit('alarm', {
+        message: '로봇 답 가져오는 중 오류가 발생했습니다.',
+      });
+    }
+    try {
+      const answer = await this.bot[roomId].getLastAnswer(
+        this.game[roomId].target as string,
+      );
+      this.logger.debug(`${roomId} bot gets ${answer}`);
+      this.server.to(roomId).emit('last.getAnswer', answer);
+    } catch (error) {
+      this.logger.error(`Bot get answer error: ${error.message}`, error.stack);
+      this.server
+        .to(roomId)
+        .emit('alarm', { message: '로봇 답 가져오는 중 오류가 발생했습니다.' });
+    }
+  }
+
+  @SubscribeMessage('last.botAnswer')
+  async handleLastBotAnswer(
+    @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
+  ) {
+    this.game[roomId].loading = true;
+
+    this.game[roomId].roundTime = roundTime;
+    this.game[roomId].turnTime = this.socketService.getTurnTime(
+      roundTime,
+      this.game[roomId].chain,
+    );
+
+    if (success) {
+      this.server.to(roomId).emit('last.game', {
+        success: false,
+        answer: chat,
+        game: this.game[roomId],
+        message: '5',
+        word: undefined,
+        who: roomId,
+      });
+    } else {
+      const check = await this.socketService.check(
+        chat,
+        this.game[roomId].option,
+      );
+      if (check.success) {
+        score = this.socketService.checkWakta(check.word.wakta)
+          ? score * 1.58
+          : score;
+        const mission = await this.lastService.handleCheckMission(
+          chat,
+          this.game[roomId],
+        );
+        score = mission ? score * 1.2 : score;
+        score = Math.round(score);
+        this.lastService.handleNextTurn(this.game[roomId], chat, score);
+        this.handlePong(roomId);
+        this.game[roomId].turnChanged = true;
+      }
+      this.server.to(roomId).emit('last.game', {
+        success: check.success,
+        answer: chat,
+        game: this.game[roomId],
+        message: check.message,
+        word: check.word,
+        who: roomId,
+      });
+    }
+    this.game[roomId].loading = false;
   }
 }
