@@ -24,7 +24,7 @@ export class CloudService {
     game.turn = -1;
     game.round = 0;
     game.total = game.users.length;
-    const count = (game.total - 1) * 5 + 15;
+    const count = (game.total - 1) * 10 + 15;
     const cloud = await this.socketService.getCloud(roomInfo.round * count);
     const infos = createCloudInfo(roomInfo.round * count);
 
@@ -64,7 +64,7 @@ export class CloudService {
         .emit('cloud.end', { game: game, roomInfo: roomInfo });
       return;
     }
-    game.roundTime = 60000;
+    game.roundTime = 40000;
     game.round += 1;
 
     this.server.to(roomId).emit('cloud.round', { game, weather: setWeather() });
