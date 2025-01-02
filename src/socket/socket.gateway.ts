@@ -136,7 +136,7 @@ class Bot {
     this.userId = roomId;
     this.name = '민수 봇';
     this.roomId = roomId;
-    this.character = JSON.parse('{ "skin": "S-1" }');
+    this.character = JSON.parse('{ "skin": "S-9" }');
     this.exp = 0;
     this.score = 0;
     this.provider = 'bot';
@@ -1380,17 +1380,18 @@ export class SocketGateway
         return;
       }
 
-      const cloudIdx = this.game[roomId].cloud.findIndex(
+      const cloud = this.game[roomId].cloud.find(
         (item) => item._id === chat && !item.clear,
       );
 
-      if (cloudIdx === -1)
+      if (!cloud)
         this.server
           .to(roomId)
           .emit('chat', { user: this.user[client.id], chat });
       else {
-        const cloudType = this.game[roomId].cloud[cloudIdx].type;
-        this.game[roomId].cloud[cloudIdx].clear = true;
+        const cloudType = cloud.type;
+        cloud.clear = true;
+
         this.cloudService.handleAnswer(
           idx,
           this.game[roomId],
@@ -1401,6 +1402,7 @@ export class SocketGateway
         }
 
         this.server.to(roomId).emit('cloud.game', this.game[roomId]);
+        client.emit('cloud.answer', cloud.bgm);
       }
     } catch (error) {
       this.logger.error(`Cloud answer error: ${error.message}`, error.stack);
@@ -1617,6 +1619,7 @@ export class SocketGateway
       game.turn = -1;
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
 
+      if (this.bot[roomId]) delete this.bot[roomId];
       clearInterval(this.ping[roomId]);
       delete this.ping[roomId];
 
@@ -1646,15 +1649,12 @@ export class SocketGateway
     const roomInfo = this.roomInfo[roomId];
     const game = this.game[roomId];
 
-    if (this.bot[roomId]) {
-      this.logger.error(`${roomId} : 이미 봇이 존재합니다`);
-      client.emit('alarm', { message: '이미 봇이 존재합니다.' });
+    if (!this.bot[roomId]) {
+      // 봇생성 및 Ready
+      this.bot[roomId] = new Bot(roomId, this.socketService);
+      this.bot[roomId].addBotToRoom(roomId, game);
       return;
     }
-
-    // 봇생성 및 Ready
-    this.bot[roomId] = new Bot(roomId, this.socketService);
-    this.bot[roomId].addBotToRoom(roomId, game);
     this.handleReady(roomId, client);
 
     roomInfo.option = roomInfo.option.filter((option) => option !== '팀전'); // 팀전기능끄기

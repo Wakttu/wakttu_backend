@@ -15,7 +15,6 @@ export class CloudService {
     [roomId: string]: string[];
   } = {};
 
-
   async handleStart(
     roomId: string,
     roomInfo: Room,
@@ -25,7 +24,7 @@ export class CloudService {
     game.turn = -1;
     game.round = 0;
     game.total = game.users.length;
-    const count = (game.total - 1) * 5 + 15;
+    const count = (game.total - 1) * 10 + 15;
     const cloud = await this.socketService.getCloud(roomInfo.round * count);
     const infos = createCloudInfo(roomInfo.round * count);
 
@@ -35,7 +34,6 @@ export class CloudService {
         ...infos[idx],
         clear: false,
         type: setCloudType(idx, count),
-
       };
     });
     roomInfo.start = true;
@@ -44,7 +42,6 @@ export class CloudService {
     this.server
       .to(roomId)
       .emit(practice ? 'cloud.practice' : 'cloud.start', game);
-
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
@@ -67,7 +64,7 @@ export class CloudService {
         .emit('cloud.end', { game: game, roomInfo: roomInfo });
       return;
     }
-    game.roundTime = 60000;
+    game.roundTime = 40000;
     game.round += 1;
 
     this.server.to(roomId).emit('cloud.round', { game, weather: setWeather() });
@@ -122,7 +119,6 @@ const setWeather = () => {
 
   return 'cloud';
 };
-
 
 const setCloudType = (idx: number, count: number) => {
   const mul = (idx + 1) % count;
