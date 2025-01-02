@@ -1619,6 +1619,7 @@ export class SocketGateway
       game.turn = -1;
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
 
+      if (this.bot[roomId]) delete this.bot[roomId];
       clearInterval(this.ping[roomId]);
       delete this.ping[roomId];
 
@@ -1648,15 +1649,12 @@ export class SocketGateway
     const roomInfo = this.roomInfo[roomId];
     const game = this.game[roomId];
 
-    if (this.bot[roomId]) {
-      this.logger.error(`${roomId} : 이미 봇이 존재합니다`);
-      client.emit('alarm', { message: '이미 봇이 존재합니다.' });
+    if (!this.bot[roomId]) {
+      // 봇생성 및 Ready
+      this.bot[roomId] = new Bot(roomId, this.socketService);
+      this.bot[roomId].addBotToRoom(roomId, game);
       return;
     }
-
-    // 봇생성 및 Ready
-    this.bot[roomId] = new Bot(roomId, this.socketService);
-    this.bot[roomId].addBotToRoom(roomId, game);
     this.handleReady(roomId, client);
 
     roomInfo.option = roomInfo.option.filter((option) => option !== '팀전'); // 팀전기능끄기
