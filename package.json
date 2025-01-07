@@ -55,6 +55,7 @@
     "passport-local": "^1.0.0",
     "passport-naver": "^1.0.6",
     "prisma": "^5.22.0",
+    "rate-limiter-flexible": "^5.0.4",
     "redis": "^4.7.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
