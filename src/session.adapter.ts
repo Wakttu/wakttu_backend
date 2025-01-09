@@ -60,7 +60,7 @@ export class EnhancedSessionAdapter extends IoAdapter {
         next();
       } catch (error) {
         const errorMessage = this.getErrorMessage(error);
-        socket.emit('connection_error', { message: errorMessage });
+        next(new Error(errorMessage));
         socket.disconnect(true);
       }
     });
