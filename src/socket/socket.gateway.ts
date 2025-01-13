@@ -189,13 +189,15 @@ class Bot {
   pingTimeout: 5000,
   upgradeTimeout: 10000,
   maxHttpBufferSize: 1e6,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(SocketGateway.name);
-  private readonly MAX_CONNECTIONS = 50; // 최대 연결 수 설정
-  private currentConnections = 0; // 현재 연결된 소켓 수
 
   constructor(
     @Inject(forwardRef(() => LastService))
@@ -231,6 +233,10 @@ export class SocketGateway
     [roomId: string]: Game;
   } = {};
 
+  public reconnectionTimeouts: {
+    [userId: string]: NodeJS.Timeout;
+  } = {};
+
   public ping: {
     [roomId: string]: NodeJS.Timeout;
   } = {};
@@ -250,25 +256,17 @@ export class SocketGateway
         return;
       }
 
-      this.currentConnections++; // 연결 수 증가
-
-      // 최대 연결 수 확인
-      if (this.currentConnections > this.MAX_CONNECTIONS) {
-        this.logger.warn(
-          `Connection rejected - Max connections reached: ${client.id}`,
-        );
-        client.emit('full', {
-          message: '서버가 가득 찼습니다. 잠시 후 다시 시도해주세요.',
-        });
-        setTimeout(() => client.disconnect(), 200);
-        return;
-      }
-
       const user = client.request.session?.user;
       if (!user) {
         this.logger.warn(`Connection rejected - No user session: ${client.id}`);
         client.disconnect();
         return;
+      }
+
+      if (this.reconnectionTimeouts[user.id]) {
+        clearTimeout(this.reconnectionTimeouts[user.id]);
+        delete this.reconnectionTimeouts[user.id];
+        this.logger.log(`Client reconnected successfully: ${user.id}`);
       }
 
       // 중복 접속 확인 및 처리
@@ -282,11 +280,16 @@ export class SocketGateway
         this.handleDisconnect({ id: existingClientId });
       }
 
-      this.user[client.id] = await this.socketService.reloadUser(user.id);
-      this.user[client.id].color = this.socketService.getColor();
+      this.user[user.id] = await this.socketService.reloadUser(user.id);
+      this.user[user.id].color = this.socketService.getColor();
+      this.user[user.id].clientId = client.id;
+
+      const roomId = this.user[user.id].roomId;
+      if (roomId && this.roomlist.findIndex((room) => roomId === room.id) != -1)
+        client.join(roomId);
 
       client.emit('connected'); // 필요한 정보만 전달
-      this.logger.log(`Client connected: ${client.id}`);
+      this.logger.log(`Client connected: ${user.id}`);
     } catch (error) {
       this.logger.error(`Connection error: ${error.message}`, error.stack);
       client.emit('error', { message: '서버 오류가 발생했습니다.' });
@@ -295,6 +298,7 @@ export class SocketGateway
 
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
+    console.log(this.server);
     // 다시열릴시 존재하는 방 모두 삭제
     const ENV = this.config.get<string>('NODE_ENV');
     if (ENV !== 'development') await this.socketService.deleteAllRoom();
@@ -316,19 +320,25 @@ export class SocketGateway
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
     try {
-      this.currentConnections--; // 연결 수 감소
-      const roomId = this.user[client.id]
-        ? this.user[client.id].roomId
-        : undefined;
+      const user = client.request.session?.user;
+      const roomId =
+        user && this.user[user.id] ? this.user[user.id].roomId : undefined;
 
-      if (roomId) {
-        this.logger.log(
-          `Client disconnecting from room ${roomId}: ${client.id}`,
-        );
+      if (!user || !roomId) {
+        this.logger.warn(`Unknown user disconnected: ${client.id}`);
+        return;
+      }
 
+      this.logger.log(`Client disconnected, waiting for reconnect: ${user.id}`);
+
+      // 재연결을 위한 타임아웃 설정
+      this.reconnectionTimeouts[user.id] = setTimeout(async () => {
+        this.logger.log(`Client did not reconnect in time: ${user.id}`);
+
+        // 재연결 시간 내에 복구되지 않았을 경우 처리
         this.handleExitReady(roomId, client);
         if (this.game[roomId]) this.handleExitTeam(roomId, client);
-        await this.socketService.exitRoom(this.user[client.id].id);
+        await this.socketService.exitRoom(this.user[user.id].id);
 
         this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
         if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
@@ -336,7 +346,7 @@ export class SocketGateway
 
           if (
             this.game[roomId] &&
-            this.game[roomId].host === this.user[client.id].id
+            this.game[roomId].host === this.user[user.id].id
           ) {
             this.game[roomId].host = id;
           }
@@ -356,32 +366,17 @@ export class SocketGateway
           delete this.ping[roomId];
           await this.socketService.deleteRoom(roomId);
         }
-      }
 
-      if (this.user[client.id] && this.user[client.id].provider === 'guest') {
-        await this.socketService.deleteGuest(this.user[client.id].id);
-        client.request.session.destroy(() => {});
-      }
+        delete this.user[user.id];
+        this.server.emit('list', this.user);
 
-      delete this.user[client.id];
-      this.server.emit('list', this.user);
-
-      this.logger.log(`Client disconnected successfully: ${client.id}`);
+        this.logger.log(`Client forcibly disconnected: ${user.id}`);
+      }, 10000); // 10초 타임아웃
     } catch (error) {
       this.logger.error(
         `Disconnect error for client ${client.id}: ${error.message}`,
         error.stack,
       );
-      try {
-        this.currentConnections--; // 에러가 발생해도 연결 수는 감소
-        delete this.user[client.id];
-        this.server.emit('list', this.user);
-      } catch (cleanupError) {
-        this.logger.error(
-          `Additional cleanup error: ${cleanupError.message}`,
-          cleanupError.stack,
-        );
-      }
     }
   }
 
@@ -430,10 +425,11 @@ export class SocketGateway
   @SubscribeMessage('lobby.chat')
   async handleLobbyChat(
     @MessageBody() chat: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
+    const user = client.request.session.user;
     this.server.emit('lobby.chat', {
-      user: this.user[client.id],
+      user: this.user[user.id],
       chat: chat,
     });
   }
@@ -442,23 +438,25 @@ export class SocketGateway
   @SubscribeMessage('chat')
   async handleMessage(
     @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
+    const user = client.request.session.user;
+    if (!user) return;
     const isGameTurn =
       this.roomInfo[roomId].start &&
       (this.game[roomId].turn === -1 ||
-        this.game[roomId].users[this.game[roomId].turn].id === client.id);
+        this.game[roomId].users[this.game[roomId].turn].userId === user.id);
 
     if (!isGameTurn || roundTime === null) {
       return this.server
         .to(roomId)
-        .emit('chat', { user: this.user[client.id], chat });
+        .emit('chat', { user: this.user[user.id], chat });
     }
 
     if (!this.ping[roomId]) {
       return this.server
         .to(roomId)
-        .emit('chat', { user: this.user[client.id], chat });
+        .emit('chat', { user: this.user[user.id], chat });
     }
 
     this.game[roomId].loading = true;
@@ -532,15 +530,16 @@ export class SocketGateway
     @ConnectedSocket() client: any,
   ) {
     try {
-      this.logger.log(`Creating room - User: ${client.id}`);
+      const user = client.request.session.user;
+      this.logger.log(`Creating room - User: ${user.id}`);
       const info = await this.socketService.createRoom(
-        this.user[client.id].id,
+        this.user[user.id].id,
         data,
       );
       const { password, ...room } = info;
       this.roomInfo[room.id] = room;
       this.game[room.id] = new Game();
-      this.game[room.id].host = this.user[client.id].id;
+      this.game[room.id].host = this.user[user.id].id;
       client.emit('createRoom', { roomId: room.id, password });
     } catch (error) {
       this.logger.error(`Room creation error: ${error.message}`, error.stack);
@@ -555,7 +554,8 @@ export class SocketGateway
     @ConnectedSocket() client: any,
   ) {
     try {
-      if (this.game[roomId].host !== this.user[client.id].id) {
+      const user = client.request.session.user;
+      if (this.game[roomId].host !== this.user[user.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
@@ -590,15 +590,15 @@ export class SocketGateway
       if (client.rooms.has(roomId)) {
         return;
       }
-      if (!this.user[client.id]) {
-        const user = client.request.session.user;
+      const user = client.request.session.user;
+      if (!this.user[user.id]) {
         if (!user) {
           client.emit('alarm', {
             message: '계정에 오류가 있습니다. 새로고침 후 재접속하세요!',
           });
           return;
         }
-        this.user[client.id] = user;
+        this.user[user.id] = user;
       }
       if (!this.roomInfo[roomId]) {
         client.emit('alarm', { message: '존재하지 않는 방입니다.' });
@@ -610,7 +610,7 @@ export class SocketGateway
         return;
       }
 
-      if (this.game[roomId].ban.includes(this.user[client.id].id)) {
+      if (this.game[roomId].ban.includes(this.user[user.id].id)) {
         client.emit('alarm', {
           message: '추방 당한 유저는 접속이 불가능 해요!',
         });
@@ -623,12 +623,12 @@ export class SocketGateway
       }
 
       this.roomInfo[roomId] = await this.socketService.enterRoom(
-        this.user[client.id].id,
+        this.user[user.id].id,
         roomId,
       );
 
       client.join(roomId);
-      this.user[client.id].roomId = roomId;
+      this.user[user.id].roomId = roomId;
       this.server.to(roomId).emit('enter', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
@@ -652,19 +652,23 @@ export class SocketGateway
   @SubscribeMessage('exit')
   async handleExit(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
-    if (!client.rooms.has(roomId) || !this.roomInfo[roomId]) {
+    const user = client.request.session.user;
+
+    if (!client.rooms.has(roomId) || !this.roomInfo[roomId] || !user) {
       return;
     }
     this.handleExitReady(roomId, client);
     if (this.game[roomId]) this.handleExitTeam(roomId, client);
-    await this.socketService.exitRoom(this.user[client.id].id);
+    await this.socketService.exitRoom(this.user[user.id].id);
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
+
+    this.user[user.id].roomId = null;
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
       const { id } = this.roomInfo[roomId].users[0];
-      if (this.game[roomId].host === this.user[client.id].id)
+      if (this.game[roomId].host === this.user[user.id].id)
         this.game[roomId].host = id;
 
       if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
@@ -685,18 +689,22 @@ export class SocketGateway
   @SubscribeMessage('kick')
   handleKick(
     @MessageBody() { roomId, userId }: { roomId: string; userId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
-    if (!this.roomInfo[roomId] || !this.game[roomId]) return;
+    const user = client.request.session.user;
+    if (!this.roomInfo[roomId] || !this.game[roomId] || !user) return;
 
-    if (this.user[client.id].id !== this.game[roomId].host) {
+    if (this.user[user.id].id !== this.game[roomId].host) {
       return;
     }
     const key = Object.keys(this.user).find(
       (key) => this.user[key].id === userId,
     );
     this.game[roomId].ban.push(this.user[key].id);
-
+    this.game[roomId].users = this.game[roomId].users.filter(
+      (user) => user.userId != userId,
+    );
+    this.user[key].roomId = null;
     client.to(key).emit('kick helper', { socketId: key });
   }
 
@@ -713,11 +721,13 @@ export class SocketGateway
   @SubscribeMessage('host')
   handleChangeHost(
     @MessageBody() { roomId, userId }: { roomId: string; userId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
-    if (!this.roomInfo[roomId] || !this.game[roomId]) return;
+    const user = client.request.session.user;
 
-    if (this.user[client.id].id !== this.game[roomId].host) {
+    if (!this.roomInfo[roomId] || !this.game[roomId] || !user) return;
+
+    if (this.user[user.id].id !== this.game[roomId].host) {
       return;
     }
     const key = Object.keys(this.user).find(
@@ -741,10 +751,12 @@ export class SocketGateway
   handleTeam(
     @MessageBody()
     { roomId, team }: { roomId: string; team: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
+    const user = client.request.session.user;
+
     const teams = ['woo', 'gomem', 'academy', 'isedol'] as const;
-    const userId = this.user[client.id].id;
+    const userId = this.user[user.id].id;
 
     // 모든 팀에서 유저 제거
     teams.forEach((teamName) => {
@@ -756,21 +768,23 @@ export class SocketGateway
 
     // 새로운 팀에 유저 추가
     this.game[roomId].team[team].push(userId);
-    this.user[client.id].team = team;
+    this.user[user.id].team = team;
 
     this.server.to(roomId).emit('team', this.game[roomId]);
   }
 
   handleExitTeam(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
+    const user = client.request.session.user;
+
     const teams = ['woo', 'gomem', 'academy', 'isedol'] as const;
 
     // 모든 팀에서 유저 제거
     teams.forEach((team) => {
       const userIndex = this.game[roomId].team[team].findIndex(
-        (userId) => userId === this.user[client.id].id,
+        (userId) => userId === this.user[user.id].id,
       );
       if (userIndex !== -1) {
         this.game[roomId].team[team].splice(userIndex, 1);
@@ -780,29 +794,30 @@ export class SocketGateway
 
   // 유저들의 ready 확인
   @SubscribeMessage('ready')
-  handleReady(
-    @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
-  ) {
+  handleReady(@MessageBody() roomId: string, @ConnectedSocket() client: any) {
+    const user = client.request.session.user;
+
     if (!this.game[roomId]) return;
-    const index = this.game[roomId].users.findIndex((x) => x.id === client.id);
+    const index = this.game[roomId].users.findIndex(
+      (x) => x.userId === user.id,
+    );
     if (index === -1) {
       const user = this.roomInfo[roomId].users.find(
-        (user) => user.id === this.user[client.id].id,
+        (user) => user.id === this.user[user.id].id,
       );
       this.game[roomId].users.push({
         id: client.id,
         score: 0,
-        userId: this.user[client.id].id,
+        userId: this.user[user.id].id,
         character: user.character,
         name: user.name,
         team:
-          this.user[client.id].team &&
+          this.user[user.id].team &&
           this.roomInfo[roomId].option.includes('팀전')
-            ? this.user[client.id].team
+            ? this.user[user.id].team
             : undefined,
-        exp: this.user[client.id].score,
-        provider: this.user[client.id].provider,
+        exp: this.user[user.id].score,
+        provider: this.user[user.id].provider,
       });
     } else {
       this.game[roomId].users.splice(index, 1);
@@ -819,10 +834,16 @@ export class SocketGateway
         (x) => x.id === client.id,
       );
       if (index === -1) return;
+
+      const turn = this.game[roomId].turn;
+
       this.game[roomId].users.splice(index, 1);
 
       this.game[roomId].total = this.game[roomId].users.length;
-      this.game[roomId].turn = this.game[roomId].turn % this.game[roomId].total;
+      if (turn === index)
+        this.game[roomId].turn =
+          this.game[roomId].turn % this.game[roomId].total;
+      else if (turn > index) this.game[roomId].turn -= 1;
     }
   }
 
@@ -870,11 +891,12 @@ export class SocketGateway
   @SubscribeMessage('last.start')
   async handleLastStart(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
+      const user = client.request.session.user;
       this.logger.log(`Starting last word game - Room: ${roomId}`);
-      if (this.game[roomId].host !== this.user[client.id].id) {
+      if (this.game[roomId].host !== this.user[user.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
@@ -1005,10 +1027,11 @@ export class SocketGateway
   @SubscribeMessage('kung.start')
   async handleKungStart(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
-      if (this.game[roomId].host !== this.user[client.id].id) {
+      const user = client.request.session.user;
+      if (this.game[roomId].host !== this.user[user.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
@@ -1117,10 +1140,12 @@ export class SocketGateway
   @SubscribeMessage('bell.start')
   async handleBellStart(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
-      if (this.game[roomId].host !== this.user[client.id].id) {
+      const user = client.request.session.user;
+
+      if (this.game[roomId].host !== this.user[user.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
@@ -1219,16 +1244,17 @@ export class SocketGateway
       roomId: string;
       score: number;
     },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
+      const _user = client.request.session.user;
       if (!this.game[roomId]) {
         this.logger.warn(`Room ${roomId} not found in bell.answer`);
         return;
       }
 
       const idx = this.game[roomId].users.findIndex(
-        (user) => user.userId === this.user[client.id].id,
+        (user) => user.userId === this.user[_user.id].id,
       );
       if (idx === -1) {
         this.logger.warn(`User not found in room ${roomId}`);
@@ -1259,10 +1285,12 @@ export class SocketGateway
   @SubscribeMessage('cloud.start')
   async handleCloudStart(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
-      if (this.game[roomId].host !== this.user[client.id].id) {
+      const user = client.request.session.user;
+
+      if (this.game[roomId].host !== this.user[user.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
@@ -1364,16 +1392,18 @@ export class SocketGateway
       chat: string;
       score: number;
     },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
+      const _user = client.request.session.user;
+
       if (!this.game[roomId]) {
         this.logger.warn(`Room ${roomId} not found in cloud.answer`);
         return;
       }
 
       const idx = this.game[roomId].users.findIndex(
-        (user) => user.userId === this.user[client.id].id,
+        (user) => user.userId === this.user[_user.id].id,
       );
       if (idx === -1) {
         this.logger.warn(`User not found in room ${roomId}`);
@@ -1387,7 +1417,7 @@ export class SocketGateway
       if (!cloud)
         this.server
           .to(roomId)
-          .emit('chat', { user: this.user[client.id], chat });
+          .emit('chat', { user: this.user[_user.id], chat });
       else {
         const cloudType = cloud.type;
         cloud.clear = true;
@@ -1419,10 +1449,12 @@ export class SocketGateway
   @SubscribeMessage('music.start')
   async handleMusicStart(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
-      if (this.game[roomId].host !== this.user[client.id].id) {
+      const user = client.request.session.user;
+
+      if (this.game[roomId].host !== this.user[user.id].id) {
         client.emit('alarm', { message: '방장이 아닙니다.' });
         return;
       }
@@ -1466,10 +1498,11 @@ export class SocketGateway
   @SubscribeMessage('music.ready')
   handleMusicReady(
     @MessageBody() roomId: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
-    if (!this.user[client.id]) {
-      this.logger.warn(`User ${client.id} not found in music.ready`);
+    const user = client.request.session.user;
+    if (!this.user[user.id]) {
+      this.logger.warn(`User ${user.id} not found in music.ready`);
       return;
     }
     if (!this.game[roomId]) {
@@ -1477,13 +1510,13 @@ export class SocketGateway
       return;
     }
 
-    this.logger.debug(`Music Ready ${this.user[client.id].id}`);
+    this.logger.debug(`Music Ready ${this.user[user.id].id}`);
     this.musicService.handleReady(
       roomId,
       this.game[roomId],
-      this.user[client.id].id,
+      this.user[user.id].id,
     );
-    if (this.game[roomId].host === this.user[client.id].id) {
+    if (this.game[roomId].host === this.user[user.id].id) {
       client.emit('chat', {
         user: { color: 'red', name: '시스템' },
         chat: '시작이 안된다면 !p을 입력해주세요',
@@ -1494,16 +1527,18 @@ export class SocketGateway
   @SubscribeMessage('music.answer')
   handleMusicAnswer(
     @MessageBody() { roomId, score }: { roomId: string; score: number },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
     try {
+      const _user = client.request.session.user;
+
       if (!this.game[roomId]) {
         this.logger.warn(`Room ${roomId} not found in music.answer`);
         return;
       }
 
       const idx = this.game[roomId].users.findIndex(
-        (user) => user.userId === this.user[client.id].id,
+        (user) => user.userId === this.user[_user.id].id,
       );
       if (idx === -1) {
         this.logger.warn(`User not found in room ${roomId}`);
@@ -1528,13 +1563,13 @@ export class SocketGateway
         });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
-        this.logger.log(`${client.id} user answered`);
+        this.logger.log(`${_user.id} user answered`);
         this.server.to(roomId).emit('chat', {
           user: {
             color: '#A377FF',
             name: '시스템',
           },
-          chat: `${this.user[client.id].name}님, 정답!`,
+          chat: `${this.user[_user.id].name}님, 정답!`,
         });
       }
     } catch (error) {
@@ -1584,9 +1619,10 @@ export class SocketGateway
   @SubscribeMessage('music.command')
   handleCode(
     @MessageBody() { roomId, command }: { roomId: string; command: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
   ) {
-    if (this.game[roomId].host !== this.user[client.id].id) return;
+    const user = client.request.session.user;
+    if (this.game[roomId].host !== this.user[user.id].id) return;
 
     if (command === '!p') {
       this.musicService.handleStrongPlay(roomId, this.game[roomId]);
