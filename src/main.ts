@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { SessionAdapter } from './session.adapter';
+import { EnhancedSessionAdapter } from './session.adapter';
 import * as session from 'express-session';
 import * as MongoDBStore from 'connect-mongodb-session';
 
@@ -57,7 +57,7 @@ async function bootstrap() {
   });
 
   app.use(sessionMiddleware);
-  app.useWebSocketAdapter(new SessionAdapter(sessionMiddleware, app));
+  app.useWebSocketAdapter(new EnhancedSessionAdapter(sessionMiddleware, app));
 
   const config = new DocumentBuilder()
     .setTitle('Wakttu')

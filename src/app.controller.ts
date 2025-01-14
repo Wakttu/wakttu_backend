@@ -16,9 +16,12 @@ export class AppController {
   async getSession(@Req() req: Request) {
     const { status, user } = await this.appService.findUser(req.session.user);
     if (!status) req.session.destroy(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ..._user } = user;
-    if (user) req.session.user = _user;
+
+    if (user) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ..._user } = user;
+      req.session.user = _user;
+    }
     return req.session;
   }
 
