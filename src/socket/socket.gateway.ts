@@ -363,6 +363,11 @@ export class SocketGateway
           await this.socketService.deleteRoom(roomId);
         }
 
+        if (this.user[user.id] && this.user[user.id].provider === 'guest') {
+          await this.socketService.deleteGuest(this.user[user.id].id);
+          client.request.session.destroy(() => {});
+        }
+
         delete this.user[user.id];
         this.server.emit('list', this.user);
 
