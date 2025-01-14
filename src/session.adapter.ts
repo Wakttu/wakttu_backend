@@ -15,7 +15,7 @@ export class EnhancedSessionAdapter extends IoAdapter {
   private session: express.RequestHandler;
   private tracker: ConnectionTracker;
   private readonly MAX_CONNECTIONS_PER_IP = 5;
-  private readonly MAX_GLOBAL_CONNECTIONS = 1;
+  private readonly MAX_GLOBAL_CONNECTIONS = 50;
   private readonly CLEANUP_INTERVAL = 60000; // 1분
 
   constructor(session: express.RequestHandler, app: INestApplicationContext) {

@@ -257,6 +257,7 @@ export class SocketGateway
       }
 
       const user = client.request.session?.user;
+
       if (!user) {
         this.logger.warn(`Connection rejected - No user session: ${client.id}`);
         client.disconnect();
@@ -267,17 +268,13 @@ export class SocketGateway
         clearTimeout(this.reconnectionTimeouts[user.id]);
         delete this.reconnectionTimeouts[user.id];
         this.logger.log(`Client reconnected successfully: ${user.id}`);
-      }
 
-      // 중복 접속 확인 및 처리
-      const existingClientId = Object.keys(this.user).find(
-        (key) => this.user[key].id === user.id,
-      );
-      if (existingClientId) {
-        this.server
-          .to(existingClientId)
-          .emit('alarm', { message: '이미 접속중인 유저입니다!' });
-        this.handleDisconnect({ id: existingClientId });
+        const roomId = this.user[user.id].roomId;
+        if (roomId)
+          client.emit('reconnect', {
+            roomInfo: this.roomInfo[roomId],
+            game: this.game[roomId],
+          });
       }
 
       this.user[user.id] = await this.socketService.reloadUser(user.id);
@@ -298,7 +295,6 @@ export class SocketGateway
 
   // 소켓서버가 열릴시 수행되는 코드
   async afterInit() {
-    console.log(this.server);
     // 다시열릴시 존재하는 방 모두 삭제
     const ENV = this.config.get<string>('NODE_ENV');
     if (ENV !== 'development') await this.socketService.deleteAllRoom();
@@ -320,7 +316,7 @@ export class SocketGateway
   // 소켓연결이 끊어지면 속해있는 방에서 나가게 하는 코드
   async handleDisconnect(client: any) {
     try {
-      const user = client.request.session?.user;
+      const user = client.request.session.user;
       const roomId =
         user && this.user[user.id] ? this.user[user.id].roomId : undefined;
 
@@ -687,7 +683,7 @@ export class SocketGateway
 
   // 강퇴기능
   @SubscribeMessage('kick')
-  handleKick(
+  async handleKick(
     @MessageBody() { roomId, userId }: { roomId: string; userId: string },
     @ConnectedSocket() client: any,
   ) {
@@ -700,12 +696,23 @@ export class SocketGateway
     const key = Object.keys(this.user).find(
       (key) => this.user[key].id === userId,
     );
+
     this.game[roomId].ban.push(this.user[key].id);
     this.game[roomId].users = this.game[roomId].users.filter(
       (user) => user.userId != userId,
     );
+
+    await this.socketService.exitRoom(this.user[key].id);
+    this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
     this.user[key].roomId = null;
-    client.to(key).emit('kick helper', { socketId: key });
+
+    client
+      .to(this.user[key].clientId)
+      .emit('kick helper', { socketId: this.user[key].clientId });
+    this.server.to(roomId).emit('exit', {
+      roomInfo: this.roomInfo[roomId],
+      game: this.game[roomId],
+    });
   }
 
   @SubscribeMessage('kick helper')
@@ -713,7 +720,7 @@ export class SocketGateway
     @MessageBody() roomId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    await this.handleExit(roomId, client);
+    client.leave(roomId);
     client.emit('alarm', { message: '퇴장 당하셨습니다.' });
   }
 
@@ -801,16 +808,14 @@ export class SocketGateway
     const index = this.game[roomId].users.findIndex(
       (x) => x.userId === user.id,
     );
+
     if (index === -1) {
-      const user = this.roomInfo[roomId].users.find(
-        (user) => user.id === this.user[user.id].id,
-      );
       this.game[roomId].users.push({
         id: client.id,
         score: 0,
         userId: this.user[user.id].id,
-        character: user.character,
-        name: user.name,
+        character: this.user[user.id].character,
+        name: this.user[user.id].name,
         team:
           this.user[user.id].team &&
           this.roomInfo[roomId].option.includes('팀전')
@@ -1685,12 +1690,10 @@ export class SocketGateway
     const roomInfo = this.roomInfo[roomId];
     const game = this.game[roomId];
 
-    if (!this.bot[roomId]) {
-      // 봇생성 및 Ready
-      this.bot[roomId] = new Bot(roomId, this.socketService);
-      this.bot[roomId].addBotToRoom(roomId, game);
-      return;
-    }
+    // 봇생성 및 Ready
+    this.bot[roomId] = new Bot(roomId, this.socketService);
+    this.bot[roomId].addBotToRoom(roomId, game);
+
     this.handleReady(roomId, client);
 
     roomInfo.option = roomInfo.option.filter((option) => option !== '팀전'); // 팀전기능끄기
@@ -1787,6 +1790,7 @@ export class SocketGateway
   async handleLastBotAnswer(
     @MessageBody() { roomId, chat, roundTime, score, success }: Chat,
   ) {
+    if (roundTime < 200) return;
     this.game[roomId].loading = true;
 
     this.game[roomId].roundTime = roundTime;
