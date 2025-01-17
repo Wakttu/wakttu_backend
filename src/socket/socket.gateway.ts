@@ -241,7 +241,7 @@ export class SocketGateway
     [roomId: string]: NodeJS.Timeout;
   } = {};
 
-  public roomlist: Room[];
+  public roomlist: Room[] = [];
 
   public bot: {
     [roomId: string]: Bot;
@@ -252,7 +252,8 @@ export class SocketGateway
       const isAuthenticated = await this.guard.validateClient(client);
 
       if (!isAuthenticated) {
-        client.disconnect();
+        client.emit('connection_error', { message: '접속 불가' });
+        setTimeout(() => client.disconnect(), 200);
         return;
       }
 
@@ -320,7 +321,7 @@ export class SocketGateway
       const roomId =
         user && this.user[user.id] ? this.user[user.id].roomId : undefined;
 
-      if (!user || !roomId) {
+      if (!user) {
         this.logger.warn(`Unknown user disconnected: ${client.id}`);
         return;
       }
@@ -331,36 +332,38 @@ export class SocketGateway
       this.reconnectionTimeouts[user.id] = setTimeout(async () => {
         this.logger.log(`Client did not reconnect in time: ${user.id}`);
 
-        // 재연결 시간 내에 복구되지 않았을 경우 처리
-        this.handleExitReady(roomId, client);
-        if (this.game[roomId]) this.handleExitTeam(roomId, client);
-        await this.socketService.exitRoom(this.user[user.id].id);
+        if (roomId) {
+          // 재연결 시간 내에 복구되지 않았을 경우 처리
+          this.handleExitReady(roomId, client);
+          if (this.game[roomId]) this.handleExitTeam(roomId, client);
+          await this.socketService.exitRoom(this.user[user.id].id);
 
-        this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-        if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
-          const { id } = this.roomInfo[roomId].users[0];
+          this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
+          if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
+            const { id } = this.roomInfo[roomId].users[0];
 
-          if (
-            this.game[roomId] &&
-            this.game[roomId].host === this.user[user.id].id
-          ) {
-            this.game[roomId].host = id;
+            if (
+              this.game[roomId] &&
+              this.game[roomId].host === this.user[user.id].id
+            ) {
+              this.game[roomId].host = id;
+            }
+
+            if (!this.roomInfo[roomId].start) {
+              this.handleHostReady({ roomId, id });
+            }
+
+            this.server.to(roomId).emit('exit', {
+              roomInfo: this.roomInfo[roomId],
+              game: this.game[roomId],
+            });
+          } else {
+            delete this.roomInfo[roomId];
+            delete this.game[roomId];
+            clearInterval(this.ping[roomId]);
+            delete this.ping[roomId];
+            await this.socketService.deleteRoom(roomId);
           }
-
-          if (!this.roomInfo[roomId].start) {
-            this.handleHostReady({ roomId, id });
-          }
-
-          this.server.to(roomId).emit('exit', {
-            roomInfo: this.roomInfo[roomId],
-            game: this.game[roomId],
-          });
-        } else {
-          delete this.roomInfo[roomId];
-          delete this.game[roomId];
-          clearInterval(this.ping[roomId]);
-          delete this.ping[roomId];
-          await this.socketService.deleteRoom(roomId);
         }
 
         if (this.user[user.id] && this.user[user.id].provider === 'guest') {
