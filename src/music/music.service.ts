@@ -51,8 +51,13 @@ export class MusicService {
       this.server.to(roomId).emit('music.end', { game, roomInfo });
       return;
     }
-    game.users.forEach((user) => (user.success = undefined));
 
+    this.server.to(roomId).emit('chat', {
+      user: { name: '시스템', color: '#A377FF' },
+      chat: '라운드 준비 중입니다!',
+    });
+
+    game.users.forEach((user) => (user.success = undefined));
     game.target = game.music[game.round].answer;
     game.round++;
     this.server.to(roomId).emit('music.round', game);

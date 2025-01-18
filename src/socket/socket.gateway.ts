@@ -269,7 +269,6 @@ export class SocketGateway
         clearTimeout(this.reconnectionTimeouts[user.id]);
         delete this.reconnectionTimeouts[user.id];
         this.logger.log(`Client reconnected successfully: ${user.id}`);
-
         const roomId = this.user[user.id].roomId;
         if (roomId)
           client.emit('reconnect', {
@@ -1502,10 +1501,6 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
-    this.server.to(roomId).emit('chat', {
-      user: { name: '시스템', color: '#A377FF' },
-      chat: '라운드 준비 중입니다!',
-    });
   }
 
   @SubscribeMessage('music.ready')
@@ -1550,6 +1545,8 @@ export class SocketGateway
         return;
       }
 
+      if (!this.ping[roomId]) return;
+
       const idx = this.game[roomId].users.findIndex(
         (user) => user.userId === this.user[_user.id].id,
       );
@@ -1572,7 +1569,7 @@ export class SocketGateway
             color: '#A377FF',
             name: '시스템',
           },
-          chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
+          chat: `모두가 정답이므로 다음 노래로~!`,
         });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);
