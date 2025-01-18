@@ -270,20 +270,21 @@ export class SocketGateway
         delete this.reconnectionTimeouts[user.id];
         this.logger.log(`Client reconnected successfully: ${user.id}`);
         const roomId = this.user[user.id].roomId;
-        if (roomId)
+        if (
+          roomId &&
+          this.roomlist.findIndex((room) => roomId === room.id) != -1
+        ) {
+          client.join(roomId);
           client.emit('reconnect', {
             roomInfo: this.roomInfo[roomId],
             game: this.game[roomId],
           });
+        }
       }
 
       this.user[user.id] = await this.socketService.reloadUser(user.id);
       this.user[user.id].color = this.socketService.getColor();
       this.user[user.id].clientId = client.id;
-
-      const roomId = this.user[user.id].roomId;
-      if (roomId && this.roomlist.findIndex((room) => roomId === room.id) != -1)
-        client.join(roomId);
 
       client.emit('connected'); // 필요한 정보만 전달
       this.logger.log(`Client connected: ${user.id}`);
@@ -374,6 +375,8 @@ export class SocketGateway
         this.server.emit('list', this.user);
 
         this.logger.log(`Client forcibly disconnected: ${user.id}`);
+
+        delete this.reconnectionTimeouts[user.id];
       }, 10000); // 10초 타임아웃
     } catch (error) {
       this.logger.error(
