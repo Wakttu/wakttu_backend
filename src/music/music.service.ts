@@ -15,14 +15,12 @@ export class MusicService {
     this.server = this.socketGateway.server;
   }
 
-
   async handleStart(
     roomId: string,
     roomInfo: Room,
     game: Game,
     practice?: boolean,
   ) {
-
     game.turn = -1;
     game.round = 0;
     game.target = '';
@@ -35,7 +33,6 @@ export class MusicService {
     this.server
       .to(roomId)
       .emit(practice ? 'music.practice' : 'music.start', game);
-
   }
 
   async handleRound(roomId: string, roomInfo: Room, game: Game) {
@@ -48,14 +45,19 @@ export class MusicService {
       const scores = await this.socketService.setResult(game.users);
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
       game.users.forEach((user) => {
-        this.socketGateway.user[user.id].score = scores[user.id];
+        this.socketGateway.user[user.userId].score = scores[user.id];
       });
       game.users.splice(0, game.total);
       this.server.to(roomId).emit('music.end', { game, roomInfo });
       return;
     }
-    game.users.forEach((user) => (user.success = undefined));
 
+    this.server.to(roomId).emit('chat', {
+      user: { name: '시스템', color: '#A377FF' },
+      chat: '라운드 준비 중입니다!',
+    });
+
+    game.users.forEach((user) => (user.success = undefined));
     game.target = game.music[game.round].answer;
     game.round++;
     this.server.to(roomId).emit('music.round', game);

@@ -241,7 +241,7 @@ export class SocketGateway
     [roomId: string]: NodeJS.Timeout;
   } = {};
 
-  public roomlist: Room[];
+  public roomlist: Room[] = [];
 
   public bot: {
     [roomId: string]: Bot;
@@ -252,7 +252,8 @@ export class SocketGateway
       const isAuthenticated = await this.guard.validateClient(client);
 
       if (!isAuthenticated) {
-        client.disconnect();
+        client.emit('connection_error', { message: '접속 불가' });
+        setTimeout(() => client.disconnect(), 200);
         return;
       }
 
@@ -268,22 +269,22 @@ export class SocketGateway
         clearTimeout(this.reconnectionTimeouts[user.id]);
         delete this.reconnectionTimeouts[user.id];
         this.logger.log(`Client reconnected successfully: ${user.id}`);
-
         const roomId = this.user[user.id].roomId;
-        if (roomId)
+        if (
+          roomId &&
+          this.roomlist.findIndex((room) => roomId === room.id) != -1
+        ) {
+          client.join(roomId);
           client.emit('reconnect', {
             roomInfo: this.roomInfo[roomId],
             game: this.game[roomId],
           });
+        }
       }
 
       this.user[user.id] = await this.socketService.reloadUser(user.id);
       this.user[user.id].color = this.socketService.getColor();
       this.user[user.id].clientId = client.id;
-
-      const roomId = this.user[user.id].roomId;
-      if (roomId && this.roomlist.findIndex((room) => roomId === room.id) != -1)
-        client.join(roomId);
 
       client.emit('connected'); // 필요한 정보만 전달
       this.logger.log(`Client connected: ${user.id}`);
@@ -320,7 +321,7 @@ export class SocketGateway
       const roomId =
         user && this.user[user.id] ? this.user[user.id].roomId : undefined;
 
-      if (!user || !roomId) {
+      if (!user) {
         this.logger.warn(`Unknown user disconnected: ${client.id}`);
         return;
       }
@@ -331,36 +332,38 @@ export class SocketGateway
       this.reconnectionTimeouts[user.id] = setTimeout(async () => {
         this.logger.log(`Client did not reconnect in time: ${user.id}`);
 
-        // 재연결 시간 내에 복구되지 않았을 경우 처리
-        this.handleExitReady(roomId, client);
-        if (this.game[roomId]) this.handleExitTeam(roomId, client);
-        await this.socketService.exitRoom(this.user[user.id].id);
+        if (roomId) {
+          // 재연결 시간 내에 복구되지 않았을 경우 처리
+          this.handleExitReady(roomId, client);
+          if (this.game[roomId]) this.handleExitTeam(roomId, client);
+          await this.socketService.exitRoom(this.user[user.id].id);
 
-        this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
-        if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
-          const { id } = this.roomInfo[roomId].users[0];
+          this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
+          if (this.roomInfo[roomId] && this.roomInfo[roomId].users.length > 0) {
+            const { id } = this.roomInfo[roomId].users[0];
 
-          if (
-            this.game[roomId] &&
-            this.game[roomId].host === this.user[user.id].id
-          ) {
-            this.game[roomId].host = id;
+            if (
+              this.game[roomId] &&
+              this.game[roomId].host === this.user[user.id].id
+            ) {
+              this.game[roomId].host = id;
+            }
+
+            if (!this.roomInfo[roomId].start) {
+              this.handleHostReady({ roomId, id });
+            }
+
+            this.server.to(roomId).emit('exit', {
+              roomInfo: this.roomInfo[roomId],
+              game: this.game[roomId],
+            });
+          } else {
+            delete this.roomInfo[roomId];
+            delete this.game[roomId];
+            clearInterval(this.ping[roomId]);
+            delete this.ping[roomId];
+            await this.socketService.deleteRoom(roomId);
           }
-
-          if (!this.roomInfo[roomId].start) {
-            this.handleHostReady({ roomId, id });
-          }
-
-          this.server.to(roomId).emit('exit', {
-            roomInfo: this.roomInfo[roomId],
-            game: this.game[roomId],
-          });
-        } else {
-          delete this.roomInfo[roomId];
-          delete this.game[roomId];
-          clearInterval(this.ping[roomId]);
-          delete this.ping[roomId];
-          await this.socketService.deleteRoom(roomId);
         }
 
         if (this.user[user.id] && this.user[user.id].provider === 'guest') {
@@ -372,6 +375,8 @@ export class SocketGateway
         this.server.emit('list', this.user);
 
         this.logger.log(`Client forcibly disconnected: ${user.id}`);
+
+        delete this.reconnectionTimeouts[user.id];
       }, 10000); // 10초 타임아웃
     } catch (error) {
       this.logger.error(
@@ -1499,10 +1504,6 @@ export class SocketGateway
       this.roomInfo[roomId],
       this.game[roomId],
     );
-    this.server.to(roomId).emit('chat', {
-      user: { name: '시스템', color: '#A377FF' },
-      chat: '라운드 준비 중입니다!',
-    });
   }
 
   @SubscribeMessage('music.ready')
@@ -1547,6 +1548,8 @@ export class SocketGateway
         return;
       }
 
+      if (!this.ping[roomId]) return;
+
       const idx = this.game[roomId].users.findIndex(
         (user) => user.userId === this.user[_user.id].id,
       );
@@ -1569,7 +1572,7 @@ export class SocketGateway
             color: '#A377FF',
             name: '시스템',
           },
-          chat: `모두가 정답을 맞췄으므로 다음 노래로~!`,
+          chat: `모두가 정답이므로 다음 노래로~!`,
         });
       } else {
         this.server.to(roomId).emit('music.answer', this.game[roomId]);

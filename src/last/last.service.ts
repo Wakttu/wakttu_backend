@@ -43,7 +43,7 @@ export class LastService {
       if (!game.users.some((user) => user.provider === 'bot')) {
         const scores = await this.socketService.setResult(game.users);
         game.users.forEach((user) => {
-          this.socketGateway.user[user.id].score = scores[user.id];
+          this.socketGateway.user[user.userId].score = scores[user.id];
         });
       }
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);

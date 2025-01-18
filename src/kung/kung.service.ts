@@ -51,7 +51,7 @@ export class KungService {
       const scores = await this.socketService.setResult(game.users);
       roomInfo = await this.socketService.setStart(roomId, roomInfo.start);
       game.users.forEach((user) => {
-        this.socketGateway.user[user.id].score = scores[user.id];
+        this.socketGateway.user[user.userId].score = scores[user.id];
       });
       game.users.splice(0, game.total);
       this.server
