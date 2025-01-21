@@ -14,7 +14,7 @@ interface ConnectionTracker {
 export class EnhancedSessionAdapter extends IoAdapter {
   private session: express.RequestHandler;
   private tracker: ConnectionTracker;
-  private readonly MAX_CONNECTIONS_PER_IP = 5;
+  private readonly MAX_CONNECTIONS_PER_IP = 50;
   private readonly MAX_GLOBAL_CONNECTIONS = 50;
   private readonly CLEANUP_INTERVAL = 60000; // 1분
 
@@ -74,6 +74,8 @@ export class EnhancedSessionAdapter extends IoAdapter {
   private async validateConnection(socket: Socket): Promise<void> {
     const ip = socket.handshake.address;
 
+    console.log('[ip]: ', ip);
+
     // 1. 글로벌 rate limit 체크
     await this.tracker.globalLimiter.consume(ip);
 
@@ -86,7 +88,6 @@ export class EnhancedSessionAdapter extends IoAdapter {
       throw new Error('IP_LIMIT_EXCEEDED');
     }
 
-    // 4. 전역 연결 수 체크
     let totalConnections = 0;
     this.tracker.connections.forEach((connections) => {
       totalConnections += connections.size;
@@ -113,7 +114,7 @@ export class EnhancedSessionAdapter extends IoAdapter {
       const connections = this.tracker.connections.get(ip);
 
       if (connections) {
-        connections.delete(socket.id);
+        if (connections.has(socket.id)) connections.delete(socket.id);
         if (connections.size === 0) {
           this.tracker.connections.delete(ip);
         }
@@ -125,7 +126,6 @@ export class EnhancedSessionAdapter extends IoAdapter {
     const now = Date.now();
     if (now - this.tracker.lastCleanup >= this.CLEANUP_INTERVAL) {
       this.tracker.lastCleanup = now;
-
       // 오래된 연결 정리
       this.tracker.connections.forEach((connections, ip) => {
         if (connections.size === 0) {
