@@ -347,10 +347,9 @@ export class SocketGateway
               this.game[roomId].host === this.user[user.id].id
             ) {
               this.game[roomId].host = id;
-            }
-
-            if (!this.roomInfo[roomId].start) {
-              this.handleHostReady({ roomId, id });
+              if (!this.roomInfo[roomId].start) {
+                this.handleHostReady({ roomId, id });
+              }
             }
 
             this.server.to(roomId).emit('exit', {
@@ -667,6 +666,7 @@ export class SocketGateway
     }
     this.handleExitReady(roomId, client);
     if (this.game[roomId]) this.handleExitTeam(roomId, client);
+    console.log(this.game[roomId].users);
     await this.socketService.exitRoom(this.user[user.id].id);
     this.roomInfo[roomId] = await this.socketService.getRoom(roomId);
 
@@ -674,10 +674,11 @@ export class SocketGateway
     client.leave(roomId);
     if (this.roomInfo[roomId].users.length > 0) {
       const { id } = this.roomInfo[roomId].users[0];
-      if (this.game[roomId].host === this.user[user.id].id)
+      if (this.game[roomId].host === this.user[user.id].id) {
         this.game[roomId].host = id;
+        if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
+      }
 
-      if (!this.roomInfo[roomId].start) this.handleHostReady({ roomId, id });
       this.server.to(roomId).emit('exit', {
         roomInfo: this.roomInfo[roomId],
         game: this.game[roomId],
